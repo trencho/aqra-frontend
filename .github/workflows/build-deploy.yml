@@ -1,0 +1,68 @@
+name: Deploy Vue app
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+  OPENVPN_USERNAME: ${{ secrets.OPENVPN_USERNAME }}
+  OPENVPN_PASSWORD: ${{ secrets.OPENVPN_PASSWORD }}
+  USER_KEY: ${{ secrets.USER_KEY }}
+  SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  GIT_REPO_PATH: ${{ secrets.GIT_REPO_PATH }}
+  GIT_REPO_USERNAME: ${{ secrets.GIT_REPO_USERNAME }}
+  GIT_REPO_NAME: ${{ secrets.GIT_REPO_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - name: Install OpenVPN
+        run: |
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
+
+      - name: Connect to VPN
+        uses: kota65535/github-openvpn-connect-action@v3.0.0
+        with:
+          config_file: ${{ env.OPENVPN_CONFIG }}
+          username: ${{ env.OPENVPN_USERNAME }}
+          password: ${{ env.OPENVPN_PASSWORD }}
+          client_key: ${{ env.USER_KEY }}
+
+      - name: SSH commands for checkout/update git repo, build and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SSH_USERNAME }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          script: |
+            export ACCESS_TOKEN=${{ env.ACCESS_TOKEN }}
+            export GIT_REPO_NAME=${{ env.GIT_REPO_NAME }}
+            export GIT_REPO_PATH=${{ env.GIT_REPO_PATH }}
+            export GIT_REPO_USERNAME=${{ env.GIT_REPO_USERNAME }}
+            export SSH_USERNAME=${{ env.SSH_USERNAME }}
+
+            mkdir -p "${GIT_REPO_PATH}"
+            if [ ! -d "${GIT_REPO_PATH}"/.git ]; then
+              git clone https://"${ACCESS_TOKEN}"@github.com/"${GIT_REPO_USERNAME}"/"${GIT_REPO_NAME}".git "${GIT_REPO_PATH}"
+            fi
+            cd "${GIT_REPO_PATH}" || exit
+            git fetch origin
+            git reset --hard origin/main
+            chown -R "${SSH_USERNAME}":"${SSH_USERNAME}" "${GIT_REPO_PATH}"
+            find .github/workflows -type f -name "*.sh" -exec chmod +x {} +
+            {
+              .github/workflows/build_docker_images.sh
+              .github/workflows/deploy_kubernetes_resources.sh
+              .github/workflows/reload_pods.sh
+            } 2>&1

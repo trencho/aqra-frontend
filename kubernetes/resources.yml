@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker/docker-compose.yml
+    kompose.version: 1.28.0 (c4137012e)
+  labels:
+    io.kompose.service: vue
+  name: vue
+  namespace: aqra
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  selector:
+    io.kompose.service: vue
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: vue-secret
+  namespace: aqra
+spec:
+  encryptedData:
+    APP_ENV: AgAsLm6nbO48QtqIwJtKsIHP0ubyCTnyF+xx8XC7g8yMXQMf15vX8Sv7oc+w7Uqfzs1xTaySE3raDVVKZB0iiq2tBWttOL5WtjPjW2tEDidluZt40CBhK+lUGD+Md+qDU7wtxZ4IHQSmVFJ70rFBWDRserWp6sBjoWaEjHjHpXaYHLVuMR5vjxMmqxR0pUuyWDk2++lMY5M+G18xSVmMhr8EU4ZSH5HtG43KAmYS3HEo9RNGT/pnlm6XXwjhTQRG3aQT8T2r4XEg9zlfXJaS4t0HuhfiMnCvMBC7Vt1hVWTfXxlunvSDmuTVnpZQ7QWzLeiINsQ62TZciqmEpqHyNrT0fY2eDTVjWnrimjnPRK854PN7DDq8Vrm/H5nVDas+HqFqawwF7sTWAuix6CLo4HlOF3QpJQV/oL2yvsYecs9b1QbtyiHR7Pfmy72kTTNmh4G6l5eY+IxOXqn+XE2VDZFUzS3diOZmf4SmW2ijODgD1LhJdrdEjub1N9mIxvMj0lDmsvhalqmlU3KvTiT2SmWhKnUHWxLo9e5500zejOskUQtEgDajjxtr38/Ws10IdPJrJskG4K0gxXRJoYM6Lsn+bDAF/qT7KVTOA6/hiym9e9UzeR9WZbk77wnsffu5mceKNeSqlWO+1gOLwVYATcFoyRz1bOw4lUe3GiygZxk6fR7W/GhnNjiJ52nylTM60viMdpu2ksqrT/Q3
+    APP_NAME: AgCWP3kLDXmf/DUoY0HWYs7na/19REkZVgW0HlY5BgcEWzRPCCSfYsec/i2/bhdVXhYmlvAMrdaQ2e6miQ+0/PwoYY8ygWuVI8H3l7hZSVN17qtoMMJqO6IwYC+4cxtrXvr+TRc54LgBs0ygjtht1KF0yaXZnGKsubapQPZ+13Zt4JL7tNSaNZliJ47FVKjDl6DkrMvihCtWa7pAiSm2r55O3CQKYx39gLddUrZt9GpL54ht/CmuN3yzZwjzhfh9N0rcIGn0keABHxHi7IYOFC+xT24ApqeGL8Fe6x/3TmREXVTtkgqvYvdBUVXHpWYdoLw4JmIVVRdP2SwM0ngVWaNk4qz07yeV6ksBuCwqDMEINKaqjuXkvLjSI9GIszDPuPC+7/Mds/1j0+jSVfqGcg2WMkxrHRjF74hlul5dHIerg8+NtKBSsaHjiBP7HJyvSnsnGryXmGFB/YRlswWQ41CVo23s8APDmxKGIwThnxPVPmIpdekt6HPoJVdSt5txBOWzToLzilF9btMw9E4cZj8uLyWGY8mvzdZJ8gmKcXUzXT8g0pHBNE25OSY/4rXOoVd3bwSZhtkaRj7N+rawVMCr3o+KZBtxtj8vcbHw+sPSUqcpxK0CpCyN2tQ/SWBVko949iOjIVh7LBh2VMQQ14F5EruDjRNeZeTcBQseLBfgMZx1yJnTx5pyLR3gE0mvf8x0HT7g0lmvOeCysMXWOU0RZI61Qw==
+    AQRA_API_URL: AgC08C3BDi+ArpXoAJly5xKmw2vHi8lSigf+fePO0aGtYZM5VmyvzRZYVpcVbcwRfJJhp2y6621bCnDwgDWwUGjOJQCg5icqm4dlfZ+QcXCg5DNM6O2KK6tcSe3c+CaXM84j6CeSrP+bkA4rFJTySL7sxC1/qWhEC5tE4N/py4CQj/BplsSgPE594ioHvRxQVM2ZUf4AQX3/b0BIW69nFd8zJUZhyksWoccYe9xkEIVm+/awupvqqJ22Jna5SuEo1huTo6L6SQKLVLff11v+LBg34/Q8Q3UJLVMHimr9t5o23M3kLC3yxxFtAjs0hCtQ/bEUh4EUTqlIX5QyWqQQB5Ma3+P545Iyh6ZTFRyorBBqKEqo2yzSJOdmcsspV0syjARFiKa65p6n7I49RBV8stZsgxZs/D5GoKksRj+JDxZtX72q/wlAt2W/L5D8ROeUdCrGUlRnIdCnetvU0zFrzN4yoQ4m27rS01iTXBVrRSNi2/Y+TXe0xWmYGKtif39MtSntRMcqdXBg+sxSZo27IT+V69XnhUIXv2K96AOeGkKRw69nprd9sQZ2paAWNMfjMb6VfGQGzoD2YzwFzgbcidwYFjbpfF0mXTKyjC8RoBjWtNOtBCLeE7bWw3jSUId/Zu72un1Dbe1RAwxMvIp33RcPby5m+8h6OKr5B2zg1Q/ub2t1/0lnW1QzP0l5w3Y1fR4bGUDK9nPK3D8QGyZQuY5l/xxi
+    OPEN_STREET_MAP_CREDENTIALS: AgBTWnyU2KIpM4BS1jUhaZgJIr3++/rbzvpZdmO8KdTlaGvatv5liYChupJYz4Bg/DKPRkuEIJaCwYmFwRhYPQ6tSQ0mY8xf9MdUdtcCS0LkG0DBL+px167Ur52giOWWa5+yq6OaS054jOigETYq9YFc8U3oGxfGeMev8OmCXb0E2CnNmzClptenB9H8eGTokc4NLbKhSwGSyHIt9e4nX8vEKal3JCAM/tpW69m+XsKFYEvYJimvTaVQRYr1cfj9TwNfYlFfdEYA1xK4Jh+bo7vUqV05UO1szgfnZrcnk3xzYVknK/a2kda2gQIeeZlZeGYToBCF3BmyUUJj7LECgGummFRsIKJLZuv52tfIWQIIAU6X1nOctX18QZ8KUAy+a8pg91Jqa22IFWE3RM7x2vLHqEdeCygDOq4G32oVyZN/vapG2JAC2tRE9arIq6FPZZN0Wbd5oyD5lQQovFFxs1PMOz3FFdazLWk+x3cLMCLPNeZzvKjfnKJIOJy75XZa/OnHs6mvyyr+1xPLlQ9mccHEEKUUtGpK77Wa2Yb5n7ZHCbcRgCoW9qF8cYi8R+Kddmmeqx7JEFTWO8jUR7mOD5P91/vPdBiIYYd28lvcGsyUZe2QKeeWrK3hdAOlJXmgIt0jV2QdMyHjRWoWezoTxJAiBJTlsCsxwjC3BKZb97uaC++/OgKl7TZ8sN4bIkXrIAAuY0tgiadxA4Lzrj5dtp2ZYZ/l0focMH/pcV7NKSjmU35l0kKcG58giE6MtpFZgtY9EFFCOF5MSbI8Q3aOkmfOtCgrqJiIdyOZ62MoLzBFr8BB0Z+I7tQXZg==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: vue-secret
+      namespace: aqra
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  name: vue-ingress
+  namespace: aqra
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: aqra.feit.ukim.edu.mk
+      http:
+        paths:
+          - backend:
+              service:
+                name: vue
+                port:
+                  number: 80
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - aqra.feit.ukim.edu.mk
+      secretName: aqra-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aqra-network
+  namespace: aqra
+spec:
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              io.kompose.network/aqra-network: "true"
+  podSelector:
+    matchLabels:
+      io.kompose.network/aqra-network: "true"

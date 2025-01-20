@@ -1,0 +1,23 @@
+services:
+  vue:
+    build:
+      args:
+        - BUILDKIT_PROGRESS=plain
+        - NODE_ENV={NODE_ENV}
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: vue
+    deploy:
+      replicas: 1
+    env_file:
+      - .env
+    image: aqra-vue:latest
+    networks:
+      - network
+    ports:
+      - "8080:80"
+
+networks:
+  network:
+    attachable: true
+    driver: overlay

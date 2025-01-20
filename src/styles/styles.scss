@@ -1,0 +1,201 @@
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.appBar {
+  z-index: 1000 !important;
+}
+
+.flex {
+  display: flex;
+}
+.flex1 {
+  flex: 1;
+}
+
+.aqra {
+  font-size: 2.25rem;
+  font-weight: 200;
+  color: white;
+  line-height: 3.75rem;
+}
+.alignCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.divider {
+  margin-bottom: 4px;
+  background: white;
+}
+.description {
+  font-size: 1.25rem !important;
+  font-weight: 300;
+  line-height: 2rem;
+  color: white;
+  letter-spacing: 0.0125em !important;
+}
+.pageTitle {
+  font-size: 3rem !important;
+  font-weight: 700;
+  line-height: 3.125rem;
+  letter-spacing: normal !important;
+  margin-bottom: 12px !important;
+  color: white;
+}
+.menuDrawer {
+  z-index: 1000 !important;
+  padding: 24px;
+}
+
+.transparentBackground {
+  background: transparent;
+}
+.projectSectionBackground {
+  background: #414143;
+}
+.contactMeBackground {
+  background: #31404f;
+}
+.aboutMePage {
+  padding-top: 48px;
+  background: black;
+}
+.homePage {
+  max-width: inherit !important;
+}
+.text:hover {
+  cursor: pointer;
+}
+
+.inputFilter {
+  flex: 1 !important;
+  margin-top: 0 !important;
+  padding-top: 2px !important;
+}
+.filters {
+  height: 650px;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.87);
+  display: flex;
+  width: auto;
+  color: white;
+  align-items: flex-start;
+}
+.filterInputs {
+  z-index: 400;
+  flex-direction: column;
+}
+.filterLarge {
+  position: absolute;
+  z-index: 400 !important;
+  right: 50px;
+  top: 5px;
+}
+.scrollButton {
+  right: 10px;
+  position: absolute;
+  bottom: 50%;
+  z-index: 401 !important;
+}
+
+.slider {
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  z-index: 401 !important;
+  margin-left: 20px;
+  height: 100%;
+}
+.sliderButtons {
+  display: flex;
+  flex-direction: column;
+}
+
+.statisticFilters {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  justify-content: flex-end;
+  border-bottom: 1px solid #E6E5E6;
+}
+.statisticBar {
+  padding: 24px;
+}
+.statisticInput {
+  max-width: 250px;
+}
+
+.zIndex500 {
+  z-index: 500 !important;
+}
+
+.width250 {
+  width: 250px;
+}
+
+.marginBottom30 {
+  margin-bottom: 30px;
+}
+.marginBottom48 {
+  margin-bottom: 48px;
+}
+.marginBottom32 {
+  margin-bottom: 32px;
+}
+.marginTop12 {
+  margin-top: 12px;
+}
+.marginTop20 {
+  margin-top: 20px;
+}
+.marginLeft10 {
+  margin-left: 10px;
+}
+.marginRight10 {
+  margin-right: 10px;
+}
+.marginAuto {
+  margin-right: auto !important;
+  margin-left: auto !important;
+}
+.noMargin {
+  margin: 0;
+}
+
+.paddingTop48 {
+  padding-top: 48px;
+}
+
+.v-tab {
+  font-size: 0.875rem;
+}
+.v-label {
+  font-size: 14px;
+}
+.v-slider--vertical .v-slider__track-container {
+  width: 8px !important;
+}
+.v-slider {
+  height: 100%;
+}
+.v-slider__thumb-label {
+  height: 70px !important;
+  width: 70px !important;
+  transform: translateY(20%) translateY(19.66667px) translateX(55%) rotate(135deg) !important;
+}
+.v-input__slot {
+  height: 100%;
+}
