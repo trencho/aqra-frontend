@@ -1,10 +1,6 @@
 <template>
-  <div
-    :style="'min-height: calc(100vh - ' + $vuetify.application.top + 'px); width: 100%, z-index=1'"
-  >
-    <StatisticsFilters
-      @show="createStatistics"
-    />
+  <div :style="'min-height: calc(100vh - ' + $vuetify.application.top + 'px); width: 100%, z-index=1'">
+    <StatisticsFilters @show="createStatistics" />
     <LineChart
       v-if="chartData.datasets.length"
       class="statisticBar"
@@ -19,8 +15,8 @@
 import LineChart from './LineChart.vue';
 import StatisticsFilters from './StatisticFilters.vue';
 
-import {mapActions, mapState} from 'vuex';
-import {chartConfig, mapHistoryToSeries} from '@/utils/createStatistics';
+import { mapActions, mapState } from 'vuex';
+import { chartConfig, mapHistoryToSeries } from '@/utils/createStatistics';
 
 export default {
   name: 'Statistics',

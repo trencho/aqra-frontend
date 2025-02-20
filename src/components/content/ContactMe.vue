@@ -4,7 +4,7 @@
       <h2 class="pageTitle">
         {{ $t("common.getInTouch") }}
       </h2>
-  
+
       <VResponsive
         class="marginBottom32 marginAuto"
         width="56"
@@ -81,7 +81,7 @@ export default {
       ],
     };
   },
-    methods: {
+  methods: {
     openLinkedIn() {
       window.open('https://www.linkedin.com/in/aleksandar-trenchevski-593b45168/', '_blank');
     },

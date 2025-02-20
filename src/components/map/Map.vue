@@ -8,7 +8,6 @@
       <Filters
         class="filterLarge"
         :selected="selected"
-      
         @setName="setName"
         @setValue="setValue"
         @setPollutant="setPollutant"
@@ -17,7 +16,6 @@
         @changeSensorMarkers="changeSensorMarkers"
         @setShowForAllCities="setShowForAllCities"
         @setShowForAllSensors="setShowForAllSensors"
-
         @sliderChange="sliderChange"
       />
     </div>
@@ -28,15 +26,12 @@
         class="scrollButton"
         @click="$vuetify.goTo(500)"
       >
-        <v-icon
-          color="white"
-        >
+        <v-icon color="white">
           mdi-chevron-down
         </v-icon>
       </VBtn>
       <Filters
         :selected="selected"
-      
         @setName="setName"
         @setValue="setValue"
         @setPollutant="setPollutant"
@@ -45,7 +40,6 @@
         @changeSensorMarkers="changeSensorMarkers"
         @setShowForAllCities="setShowForAllCities"
         @setShowForAllSensors="setShowForAllSensors"
-
         @sliderChange="sliderChange"
       />
     </div>
@@ -53,15 +47,15 @@
 </template>
 
 <script>
-import {mapActions, mapState} from 'vuex';
+import { mapActions, mapState } from 'vuex';
 
 import L from 'leaflet';
 
 import Filters from './Filters';
 
-import {MACEDONIA_COORDINATES, MIN_ZOOM} from '@/constants/map';
-import {CreateLayer, Layers} from '@/constants/layers';
-import {createBaseLayer, createCityBoundaries, mapCities, mapSensorsInCities, removeLayer,} from '@/utils/createMap';
+import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
+import { CreateLayer, Layers } from '@/constants/layers';
+import { createBaseLayer, createCityBoundaries, mapCities, mapSensorsInCities, removeLayer, } from '@/utils/createMap';
 
 export default {
   name: 'Map',
@@ -169,7 +163,7 @@ export default {
           selected: Layers.SelectedSensor
         };
       }
-      const conf = CreateLayer[this.selected.selected](this.map, {...this.selected, time: this.slider});
+      const conf = CreateLayer[this.selected.selected](this.map, { ...this.selected, time: this.slider });
       this.selected = {
         ...this.selected,
         selectedTime: conf.time
@@ -237,7 +231,7 @@ export default {
     sliderChange(time) {
       this.heatLayers = removeLayer(this.map, this.heatLayers);
 
-      const conf = CreateLayer[this.selected.selected](this.map, {...this.selected, time});
+      const conf = CreateLayer[this.selected.selected](this.map, { ...this.selected, time });
       this.selected = {
         ...this.selected,
         selectedTime: conf.time

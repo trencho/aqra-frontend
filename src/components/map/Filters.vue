@@ -33,10 +33,10 @@ import SliderFilter from './SliderFilter';
 export default {
   name: 'Filters',
 
-	components: {
-		InputFilters,
-		SliderFilter
-	},
+  components: {
+    InputFilters,
+    SliderFilter
+  },
 
   props: {
     selected: {

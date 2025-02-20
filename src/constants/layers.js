@@ -1,4 +1,4 @@
-import {createHeatLayer, createHeatLayers, createSensorHeatLayers} from "@/utils/createMap";
+import { createHeatLayer, createHeatLayers, createSensorHeatLayers } from "@/utils/createMap";
 
 export const Layers = {
     AllCities: 'AllCities',

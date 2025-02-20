@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import {mapActions, mapState} from 'vuex';
+import { mapActions, mapState } from 'vuex';
 
 import Footer from './Footer';
 import MenuDrawer from './MenuDrawer';
@@ -72,8 +72,8 @@ import TranslationButton from './TranslationButton';
 import Statistics from '@/components/statistics/Statistics';
 import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation';
 
-import {LocaleId} from '@/constants/locales';
-import {TabIds, Tabs} from '@/constants/navigationTabs';
+import { LocaleId } from '@/constants/locales';
+import { TabIds, Tabs } from '@/constants/navigationTabs';
 
 import logo from '@/assets/logo.svg';
 

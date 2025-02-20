@@ -49,8 +49,8 @@
 </template>
 
 <script>
-import {mapHistoryToSeries} from '@/utils/createStatistics';
-import {mapActions, mapState} from 'vuex';
+import { mapHistoryToSeries } from '@/utils/createStatistics';
+import { mapActions, mapState } from 'vuex';
 
 export default {
   name: 'StatisticsFilter',

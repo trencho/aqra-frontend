@@ -19,9 +19,7 @@
       </VBtn>
     </template>
 
-    <VList
-      dark
-    >
+    <VList dark>
       <VListItem
         v-for="(item, index) in locales"
         :key="index"
@@ -38,9 +36,9 @@
 </template>
 
 <script>
-import {mapActions, mapState} from 'vuex';
+import { mapActions, mapState } from 'vuex';
 
-import {LocaleId} from '@/constants/locales';
+import { LocaleId } from '@/constants/locales';
 
 export default {
   name: 'TranslationButton',

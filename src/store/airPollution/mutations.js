@@ -1,5 +1,5 @@
-import {Pollutants, PollutantsLabels} from '@/constants/pollutants';
-import {types} from './types';
+import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
+import { types } from './types';
 
 export const mutations = {
   [types.SET_TAB_ID](state, id) {
@@ -26,26 +26,26 @@ export const mutations = {
       value: o.value
     }));
   },
-  [types.SET_VALUE](state, {input, value}) {
+  [types.SET_VALUE](state, { input, value }) {
     input.value = value;
   },
-  [types.SET_SENSORS_BY_CITY](state, {cityName, sensors}) {
+  [types.SET_SENSORS_BY_CITY](state, { cityName, sensors }) {
     if (!state.cities) {
       return;
     }
     state.cities[cityName].sensors = mapList(sensors, 'sensorId');
   },
-  [types.SET_FORECAST_FOR_SENSOR](state, {sensorId, forecast, cityName}) {
+  [types.SET_FORECAST_FOR_SENSOR](state, { sensorId, forecast, cityName }) {
     if (!state.cities[cityName].sensors) {
       return;
     }
     const selected = state.cities[cityName].sensors?.[sensorId];
     selected.forecast = forecast;
   },
-  [types.SET_FORECAST_FOR_CITY](state, {forecast, cityName}) {
-      state.cities[cityName].forecast = forecast;
+  [types.SET_FORECAST_FOR_CITY](state, { forecast, cityName }) {
+    state.cities[cityName].forecast = forecast;
   },
-  [types.SET_POLLUTANTS_FOR_SENSOR](state, {sensorId, pollutants}) {
+  [types.SET_POLLUTANTS_FOR_SENSOR](state, { sensorId, pollutants }) {
     state.pollutantsBySensorId = {
       ...state.pollutantsBySensorId,
       [sensorId]: pollutants
@@ -69,7 +69,7 @@ export const mutations = {
     state.pollutantInput.items = value ? mapPollutants() : [];
     state.pollutantInput.value = null;
   },
-  [types.SET_HISTORY_DATA](state, {sensorId, historyData}) {
+  [types.SET_HISTORY_DATA](state, { sensorId, historyData }) {
     state.historyData = {
       ...state.historyData,
       [sensorId]: historyData
@@ -82,8 +82,8 @@ export const mutations = {
       value: null,
       hidden: false,
       items: (state.cities ? Object.values(state.cities) : []).map(c => ({
-          label: c.siteName,
-          value: c.cityName
+        label: c.siteName,
+        value: c.cityName
       }))
     };
     state.sensorInput = {
@@ -108,8 +108,8 @@ export const mutations = {
       value: null,
       hidden: false,
       items: (state.cities ? Object.values(state.cities) : []).map(c => ({
-          label: c.siteName,
-          value: c.cityName
+        label: c.siteName,
+        value: c.cityName
       }))
     };
     state.sensorInput = {
@@ -161,7 +161,7 @@ function mapList(list, entity) {
 
 function mapPollutants() {
   return Object.values(Pollutants).map(p => ({
-      label: PollutantsLabels[p],
-      value: p
+    label: PollutantsLabels[p],
+    value: p
   }));
 }

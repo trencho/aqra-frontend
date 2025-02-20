@@ -1,4 +1,4 @@
-import {TabIds} from "@/constants/navigationTabs";
+import { TabIds } from "@/constants/navigationTabs";
 
 export const state = {
     drawer: false,

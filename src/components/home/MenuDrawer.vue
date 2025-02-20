@@ -31,50 +31,50 @@
 </template>
 
 <script>
-import {mapActions} from 'vuex'
-import {TabIds} from '@/constants/navigationTabs';
+import { mapActions } from 'vuex'
+import { TabIds } from '@/constants/navigationTabs';
 
 export default {
-    name: 'MenuDrawer',
+  name: 'MenuDrawer',
 
-    data() {
-      return {
-        links: [
-          {
-            title: 'common.home',
-            id: TabIds.Home,
-            icon: 'mdi-home'
-          },
-          {
-            title: 'common.pollutionMap',
-            id: TabIds.PollutionMap,
-            icon: 'mdi-map'
-          },
-          {
-            title: 'common.statistics',
-            id: TabIds.Statistics,
-            icon: 'mdi-chart-bar'
-          },
-          {
-            title: 'common.swaggerDocumentation',
-            id: TabIds.SwaggerDocumentation,
-            icon: 'mdi-text-box'
-          }
-        ]
-      };
-    },
+  data() {
+    return {
+      links: [
+        {
+          title: 'common.home',
+          id: TabIds.Home,
+          icon: 'mdi-home'
+        },
+        {
+          title: 'common.pollutionMap',
+          id: TabIds.PollutionMap,
+          icon: 'mdi-map'
+        },
+        {
+          title: 'common.statistics',
+          id: TabIds.Statistics,
+          icon: 'mdi-chart-bar'
+        },
+        {
+          title: 'common.swaggerDocumentation',
+          id: TabIds.SwaggerDocumentation,
+          icon: 'mdi-text-box'
+        }
+      ]
+    };
+  },
 
-    computed: {
-      drawer: {
-        get () {
-          return this.$store.state.airPollution.drawer;
-        },
-        set (val) {
-          this.setDrawer(val);
-        },
+  computed: {
+    drawer: {
+      get() {
+        return this.$store.state.airPollution.drawer;
+      },
+      set(val) {
+        this.setDrawer(val);
       },
     },
+  },
 
-    methods: mapActions('airPollution' ,['setDrawer', 'changeTab']),
-  }
+  methods: mapActions('airPollution', ['setDrawer', 'changeTab']),
+}
 </script>
