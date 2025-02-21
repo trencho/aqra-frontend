@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "vue-cli-service serve",
+    "dev": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
@@ -32,7 +32,7 @@
     "vue-axios": "^3.5.2",
     "vue-chartjs": "^5.3.2",
     "vue-i18n": "^8.28.2",
-    "vue-iframes": "^0.0.20",
+    "vue-iframes": "^0.0.21",
     "vue2-leaflet": "^2.7.1",
     "vuetify": "^2.7.2",
     "vuex": "^3.6.2"
@@ -47,7 +47,7 @@
     "@vue/cli-service": "^5.0.8",
     "eslint": "^8.57.1",
     "eslint-plugin-vue": "^9.32.0",
-    "globals": "^15.15.0",
+    "globals": "^16.0.0",
     "sass-embedded": "^1.85.0",
     "sass-loader": "^16.0.5",
     "vue-cli-plugin-vuetify": "^2.5.8",
