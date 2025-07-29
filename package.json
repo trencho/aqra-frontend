@@ -40,7 +40,7 @@
     "@babel/eslint-parser": "7.28.0",
     "@babel/preset-env": "7.28.0",
     "@capacitor/cli": "7.4.2",
-    "@eslint/js": "9.31.0",
+    "@eslint/js": "9.32.0",
     "@vue/cli-plugin-eslint": "5.0.8",
     "@vue/cli-service": "5.0.8",
     "eslint": "8.57.1",
@@ -52,7 +52,7 @@
     "vue-eslint-parser": "9.4.3",
     "vue-template-compiler": "2.7.16",
     "vuetify-loader": "1.9.2",
-    "webpack": "5.100.2"
+    "webpack": "5.101.0"
   },
   "eslintConfig": {
     "root": true,
