@@ -7,5 +7,5 @@ echo "Applying base resources..."
 kubectl apply -f "${KUBERNETES_DIR}/resources.yml"
 
 echo "Deploying Vue application..."
-kubectl apply -f "${KUBERNETES_DIR}/deployment/vue-deployment.yml"
+kubectl apply -f "${KUBERNETES_DIR}/vue-deployment.yml"
 kubectl rollout status deployment/vue -n aqra --watch=true
