@@ -8,8 +8,6 @@ export function transformRequestOptions(params) {
 
 export const axios = Axios;
 
-console.log(process.env.NODE_ENV);
-console.log(process.env.VUE_APP_AQRA_API_URL);
 axios.defaults.baseURL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_AQRA_API_URL || 'https://aqra.feit.ukim.edu.mk/api/v1' : 'https://aqra.feit.ukim.edu.mk/api/v1';
 
 axios.defaults.headers.common.Accept = '*';
