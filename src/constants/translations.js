@@ -36,7 +36,7 @@ export const translations = {
             my enthusiasm for programming. I graduated and earned both of my bachelor\'s and master\'s degree at the \
             Faculty of Electrical Engineering and Information Technologies. My primary occupation now is working as a \
             backend developer, trying out DevOps technologies, studying machine learning concepts and working on \
-            small game projects for competitions. <br><br> AQRA began as a project out of curiosity for machine \
+            small game projects for competitions. AQRA began as a project out of curiosity for machine \
             learning and developing models for predicting pollution based on weather characteristics within a certain \
             area since this topic is a big deal here in Macedonia. While working on the project, I have gained \
             experience on many technologies that are used in the present for small and enterprise applications. This \
@@ -47,9 +47,9 @@ export const translations = {
                 machine learning. In addition to the forecast, data can be retrieved for the cities and sensors \
                 obtained from pulse.eco for which those forecasts are performed, as well as a historical archive of \
                 previous meteorological values obtained from an external API (DarkSky and OpenWeather).',
-            usedTechnologiesContent: 'Operating system: CentOS 7 <br> Database: MongoDB <br> Web Framework: Vue.js \
-                (frontend) - Flask (backend) <br> Application server: Gunicorn <br> Web server: NGINX (reverse proxy) \
-                <br> Virtualization: Docker <br> Orchestration: Kubernetes'
+            usedTechnologiesContent: 'Operating system: CentOS 7 - Database: MongoDB - Web Framework: Vue.js \
+                (frontend) - Flask (backend) - Application server: Gunicorn - Web server: NGINX (reverse proxy) \
+                - Virtualization: Docker - Orchestration: Kubernetes'
         }
     },
     mk: {
@@ -88,7 +88,7 @@ export const translations = {
       Во слободно време играм игри, возам точак, се качувам на планини и испробувам нови проекти и технологии за да \
       го задоволам мојот ентузијазам за програмирање. Дипломирав и магистрирав на Факултетот за електротехника и \
       информациски технологии во Скопје. Моментално работам како backend девелопер, но се испробувам и на DevOps \
-      полето, ги изучувам концептите за машинско учење и работам на мали проекти за изработка на игри. <br><br> AQRA \
+      полето, ги изучувам концептите за машинско учење и работам на мали проекти за изработка на игри. AQRA \
       е продукт на мојот интерес за машинско учење и градење на модели за предвидување на загаденоста базирана на \
       временските карактеристки во рамки на определена област, бидејќи ова е исклучително важна тема во Македонија. \
       Работејќи на проектов, се здобив до искуство и знаење за повеќе технологии кој се користат денес во \
@@ -99,9 +99,9 @@ export const translations = {
             базирани на машинско учење. Покрај предвидување може да се повлечат податоци за градовите и сензорите \
             добиени од pulse.eco за кои што се извршуваат тие предвидувања како и историска архива на претходни \
             метеоролошки вредности добиени од надворешно API (DarkSky и OpenWeather).',
-            usedTechnologiesContent: 'Оперативен систем: CentOS 7 <br> База на податоци: MongoDB <br> Web Framework: \
-                Vue.js (frontend) - Flask (backend) <br> Апликациски сервер: Gunicorn <br> Веб сервер: NGINX (reverse \
-                proxy) <br> Виртуелизација: Docker <br> Оркестрација: Kubernetes'
+            usedTechnologiesContent: 'Оперативен систем: CentOS 7 - База на податоци: MongoDB - Web Framework: \
+                Vue.js (frontend) - Flask (backend) - Апликациски сервер: Gunicorn - Веб сервер: NGINX (reverse \
+                proxy) - Виртуелизација: Docker - Оркестрација: Kubernetes'
         }
     }
 };
