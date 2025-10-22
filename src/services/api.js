@@ -18,9 +18,9 @@ async function getDataForCountry(country) {
     return axios.get(`/countries/${country}/`)
 }
 
-//forcast
+//forecast
 async function getForecastBySpecificCoordinates(latitude, longitude) {
-    return axios.get(`/coordinates/${latitude},${longitude}/forecast/`)
+    return axios.get(`/sensors/coordinates/${latitude},${longitude}/forecast/`)
 }
 
 async function getForecastForSpecificSensor(cityName, sensorId) {
