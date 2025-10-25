@@ -14,6 +14,7 @@ export class Forecast {
         this.position = config.position;
     }
 
+    // Refactor to map API response to Forecast class
     static fromApi(city) {
         if (!city) {
             return null;
