@@ -1,5 +1,11 @@
 <template>
-  <div :style="'min-height: calc(100vh - ' + $vuetify.application.top + 'px); width: 100%, z-index=1'">
+  <div
+    :style="
+      'min-height: calc(100vh - ' +
+      $vuetify.application.top +
+      'px); width: 100%, z-index=1'
+    "
+  >
     <StatisticsFilters @show="createStatistics" />
     <LineChart
       v-if="chartData.datasets.length"
@@ -23,16 +29,16 @@ export default {
 
   components: {
     LineChart,
-    StatisticsFilters
+    StatisticsFilters,
   },
 
   data() {
     return {
       chartData: {
-        datasets: []
+        datasets: [],
       },
-      chartOptions: chartConfig
-    }
+      chartOptions: chartConfig,
+    };
   },
 
   computed: {
@@ -54,14 +60,14 @@ export default {
       const historyData = mapHistoryToSeries({
         sensorId: this.sensorInput.value,
         historyData: this.historyData,
-        selectedPollutants: this.pollutantInput.value
+        selectedPollutants: this.pollutantInput.value,
       });
 
       this.chartData = {
         datasets: historyData,
-        labels: historyData[0].time
+        labels: historyData[0].time,
       };
     },
-  }
+  },
 };
 </script>

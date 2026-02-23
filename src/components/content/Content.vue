@@ -28,7 +28,7 @@ export default {
     ContactMe,
     WelcomePage,
     AboutMeSection,
-    ProjectInfoSection
+    ProjectInfoSection,
   },
 };
 </script>

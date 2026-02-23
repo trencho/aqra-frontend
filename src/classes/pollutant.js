@@ -1,30 +1,27 @@
 export class Pollutant {
-    /**
-     * Pollutant config
-     *
-     * @param {Object}                    config
-     * @param {String}                    config.name
-     * @param {String}                    config.value
-     */
+  /**
+   * Pollutant config
+   *
+   * @param {Object}                    config
+   * @param {String}                    config.name
+   * @param {String}                    config.value
+   */
 
-    constructor(config) {
-        this.name = config.name;
-        this.value = config.value;
+  constructor(config) {
+    this.name = config.name;
+    this.value = config.value;
+  }
+
+  static fromApi(pollutant) {
+    if (!pollutant) {
+      return null;
     }
 
-    static fromApi(pollutant) {
-        if (!pollutant) {
-            return null;
-        }
+    const { name, value } = pollutant;
 
-        const {
-            name,
-            value,
-        } = pollutant;
-
-        return new Pollutant({
-            name,
-            value
-        });
-    }
+    return new Pollutant({
+      name,
+      value,
+    });
+  }
 }

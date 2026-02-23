@@ -2,10 +2,7 @@
   <div class="filters">
     <div>
       {{ $t('common.filters') }}
-      <VDivider
-        dark
-        class="marginTop12 marginBottom30"
-      />
+      <VDivider dark class="marginTop12 marginBottom30" />
       <InputFilters
         class="flex flex1 filterInputs"
         @setName="$emit('setName', $event)"
@@ -35,25 +32,25 @@ export default {
 
   components: {
     InputFilters,
-    SliderFilter
+    SliderFilter,
   },
 
   props: {
     selected: {
-      type: Object
-    }
+      type: Object,
+    },
   },
 
   data() {
     return {
       drawer: true,
-    }
+    };
   },
 
   methods: {
     toggleDrawer() {
       this.drawer = !this.drawer;
-    }
-  }
+    },
+  },
 };
 </script>

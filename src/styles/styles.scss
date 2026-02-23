@@ -145,7 +145,7 @@
   flex-wrap: wrap;
   padding: 12px 24px;
   justify-content: flex-end;
-  border-bottom: 1px solid #E6E5E6;
+  border-bottom: 1px solid #e6e5e6;
 }
 
 .statisticBar {
@@ -224,7 +224,8 @@
 .v-slider__thumb-label {
   height: 70px !important;
   width: 70px !important;
-  transform: translateY(20%) translateY(19.66667px) translateX(55%) rotate(135deg) !important;
+  transform: translateY(20%) translateY(19.66667px) translateX(55%)
+    rotate(135deg) !important;
 }
 
 .v-input__slot {

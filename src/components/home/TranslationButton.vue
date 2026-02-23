@@ -20,14 +20,8 @@
     </template>
 
     <VList dark>
-      <VListItem
-        v-for="(item, index) in locales"
-        :key="index"
-      >
-        <VBtn
-          text
-          @click="setLocale(item)"
-        >
+      <VListItem v-for="(item, index) in locales" :key="index">
+        <VBtn text @click="setLocale(item)">
           {{ item }}
         </VBtn>
       </VListItem>
@@ -46,10 +40,10 @@ export default {
   data() {
     return {
       locales: Object.values(LocaleId),
-    }
+    };
   },
 
   computed: mapState('locale', ['locale']),
-  methods: mapActions('locale', ['setLocale'])
+  methods: mapActions('locale', ['setLocale']),
 };
 </script>

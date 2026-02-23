@@ -7,28 +7,28 @@ export default {
   props: {
     options: {
       type: Object,
-      required: true
+      required: true,
     },
     chartData: {
       type: Object,
-      required: true
+      required: true,
     },
   },
   watch: {
     options: {
       handler() {
         this.renderChart(this.chartData, this.options);
-      }
+      },
     },
     chartData: {
       handler() {
         this.renderChart(this.chartData, this.options);
-      }
+      },
     },
   },
 
   mounted() {
     this.renderChart(this.chartData, this.options);
-  }
+  },
 };
 </script>

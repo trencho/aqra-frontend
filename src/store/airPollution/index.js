@@ -3,8 +3,8 @@ import { actions } from './actions';
 import { mutations } from './mutations';
 
 export const airPollution = {
-    namespaced: true,
-    state,
-    actions,
-    mutations,
+  namespaced: true,
+  state,
+  actions,
+  mutations,
 };

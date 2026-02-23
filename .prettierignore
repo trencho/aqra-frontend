@@ -1,0 +1,7 @@
+.github/
+android/
+dist/
+docker/
+ios/
+kubernetes/
+node_modules/

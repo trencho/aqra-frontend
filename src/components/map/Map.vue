@@ -2,7 +2,11 @@
   <div>
     <div
       id="map"
-      :style="'height: calc(100vh - ' + $vuetify.application.top + 'px); width: 100%, z-index=1'"
+      :style="
+        'height: calc(100vh - ' +
+        $vuetify.application.top +
+        'px); width: 100%, z-index=1'
+      "
     />
     <div class="hidden-sm-and-down">
       <Filters
@@ -20,15 +24,8 @@
       />
     </div>
     <div class="hidden-md-and-up">
-      <VBtn
-        dark
-        fab
-        class="scrollButton"
-        @click="$vuetify.goTo(500)"
-      >
-        <v-icon color="white">
-          mdi-chevron-down
-        </v-icon>
+      <VBtn dark fab class="scrollButton" @click="$vuetify.goTo(500)">
+        <v-icon color="white"> mdi-chevron-down </v-icon>
       </VBtn>
       <Filters
         :selected="selected"
@@ -55,13 +52,19 @@ import Filters from './Filters';
 
 import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
 import { CreateLayer, Layers } from '@/constants/layers';
-import { createBaseLayer, createCityBoundaries, mapCities, mapSensorsInCities, removeLayer, } from '@/utils/createMap';
+import {
+  createBaseLayer,
+  createCityBoundaries,
+  mapCities,
+  mapSensorsInCities,
+  removeLayer,
+} from '@/utils/createMap';
 
 export default {
   name: 'Map',
 
   components: {
-    Filters
+    Filters,
   },
 
   data() {
@@ -76,7 +79,7 @@ export default {
       isPlaying: false,
       cityMarkers: null,
       sensorMarkers: null,
-    }
+    };
   },
 
   computed: {
@@ -96,7 +99,7 @@ export default {
     },
     sliderValid() {
       return !!this.pollutantInput.value;
-    }
+    },
   },
 
   beforeMount() {
@@ -147,26 +150,29 @@ export default {
         this.selected = {
           cities: this.allCities,
           pollutant: config.value,
-          selected: Layers.AllCities
+          selected: Layers.AllCities,
         };
       } else if (this.showForAllSensorsInput.value) {
         this.selected = {
           cities: this.allCities,
           pollutant: config.value,
-          selected: Layers.AllSensors
+          selected: Layers.AllSensors,
         };
       } else {
         this.selected = {
           city: this.cities[this.nameInput.value],
           pollutant: config.value,
           sensorId: this.sensorInput.value,
-          selected: Layers.SelectedSensor
+          selected: Layers.SelectedSensor,
         };
       }
-      const conf = CreateLayer[this.selected.selected](this.map, { ...this.selected, time: this.slider });
+      const conf = CreateLayer[this.selected.selected](this.map, {
+        ...this.selected,
+        time: this.slider,
+      });
       this.selected = {
         ...this.selected,
-        selectedTime: conf.time
+        selectedTime: conf.time,
       };
       this.heatLayers = [conf.heatLayer];
     },
@@ -231,10 +237,13 @@ export default {
     sliderChange(time) {
       this.heatLayers = removeLayer(this.map, this.heatLayers);
 
-      const conf = CreateLayer[this.selected.selected](this.map, { ...this.selected, time });
+      const conf = CreateLayer[this.selected.selected](this.map, {
+        ...this.selected,
+        time,
+      });
       this.selected = {
         ...this.selected,
-        selectedTime: conf.time
+        selectedTime: conf.time,
       };
       this.heatLayers = [conf.heatLayer];
     },
@@ -247,7 +256,7 @@ export default {
       } else {
         clearInterval(this.interval);
       }
-    }
-  }
+    },
+  },
 };
 </script>

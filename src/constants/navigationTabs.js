@@ -12,14 +12,14 @@ export const Tabs = [
   },
   {
     title: 'common.pollutionMap',
-    id: TabIds.PollutionMap
+    id: TabIds.PollutionMap,
   },
   {
     title: 'common.statistics',
-    id: TabIds.Statistics
+    id: TabIds.Statistics,
   },
   {
     title: 'common.swaggerDocumentation',
-    id: TabIds.SwaggerDocumentation
-  }
+    id: TabIds.SwaggerDocumentation,
+  },
 ];

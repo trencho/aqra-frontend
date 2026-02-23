@@ -1,19 +1,9 @@
 <template>
-  <VNavigationDrawer
-    v-model="drawer"
-    class="menuDrawer"
-    app
-    dark
-    temporary
-  >
+  <VNavigationDrawer v-model="drawer" class="menuDrawer" app dark temporary>
     <VList>
       <VListItemContent>
-        <VListItemTitle class="text-h6">
-          AQRA
-        </VListItemTitle>
-        <VListItemSubtitle>
-          Air Quality REST API
-        </VListItemSubtitle>
+        <VListItemTitle class="text-h6"> AQRA </VListItemTitle>
+        <VListItemSubtitle> Air Quality REST API </VListItemSubtitle>
       </VListItemContent>
       <VDivider />
       <VListItem
@@ -31,7 +21,7 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions } from 'vuex';
 import { TabIds } from '@/constants/navigationTabs';
 
 export default {
@@ -43,24 +33,24 @@ export default {
         {
           title: 'common.home',
           id: TabIds.Home,
-          icon: 'mdi-home'
+          icon: 'mdi-home',
         },
         {
           title: 'common.pollutionMap',
           id: TabIds.PollutionMap,
-          icon: 'mdi-map'
+          icon: 'mdi-map',
         },
         {
           title: 'common.statistics',
           id: TabIds.Statistics,
-          icon: 'mdi-chart-bar'
+          icon: 'mdi-chart-bar',
         },
         {
           title: 'common.swaggerDocumentation',
           id: TabIds.SwaggerDocumentation,
-          icon: 'mdi-text-box'
-        }
-      ]
+          icon: 'mdi-text-box',
+        },
+      ],
     };
   },
 
@@ -76,5 +66,5 @@ export default {
   },
 
   methods: mapActions('airPollution', ['setDrawer', 'changeTab']),
-}
+};
 </script>

@@ -1,4 +1,4 @@
 export const LocaleId = {
-    en: 'en',
-    mk: 'mk'
+  en: 'en',
+  mk: 'mk',
 };

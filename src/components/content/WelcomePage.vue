@@ -7,26 +7,11 @@
       >
         <VThemeProvider dark>
           <VContainer fill-height>
-            <VRow
-              align="center"
-              class="marginAuto"
-              justify="center"
-            >
-              <VCol
-                class="alignCenter"
-                cols="12"
-                tag="h1"
-              >
-                <VImg
-                  :src="logo"
-                  height="286"
-                  width="253"
-                />
-                <span class="aqra">{{ $t("common.welcomeTo") }}</span>
-                <VImg
-                  :src="name"
-                  width="350"
-                />
+            <VRow align="center" class="marginAuto" justify="center">
+              <VCol class="alignCenter" cols="12" tag="h1">
+                <VImg :src="logo" height="286" width="253" />
+                <span class="aqra">{{ $t('common.welcomeTo') }}</span>
+                <VImg :src="name" width="350" />
               </VCol>
             </VRow>
           </VContainer>
@@ -48,9 +33,8 @@ export default {
     return {
       logo,
       name,
-      background
+      background,
     };
   },
-
 };
 </script>

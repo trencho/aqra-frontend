@@ -1,19 +1,19 @@
-import { TabIds } from "@/constants/navigationTabs";
+import { TabIds } from '@/constants/navigationTabs';
 
 export const state = {
-    drawer: false,
+  drawer: false,
 
-    cities: {},
-    nameInput: {},
-    sensorInput: {},
-    historyData: {},
-    pollutantInput: {},
-    tabId: TabIds.Home,
-    forecastBySensorId: {},
-    pollutantsBySensorId: {},
-    showCityMarkersInput: {},
-    showForAllCitiesInput: {},
-    showSensorMarkersInput: {},
-    showForAllSensorsInput: {},
-    showCityBoundariesInput: {},
+  cities: {},
+  nameInput: {},
+  sensorInput: {},
+  historyData: {},
+  pollutantInput: {},
+  tabId: TabIds.Home,
+  forecastBySensorId: {},
+  pollutantsBySensorId: {},
+  showCityMarkersInput: {},
+  showForAllCitiesInput: {},
+  showSensorMarkersInput: {},
+  showForAllSensorsInput: {},
+  showCityBoundariesInput: {},
 };

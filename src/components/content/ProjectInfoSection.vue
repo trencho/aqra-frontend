@@ -2,13 +2,10 @@
   <div class="paddingTop48 projectSectionBackground">
     <VContainer class="text-center">
       <h2 class="pageTitle">
-        {{ $t("common.projectInfo") }}
+        {{ $t('common.projectInfo') }}
       </h2>
 
-      <VResponsive
-        class="marginAuto marginBottom32"
-        width="56"
-      >
+      <VResponsive class="marginAuto marginBottom32" width="56">
         <VDivider class="divider" />
         <VDivider />
       </VResponsive>
@@ -20,16 +17,9 @@
           cols="12"
           md="6"
         >
-          <VCard
-            class="paddingTop48 px-4"
-            color="grey lighten-5"
-            flat
-          >
+          <VCard class="paddingTop48 px-4" color="grey lighten-5" flat>
             <VThemeProvider dark>
-              <VAvatar
-                color="#31404f"
-                size="88"
-              >
+              <VAvatar color="#31404f" size="88">
                 <VIcon large>
                   {{ icon }}
                 </VIcon>
@@ -70,6 +60,5 @@ export default {
       ],
     };
   },
-
 };
 </script>

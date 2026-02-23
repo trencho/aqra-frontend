@@ -14,16 +14,16 @@ export const mutations = {
   [types.SET_SENSOR_INPUT_OPTIONS](state, options) {
     state.sensorInput.value = null;
     state.pollutantInput.value = null;
-    state.sensorInput.items = (options || []).map(o => ({
+    state.sensorInput.items = (options || []).map((o) => ({
       label: o.description,
-      value: o.sensorId
+      value: o.sensorId,
     }));
   },
   [types.SET_POLLUTANT_INPUT_OPTIONS](state, options) {
     state.pollutantInput.value = null;
-    state.pollutantInput.items = (options || []).map(o => ({
+    state.pollutantInput.items = (options || []).map((o) => ({
       label: o.name,
-      value: o.value
+      value: o.value,
     }));
   },
   [types.SET_VALUE](state, { input, value }) {
@@ -48,7 +48,7 @@ export const mutations = {
   [types.SET_POLLUTANTS_FOR_SENSOR](state, { sensorId, pollutants }) {
     state.pollutantsBySensorId = {
       ...state.pollutantsBySensorId,
-      [sensorId]: pollutants
+      [sensorId]: pollutants,
     };
   },
   [types.SET_SHOW_ALL_CITIES](state, value) {
@@ -72,7 +72,7 @@ export const mutations = {
   [types.SET_HISTORY_DATA](state, { sensorId, historyData }) {
     state.historyData = {
       ...state.historyData,
-      [sensorId]: historyData
+      [sensorId]: historyData,
     };
   },
   [types.SET_STATISTIC_FILTERS](state) {
@@ -81,23 +81,23 @@ export const mutations = {
       label: 'common.cityName',
       value: null,
       hidden: false,
-      items: (state.cities ? Object.values(state.cities) : []).map(c => ({
+      items: (state.cities ? Object.values(state.cities) : []).map((c) => ({
         label: c.siteName,
-        value: c.cityName
-      }))
+        value: c.cityName,
+      })),
     };
     state.sensorInput = {
       id: 'sensor',
       label: 'common.sensors',
       value: null,
       hidden: false,
-      items: []
+      items: [],
     };
     state.pollutantInput = {
       id: 'pollutant',
       label: 'common.pollutants',
       value: null,
-      items: []
+      items: [],
     };
   },
 
@@ -107,23 +107,23 @@ export const mutations = {
       label: 'common.cityName',
       value: null,
       hidden: false,
-      items: (state.cities ? Object.values(state.cities) : []).map(c => ({
+      items: (state.cities ? Object.values(state.cities) : []).map((c) => ({
         label: c.siteName,
-        value: c.cityName
-      }))
+        value: c.cityName,
+      })),
     };
     state.sensorInput = {
       id: 'sensor',
       label: 'common.sensors',
       value: null,
       hidden: false,
-      items: []
+      items: [],
     };
     state.pollutantInput = {
       id: 'pollutant',
       label: 'common.pollutants',
       value: null,
-      items: []
+      items: [],
     };
     state.showForAllCitiesInput = {
       id: 'showForAllCities',
@@ -150,18 +150,18 @@ export const mutations = {
       label: 'common.showSensorMarkers',
       value: false,
     };
-  }
+  },
 };
 
 function mapList(list, entity) {
   const map = {};
-  list.forEach(i => map[i[entity]] = i);
+  list.forEach((i) => (map[i[entity]] = i));
   return map;
 }
 
 function mapPollutants() {
-  return Object.values(Pollutants).map(p => ({
+  return Object.values(Pollutants).map((p) => ({
     label: PollutantsLabels[p],
-    value: p
+    value: p,
   }));
 }

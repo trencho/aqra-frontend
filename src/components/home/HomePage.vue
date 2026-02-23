@@ -1,13 +1,6 @@
 <template>
   <div>
-    <VAppBar
-      app
-      flat
-      color="#292929"
-      height="60"
-      fixed
-      class="appBar"
-    >
+    <VAppBar app flat color="#292929" height="60" fixed class="appBar">
       <VContainer class="noMargin homePage">
         <VRow class="flex">
           <div class="flex">
@@ -25,12 +18,7 @@
               @click="setDrawer(!drawer)"
             />
 
-            <VTabs
-              background-color="transparent"
-              dark
-              grow
-              :value="tabId"
-            >
+            <VTabs background-color="transparent" dark grow :value="tabId">
               <VTab
                 v-for="tab in tabs"
                 :key="tab.id"
@@ -95,7 +83,7 @@ export default {
       TabIds,
       tabs: Tabs,
       locales: Object.values(LocaleId),
-    }
+    };
   },
 
   computed: {
@@ -108,6 +96,6 @@ export default {
 
   methods: {
     ...mapActions('airPollution', ['changeTab', 'initHomePage', 'setDrawer']),
-  }
+  },
 };
 </script>

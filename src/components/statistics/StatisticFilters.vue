@@ -6,10 +6,12 @@
       item-text="label"
       item-value="value"
       v-bind="nameInput"
-      @change="setValue({
-        input: nameInput,
-        value: $event
-      })"
+      @change="
+        setValue({
+          input: nameInput,
+          value: $event,
+        })
+      "
     />
     <VSelect
       :label="$t(sensorInput.label)"
@@ -17,10 +19,12 @@
       item-text="label"
       item-value="value"
       v-bind="sensorInput"
-      @change="setValue({
-        input: sensorInput,
-        value: $event
-      })"
+      @change="
+        setValue({
+          input: sensorInput,
+          value: $event,
+        })
+      "
     />
     <VSelect
       :hint="$t('common.pollutantStatisticHelp')"
@@ -31,11 +35,13 @@
       multiple
       persistent-hint
       v-bind="pollutantInput"
-      @change="setValue({
-        input: pollutantInput,
-        value: $event,
-        isStatistics: true
-      })"
+      @change="
+        setValue({
+          input: pollutantInput,
+          value: $event,
+          isStatistics: true,
+        })
+      "
     />
     <VBtn
       :disabled="!pollutantInput.value"
@@ -70,12 +76,12 @@ export default {
       const historyData = mapHistoryToSeries({
         sensorId: this.sensorInput.value,
         historyData: this.historyData,
-        selectedPollutants: this.pollutantInput.value
+        selectedPollutants: this.pollutantInput.value,
       });
 
       this.chartOptions.series = historyData;
       this.chartOptions.xAxis.categories = historyData[0].time;
-    }
-  }
+    },
+  },
 };
 </script>
