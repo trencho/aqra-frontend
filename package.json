@@ -9,9 +9,9 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@capacitor/android": "8.1.0",
-    "@capacitor/core": "8.1.0",
-    "@capacitor/ios": "8.1.0",
+    "@capacitor/android": "8.3.0",
+    "@capacitor/core": "8.3.0",
+    "@capacitor/ios": "8.3.0",
     "@fortawesome/fontawesome-svg-core": "7.2.0",
     "@fortawesome/free-brands-svg-icons": "7.2.0",
     "@fortawesome/free-solid-svg-icons": "7.2.0",
@@ -39,21 +39,21 @@
   "devDependencies": {
     "@babel/core": "7.29.0",
     "@babel/eslint-parser": "7.28.6",
-    "@babel/preset-env": "7.29.0",
-    "@capacitor/cli": "8.1.0",
+    "@babel/preset-env": "7.29.2",
+    "@capacitor/cli": "8.3.0",
     "@eslint/js": "9.39.2",
     "@vue/cli-plugin-eslint": "5.0.9",
     "@vue/cli-service": "5.0.9",
     "eslint": "8.57.1",
     "eslint-plugin-vue": "9.32.0",
     "globals": "16.5.0",
-    "sass-embedded": "1.97.3",
+    "sass-embedded": "1.98.0",
     "sass-loader": "16.0.7",
     "vue-cli-plugin-vuetify": "2.5.8",
     "vue-eslint-parser": "9.4.3",
     "vue-template-compiler": "2.7.16",
     "vuetify-loader": "1.9.2",
-    "webpack": "5.105.2"
+    "webpack": "5.105.4"
   },
   "eslintConfig": {
     "root": true,

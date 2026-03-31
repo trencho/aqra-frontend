@@ -2,8 +2,8 @@
   <div
     :style="
       'min-height: calc(100vh - ' +
-      $vuetify.application.top +
-      'px); width: 100%, z-index=1'
+        $vuetify.application.top +
+        'px); width: 100%, z-index=1'
     "
   >
     <StatisticsFilters @show="createStatistics" />

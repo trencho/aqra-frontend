@@ -4,7 +4,10 @@
       <h2 class="pageTitle">
         {{ $t('common.aboutMe') }}
       </h2>
-      <VResponsive class="marginBottom32 marginAuto" width="56">
+      <VResponsive
+        class="marginBottom32 marginAuto"
+        width="56"
+      >
         <VDivider class="divider" />
         <VDivider />
       </VResponsive>
@@ -15,7 +18,10 @@
       >
         {{ $t('common.aboutMeContent') }}
       </VResponsive>
-      <VAvatar class="elevation-12 marginBottom48" size="130">
+      <VAvatar
+        class="elevation-12 marginBottom48"
+        size="130"
+      >
         <VImg :src="avatar" />
       </VAvatar>
     </VContainer>

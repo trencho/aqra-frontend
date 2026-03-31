@@ -17,7 +17,12 @@
         {{ selected && selected.selectedTime[value] }}
       </template>
       <template #prepend>
-        <v-icon color="white" @click="decrement"> mdi-minus </v-icon>
+        <v-icon
+          color="white"
+          @click="decrement"
+        >
+          mdi-minus
+        </v-icon>
       </template>
 
       <template #append>
@@ -31,7 +36,12 @@
           >
             <v-icon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</v-icon>
           </VBtn>
-          <v-icon color="white" @click="increment"> mdi-plus </v-icon>
+          <v-icon
+            color="white"
+            @click="increment"
+          >
+            mdi-plus
+          </v-icon>
         </div>
       </template>
     </VSlider>

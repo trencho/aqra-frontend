@@ -2,7 +2,10 @@
   <div class="filters">
     <div>
       {{ $t('common.filters') }}
-      <VDivider dark class="marginTop12 marginBottom30" />
+      <VDivider
+        dark
+        class="marginTop12 marginBottom30"
+      />
       <InputFilters
         class="flex flex1 filterInputs"
         @setName="$emit('setName', $event)"

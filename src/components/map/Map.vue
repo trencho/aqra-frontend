@@ -4,8 +4,8 @@
       id="map"
       :style="
         'height: calc(100vh - ' +
-        $vuetify.application.top +
-        'px); width: 100%, z-index=1'
+          $vuetify.application.top +
+          'px); width: 100%, z-index=1'
       "
     />
     <div class="hidden-sm-and-down">
@@ -24,8 +24,15 @@
       />
     </div>
     <div class="hidden-md-and-up">
-      <VBtn dark fab class="scrollButton" @click="$vuetify.goTo(500)">
-        <v-icon color="white"> mdi-chevron-down </v-icon>
+      <VBtn
+        dark
+        fab
+        class="scrollButton"
+        @click="$vuetify.goTo(500)"
+      >
+        <v-icon color="white">
+          mdi-chevron-down
+        </v-icon>
       </VBtn>
       <Filters
         :selected="selected"

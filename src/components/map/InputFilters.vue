@@ -26,7 +26,10 @@
         })
       "
     />
-    <VDivider dark class="marginBottom30" />
+    <VDivider
+      dark
+      class="marginBottom30"
+    />
     <VCheckbox
       :input-value="showCityBoundariesInput.value"
       :label="$t(showCityBoundariesInput.label)"
@@ -96,7 +99,10 @@
         })
       "
     />
-    <VDivider dark class="marginBottom30" />
+    <VDivider
+      dark
+      class="marginBottom30"
+    />
     <VSelect
       :hint="$t('common.pollutantHelp')"
       :label="$t(pollutantInput.label)"

@@ -20,8 +20,14 @@
     </template>
 
     <VList dark>
-      <VListItem v-for="(item, index) in locales" :key="index">
-        <VBtn text @click="setLocale(item)">
+      <VListItem
+        v-for="(item, index) in locales"
+        :key="index"
+      >
+        <VBtn
+          text
+          @click="setLocale(item)"
+        >
           {{ item }}
         </VBtn>
       </VListItem>

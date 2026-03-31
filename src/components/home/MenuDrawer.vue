@@ -1,8 +1,16 @@
 <template>
-  <VNavigationDrawer v-model="drawer" class="menuDrawer" app dark temporary>
+  <VNavigationDrawer
+    v-model="drawer"
+    class="menuDrawer"
+    app
+    dark
+    temporary
+  >
     <VList>
       <VListItemContent>
-        <VListItemTitle class="text-h6"> AQRA </VListItemTitle>
+        <VListItemTitle class="text-h6">
+          AQRA
+        </VListItemTitle>
         <VListItemSubtitle> Air Quality REST API </VListItemSubtitle>
       </VListItemContent>
       <VDivider />

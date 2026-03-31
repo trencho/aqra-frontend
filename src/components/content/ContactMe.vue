@@ -5,23 +5,45 @@
         {{ $t('common.getInTouch') }}
       </h2>
 
-      <VResponsive class="marginBottom32 marginAuto" width="56">
+      <VResponsive
+        class="marginBottom32 marginAuto"
+        width="56"
+      >
         <VDivider class="divider" />
         <VDivider />
       </VResponsive>
 
       <VRow>
-        <VCol v-for="(contact, i) in contacts" :key="i" cols="12" md="4">
-          <VCard class="paddingTop px-4" color="transparent" flat dark>
-            <VAvatar color="transparent" size="40">
-              <font-awesome-icon :icon="contact.icon" class="size" />
+        <VCol
+          v-for="(contact, i) in contacts"
+          :key="i"
+          cols="12"
+          md="4"
+        >
+          <VCard
+            class="paddingTop px-4"
+            color="transparent"
+            flat
+            dark
+          >
+            <VAvatar
+              color="transparent"
+              size="40"
+            >
+              <font-awesome-icon
+                :icon="contact.icon"
+                class="size"
+              />
             </VAvatar>
 
             <VCardTitle class="justify-center font-weight-white text-uppercase">
               {{ $t(contact.title) }}
             </VCardTitle>
 
-            <VCardText class="subtitle-1 text" @click="contact.action">
+            <VCardText
+              class="subtitle-1 text"
+              @click="contact.action"
+            >
               {{ $t(contact.text) }}
             </VCardText>
           </VCard>
