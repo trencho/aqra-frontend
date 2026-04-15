@@ -45,7 +45,7 @@
     "@vue/cli-plugin-eslint": "5.0.9",
     "@vue/cli-service": "5.0.9",
     "eslint": "8.57.1",
-    "eslint-plugin-vue": "10.8.0",
+    "eslint-plugin-vue": "9.32.0",
     "globals": "17.5.0",
     "sass-embedded": "1.99.0",
     "sass-loader": "16.0.7",
