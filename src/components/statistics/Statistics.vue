@@ -1,11 +1,5 @@
 <template>
-  <div
-    :style="
-      'min-height: calc(100vh - ' +
-        $vuetify.application.top +
-        'px); width: 100%, z-index=1'
-    "
-  >
+  <div :style="containerStyle">
     <StatisticsFilters @show="createStatistics" />
     <LineChart
       v-if="chartData.datasets.length"
@@ -18,11 +12,14 @@
 </template>
 
 <script>
+import { mapStores } from 'pinia';
+
 import LineChart from './LineChart.vue';
 import StatisticsFilters from './StatisticFilters.vue';
 
-import { mapActions, mapState } from 'vuex';
+import { useAirPollutionStore } from '@/stores/airPollution';
 import { chartConfig, mapHistoryToSeries } from '@/utils/createStatistics';
+import { belowAppBar } from '@/constants/layout';
 
 export default {
   name: 'Statistics',
@@ -42,30 +39,37 @@ export default {
   },
 
   computed: {
-    ...mapState('airPollution', [
-      'nameInput',
-      'historyData',
-      'sensorInput',
-      'pollutantInput',
-    ]),
+    ...mapStores(useAirPollutionStore),
+
+    store() {
+      return this.airPollutionStore;
+    },
+    containerStyle() {
+      return {
+        minHeight: belowAppBar(),
+        width: '100%',
+        zIndex: 1,
+      };
+    },
   },
 
   async beforeMount() {
-    await this.initStatisticPage();
+    await this.store.initStatisticPage();
   },
 
   methods: {
-    ...mapActions('airPollution', ['initStatisticPage', 'setValue']),
     async createStatistics() {
       const historyData = mapHistoryToSeries({
-        sensorId: this.sensorInput.value,
-        historyData: this.historyData,
-        selectedPollutants: this.pollutantInput.value,
+        sensorId: this.store.sensorInput.value,
+        historyData: this.store.historyData,
+        selectedPollutants: this.store.pollutantInput.value,
       });
 
       this.chartData = {
         datasets: historyData,
-        labels: historyData[0].time,
+        // historyData is empty when no pollutant resolved to a series;
+        // indexing [0] unguarded threw here.
+        labels: historyData[0]?.time ?? [],
       };
     },
   },

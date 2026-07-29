@@ -1,32 +1,35 @@
 <template>
   <VMenu
     :close-on-content-click="true"
-    bottom
+    location="bottom"
     class="zIndex500"
-    nudge-bottom="50"
   >
-    <template #activator="{ on, attrs }">
+    <!--
+      Vuetify 3+ hands the activator a single `props` object to v-bind. The
+      Vuetify 2 contract was `{ on, attrs }` with a separate v-on -- that slot
+      shape silently renders a dead button here.
+    -->
+    <template #activator="{ props }">
       <VBtn
+        v-bind="props"
         class="transparentBackground"
         color="white"
         elevation="2"
         icon
-        large
-        v-bind="attrs"
-        v-on="on"
+        size="large"
       >
-        {{ locale }}
+        {{ store.locale }}
       </VBtn>
     </template>
 
-    <VList dark>
+    <VList>
       <VListItem
         v-for="(item, index) in locales"
         :key="index"
       >
         <VBtn
-          text
-          @click="setLocale(item)"
+          variant="text"
+          @click="store.setLocale(item)"
         >
           {{ item }}
         </VBtn>
@@ -36,8 +39,8 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex';
-
+import { mapStores } from 'pinia';
+import { useLocaleStore } from '@/stores/locale';
 import { LocaleId } from '@/constants/locales';
 
 export default {
@@ -49,7 +52,12 @@ export default {
     };
   },
 
-  computed: mapState('locale', ['locale']),
-  methods: mapActions('locale', ['setLocale']),
+  computed: {
+    ...mapStores(useLocaleStore),
+
+    store() {
+      return this.localeStore;
+    },
+  },
 };
 </script>

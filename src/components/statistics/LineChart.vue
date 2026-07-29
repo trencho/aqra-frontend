@@ -1,34 +1,41 @@
+<template>
+  <Line
+    :data="chartData"
+    :options="options"
+  />
+</template>
+
 <script>
 import { Line } from 'vue-chartjs';
+import { Chart, registerables } from 'chart.js';
+
+// Chart.js 3+ is tree-shakeable: without registering the controllers, scales
+// and elements, every chart throws "line is not a registered controller" at
+// render time. Nothing in this project ever registered them, which was half
+// the reason the Statistics tab has never drawn.
+//
+// The other half was this component: it used the vue-chartjs v2/v3 API
+// (`extends: Line` plus `this.renderChart(...)`) against vue-chartjs 5, where
+// Line is a component taking `data`/`options` props and renderChart no longer
+// exists.
+Chart.register(...registerables);
 
 export default {
   name: 'LineChart',
-  extends: Line,
-  props: {
-    options: {
-      type: Object,
-      required: true,
-    },
-    chartData: {
-      type: Object,
-      required: true,
-    },
-  },
-  watch: {
-    options: {
-      handler() {
-        this.renderChart(this.chartData, this.options);
-      },
-    },
-    chartData: {
-      handler() {
-        this.renderChart(this.chartData, this.options);
-      },
-    },
+
+  components: {
+    Line,
   },
 
-  mounted() {
-    this.renderChart(this.chartData, this.options);
+  props: {
+    chartData: {
+      type: Object,
+      required: true,
+    },
+    options: {
+      type: Object,
+      required: true,
+    },
   },
 };
 </script>

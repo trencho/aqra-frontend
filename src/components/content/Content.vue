@@ -16,10 +16,10 @@
 </template>
 
 <script>
-import ContactMe from './ContactMe';
-import WelcomePage from './WelcomePage';
-import AboutMeSection from './AboutMeSection';
-import ProjectInfoSection from './ProjectInfoSection';
+import ContactMe from './ContactMe.vue';
+import WelcomePage from './WelcomePage.vue';
+import AboutMeSection from './AboutMeSection.vue';
+import ProjectInfoSection from './ProjectInfoSection.vue';
 
 export default {
   name: 'Content',

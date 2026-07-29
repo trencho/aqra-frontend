@@ -23,10 +23,23 @@ export class Forecast {
     const { data, latitude, longitude } = city;
 
     return new Forecast({
-      position: [latitude.toString(), longitude.toString()],
+      // mapData() guarded its argument; these two did not, one line apart, so
+      // a record missing either coordinate threw.
+      position: mapPosition(latitude, longitude),
       data: mapData(data),
     });
   }
+}
+
+function mapPosition(latitude, longitude) {
+  if (latitude === null || latitude === undefined) {
+    return [];
+  }
+  if (longitude === null || longitude === undefined) {
+    return [];
+  }
+
+  return [latitude.toString(), longitude.toString()];
 }
 
 function mapData(data) {

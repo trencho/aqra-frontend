@@ -24,7 +24,7 @@
             class="paddingTop px-4"
             color="transparent"
             flat
-            dark
+            theme="dark"
           >
             <VAvatar
               color="transparent"
@@ -41,7 +41,7 @@
             </VCardTitle>
 
             <VCardText
-              class="subtitle-1 text"
+              class="text-subtitle-1 text"
               @click="contact.action"
             >
               {{ $t(contact.text) }}

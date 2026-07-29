@@ -31,6 +31,21 @@ repositories {
     }
 }
 
+// The build failed with "Duplicate class kotlin.collections.jdk8..." before
+// this. A transitive dependency pulls kotlin-stdlib-jdk7/jdk8 1.6.21 while
+// kotlin-stdlib itself resolves to 1.8.22, and as of Kotlin 1.8 those two
+// artifacts' classes were folded into the main stdlib -- so both copies ship
+// and collide.
+//
+// Forcing the jdk7/jdk8 artifacts to match the resolved stdlib fixes it: from
+// 1.8.0 onwards they are empty pass-through modules, so nothing is lost.
+configurations.configureEach {
+    resolutionStrategy {
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinStdlibVersion"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinStdlibVersion"
+    }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"

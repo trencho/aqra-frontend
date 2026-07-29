@@ -1,18 +1,32 @@
 <template>
   <div>
-    <vue-iframe
-      :style="
-        'height: calc(100vh - ' + $vuetify.application.top + 'px); width: 100%'
-      "
-      height="100%"
+    <!--
+      Was <vue-iframe> from vue-iframes, a Vue-2-only package last published in
+      2020 (v0.0.21) with no Vue 3 build. It wrapped a single iframe, so a
+      plain iframe replaces it and the dependency is gone.
+    -->
+    <iframe
+      :style="frameStyle"
+      title="AQRA API documentation"
       src="https://aqra.feit.ukim.edu.mk/api/v1/apidocs/"
-      width="100%"
     />
   </div>
 </template>
 
 <script>
+import { belowAppBar } from '@/constants/layout';
+
 export default {
   name: 'SwaggerDocumentation',
+
+  computed: {
+    frameStyle() {
+      return {
+        height: belowAppBar(),
+        width: '100%',
+        border: 'none',
+      };
+    },
+  },
 };
 </script>

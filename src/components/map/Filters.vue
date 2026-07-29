@@ -2,10 +2,7 @@
   <div class="filters">
     <div>
       {{ $t('common.filters') }}
-      <VDivider
-        dark
-        class="marginTop12 marginBottom30"
-      />
+      <VDivider class="marginTop12 marginBottom30" />
       <InputFilters
         class="flex flex1 filterInputs"
         @setName="$emit('setName', $event)"
@@ -27,8 +24,8 @@
 </template>
 
 <script>
-import InputFilters from './InputFilters';
-import SliderFilter from './SliderFilter';
+import InputFilters from './InputFilters.vue';
+import SliderFilter from './SliderFilter.vue';
 
 export default {
   name: 'Filters',
@@ -41,19 +38,21 @@ export default {
   props: {
     selected: {
       type: Object,
+      default: null,
     },
   },
 
-  data() {
-    return {
-      drawer: true,
-    };
-  },
+  emits: [
+    'setName',
+    'setValue',
+    'setPollutant',
+    'changeBoundaries',
+    'changeCityMarkers',
+    'changeSensorMarkers',
+    'setShowForAllCities',
+    'setShowForAllSensors',
+    'sliderChange',
+  ],
 
-  methods: {
-    toggleDrawer() {
-      this.drawer = !this.drawer;
-    },
-  },
 };
 </script>
