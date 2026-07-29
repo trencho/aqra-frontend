@@ -114,18 +114,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@capacitor/android@npm:8.3.4":
-  version: 8.3.4
-  resolution: "@capacitor/android@npm:8.3.4"
+"@capacitor/android@npm:8.4.2":
+  version: 8.4.2
+  resolution: "@capacitor/android@npm:8.4.2"
   peerDependencies:
-    "@capacitor/core": ^8.3.0
-  checksum: 10c0/c24c0ad18df8de1ef63bc22392cc8e3934acbff72a7cbd97eb1710f38617cc42728c410cd9e2f74c62d93da09d678ce2dac96a819005343c1c0a8ad8ee629cb1
+    "@capacitor/core": ^8.4.0
+  checksum: 10c0/e9bf7a98b45b06f66239ca19e923c85392f9d20edf24045c36653eb79c856fa7624e8bc6b88b718fa9ece1646b8ad79c8f12d4a35fc2e4611602d8f8a798954d
   languageName: node
   linkType: hard
 
-"@capacitor/cli@npm:8.3.4":
-  version: 8.3.4
-  resolution: "@capacitor/cli@npm:8.3.4"
+"@capacitor/cli@npm:8.4.2":
+  version: 8.4.2
+  resolution: "@capacitor/cli@npm:8.4.2"
   dependencies:
     "@ionic/cli-framework-output": "npm:^2.2.8"
     "@ionic/utils-subprocess": "npm:^3.0.1"
@@ -147,25 +147,25 @@ __metadata:
   bin:
     cap: bin/capacitor
     capacitor: bin/capacitor
-  checksum: 10c0/e9f8f4bbd10f1eb4cd80b450cab75c12a78490fed2caa540f5fc7b7ba9cb61e309e0d214bc4b30085f686eda1de4da72ed0ea84902a9129d257deffff65797c7
+  checksum: 10c0/2351137b8e0c4ae4a826bb47784571704626114b260e3ef88e8ec68dfce9e116f8d75878b80a89c6323f77dce281778083979162e55f8adcb833a990c3aa0667
   languageName: node
   linkType: hard
 
-"@capacitor/core@npm:8.3.4":
-  version: 8.3.4
-  resolution: "@capacitor/core@npm:8.3.4"
+"@capacitor/core@npm:8.4.2":
+  version: 8.4.2
+  resolution: "@capacitor/core@npm:8.4.2"
   dependencies:
     tslib: "npm:^2.1.0"
-  checksum: 10c0/12341743e5d4c532cdfe1f3a145ac0f278f9006a46cd9a31f79c9169cfce6d86b77c60082230975bf265882a84e7dce7a4d5b137a5841a5b86d1b9d230f67995
+  checksum: 10c0/10526fbce67ae055e6bb9231afd0f149463152c7f6d3e3562b5b70d16e8f1dd60e5803c209949432df6d5d666caf264242ad0c91e7744e8e3875c2dfc360b174
   languageName: node
   linkType: hard
 
-"@capacitor/ios@npm:8.3.4":
-  version: 8.3.4
-  resolution: "@capacitor/ios@npm:8.3.4"
+"@capacitor/ios@npm:8.4.2":
+  version: 8.4.2
+  resolution: "@capacitor/ios@npm:8.4.2"
   peerDependencies:
-    "@capacitor/core": ^8.3.0
-  checksum: 10c0/1725f5d38ef762c0bba6368fcf13be62758e0159041d83e7570b0163e99db6e6be4fab5f2863c32c2bd4d05e1dbea70bbe55def635a07862e850fae35ae83563
+    "@capacitor/core": ^8.4.0
+  checksum: 10c0/328a8500fe375958fdfa6ed5b0c1e29051178feca78050ad5710864c9906fa368ff938310c864e43e7bac2b00c2e9edfa4f659d1d5b456c5b710c7ce0f177861
   languageName: node
   linkType: hard
 
@@ -1385,10 +1385,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "aqra@workspace:."
   dependencies:
-    "@capacitor/android": "npm:8.3.4"
-    "@capacitor/cli": "npm:8.3.4"
-    "@capacitor/core": "npm:8.3.4"
-    "@capacitor/ios": "npm:8.3.4"
+    "@capacitor/android": "npm:8.4.2"
+    "@capacitor/cli": "npm:8.4.2"
+    "@capacitor/core": "npm:8.4.2"
+    "@capacitor/ios": "npm:8.4.2"
     "@eslint/js": "npm:10.0.1"
     "@fortawesome/fontawesome-svg-core": "npm:6.7.2"
     "@fortawesome/free-brands-svg-icons": "npm:7.2.0"
