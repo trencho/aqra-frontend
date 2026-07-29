@@ -10,7 +10,8 @@ services:
     deploy:
       replicas: 1
     env_file:
-      - .env
+      - path: .env
+        required: false
     image: aqra-vue:latest
     networks:
       - network
