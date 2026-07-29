@@ -27,6 +27,13 @@ export default [
     },
   },
   {
-    ignores: ['dist/', 'android/', 'ios/', 'node_modules/'],
+    ignores: [
+      'dist/',
+      'coverage/',
+      'android/',
+      'ios/',
+      'node_modules/',
+      '.yarn/',
+    ],
   },
 ];
