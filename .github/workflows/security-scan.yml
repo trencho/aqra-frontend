@@ -40,14 +40,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      # Must precede setup-node: its `cache: yarn` runs `yarn cache dir`, and
+      # the runner's global yarn 1.x refuses to run against a packageManager
+      # field pinning 4.x.
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Set up Node
         uses: actions/setup-node@v7.0.0
         with:
           node-version: 24
           cache: yarn
-
-      - name: Enable corepack
-        run: corepack enable
 
       - name: Install dependencies
         run: yarn install --immutable
