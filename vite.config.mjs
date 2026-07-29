@@ -37,25 +37,30 @@ export default defineConfig({
       provider: 'v8',
       include: [
         'src/classes/**',
+        'src/components/**',
         'src/services/**',
         'src/utils/**',
         'src/constants/**',
         'src/stores/**',
       ],
+      exclude: ['src/**/__tests__/**'],
       reporter: ['text', 'lcov'],
       // Set to what is ACTUALLY achieved, not to an aspiration -- a threshold
       // above the real number fails from day one and gets switched off, while
       // one at the real number catches regressions from day one.
       //
-      // These dropped from 54/54/55/53 when the Vuex -> Pinia migration landed.
-      // That is a denominator change, not a regression: absolute covered lines
-      // went UP (70 -> 103), but src/stores/ added ~140 largely untested lines
-      // to the total. Phase 7 covers the store and raises these substantially.
+      // Components are included in the denominator now that they are tested,
+      // so this is the honest whole-app figure rather than a flattering subset.
+      //
+      // What is still uncovered is deliberate: Map.vue's dead
+      // decrement/increment/playSlider (Phase 8 deletes them), services/
+      // store.js (a one-line createPinia call), and the branches of
+      // TranslationButton's menu that only open on real pointer interaction.
       thresholds: {
-        statements: 38,
-        branches: 23,
-        functions: 39,
-        lines: 37,
+        statements: 89,
+        branches: 86,
+        functions: 85,
+        lines: 89,
       },
     },
   },
