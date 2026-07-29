@@ -1,0 +1,58 @@
+name: Security scan
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  schedule:
+    # Weekly, so a newly published advisory against an unchanged lockfile is
+    # still found. A push-only scan goes quiet exactly when a project is stable.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  osv-scan:
+    name: OSV vulnerability scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Scan the lockfile
+        uses: google/osv-scanner-action/osv-scanner-action@v2.3.8
+        with:
+          scan-args: |-
+            --lockfile=./yarn.lock
+
+  audit:
+    name: Yarn audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # Fails on moderate and above. The project reached zero advisories in the
+      # Vue 3 migration; this keeps it there.
+      - name: Audit
+        run: yarn npm audit --severity moderate

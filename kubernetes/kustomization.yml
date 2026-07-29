@@ -1,7 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: aqra
 resources:
   - aqra-network-networkpolicy.yaml
-  - vue-ingress.yml
+  # The Deployment was missing entirely, so a kustomize apply created the
+  # ingress, service and secret but never the workload they point at.
+  - aqra-frontend-deployment.yml
+  - aqra-frontend-ingress.yml
+  - aqra-frontend-service.yml
   - vue-sealed-secret.yml
-  - vue-service.yml
+# NOTE: resources.yml is deliberately excluded. It is a kompose dump that
+# redefines the Deployment, Service, Ingress and Secret already declared above;
+# including it would apply two conflicting copies of each.

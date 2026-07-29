@@ -1,18 +1,18 @@
 services:
-  vue:
+  aqra-frontend:
     build:
       args:
         - BUILDKIT_PROGRESS=plain
         - NODE_ENV=${NODE_ENV:-production}
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: vue
+    container_name: aqra-frontend
     deploy:
       replicas: 1
     env_file:
       - path: .env
         required: false
-    image: aqra-vue:latest
+    image: aqra-frontend:latest
     networks:
       - network
     ports:

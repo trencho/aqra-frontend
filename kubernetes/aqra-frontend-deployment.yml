@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: aqra-frontend
+  name: aqra-frontend
+  namespace: aqra
+spec:
+  replicas: 1
+  selector:
+    # Kept as io.kompose.service so this keeps matching the Service selector.
+    # A Deployment's selector is immutable, so changing the label key means
+    # deleting and recreating the object.
+    matchLabels:
+      io.kompose.service: aqra-frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.network/aqra-network: "true"
+        io.kompose.service: aqra-frontend
+    spec:
+      containers:
+        - envFrom:
+            # Deliberately NOT renamed alongside the workload. This
+            # SealedSecret carries no scope annotation, so it uses bitnami's
+            # default strict scope and is encrypted against namespace/name
+            # (aqra/vue-secret). Renaming it makes it undecryptable and the
+            # pod never starts; that would need re-sealing from the plaintext
+            # with the cluster's public key.
+            #
+            # Separately, every key it holds is dead config: none is
+            # VITE_-prefixed, so none reaches the browser bundle.
+            - secretRef:
+                name: vue-secret
+          image: aqra-frontend
+          # Built on the node by build_docker_images.sh rather than pulled, so
+          # the renamed image must exist there before this rolls out.
+          imagePullPolicy: Never
+          name: aqra-frontend
+          ports:
+            - containerPort: 80
+          # Readiness gates traffic, liveness restarts a wedged container.
+          # Only liveness existed, so the Service could route to a pod that was
+          # not yet serving. The old liveness settings were also extreme --
+          # failureThreshold 1 with a 60s timeout meant one slow response
+          # restarted the pod.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          # Was `resources: {}`, which makes the pod BestEffort: first evicted
+          # under node pressure, and free to starve its neighbours. Sized for
+          # an nginx container serving static files.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

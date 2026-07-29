@@ -1,0 +1,28 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    # The project pins every dependency exactly (no ^ or ~), so Dependabot
+    # must rewrite the manifest rather than rely on a range.
+    versioning-strategy: increase
+    groups:
+      # One PR for the routine bumps; majors stay separate so each gets its
+      # own review.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: monthly
