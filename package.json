@@ -2,6 +2,7 @@
   "name": "aqra",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "yarn@4.18.0",
   "scripts": {
     "dev": "vue-cli-service serve",
     "build": "vue-cli-service build",
