@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
+    "lint": "eslint .",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -17,62 +17,38 @@
     "@fortawesome/free-brands-svg-icons": "7.2.0",
     "@fortawesome/free-solid-svg-icons": "7.2.0",
     "@fortawesome/vue-fontawesome": "2.0.10",
-    "@types/leaflet": "1.9.21",
-    "axios": "1.16.1",
+    "axios": "1.19.0",
     "chart.js": "4.5.1",
     "dotenv": "17.4.2",
-    "highcharts": "12.6.0",
-    "highcharts-vue": "1.4.3",
     "leaflet": "1.9.4",
     "leaflet.heat": "0.2.0",
     "lodash": "4.18.1",
-    "moment-timezone": "0.6.1",
-    "qs": "6.15.1",
+    "moment-timezone": "0.6.3",
+    "qs": "6.15.3",
     "vue": "2.7.16",
-    "vue-axios": "3.5.2",
-    "vue-chartjs": "5.3.3",
+    "vue-chartjs": "5.3.4",
     "vue-i18n": "8.28.2",
     "vue-iframes": "0.0.21",
-    "vue2-leaflet": "2.7.1",
     "vuetify": "2.7.2",
     "vuex": "3.6.2"
   },
   "devDependencies": {
     "@babel/core": "7.29.0",
-    "@babel/eslint-parser": "7.28.6",
     "@babel/preset-env": "7.29.5",
     "@capacitor/cli": "8.3.4",
-    "@eslint/js": "9.39.2",
-    "@vue/cli-plugin-eslint": "5.0.9",
+    "@eslint/js": "10.0.1",
     "@vue/cli-service": "5.0.9",
-    "eslint": "8.57.1",
-    "eslint-plugin-vue": "9.32.0",
+    "eslint": "10.8.0",
+    "eslint-plugin-vue": "10.10.0",
     "globals": "17.6.0",
+    "prettier": "3.9.6",
     "sass-embedded": "1.99.0",
     "sass-loader": "16.0.8",
     "vue-cli-plugin-vuetify": "2.5.8",
-    "vue-eslint-parser": "10.4.0",
+    "vue-eslint-parser": "10.4.1",
     "vue-template-compiler": "2.7.16",
     "vuetify-loader": "1.9.2",
     "webpack": "5.106.2"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "plugin:vue/recommended"
-    ],
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "rules": {
-      "vue/multi-word-component-names": "off",
-      "vue/no-reserved-component-names": "off",
-      "vue/require-default-prop": "off"
-    }
   },
   "browserslist": [
     "> 1%",
