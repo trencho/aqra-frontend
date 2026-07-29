@@ -22,15 +22,15 @@
         >
           <VCard
             class="paddingTop48 px-4"
-            color="grey lighten-5"
+            color="grey-lighten-5"
             flat
           >
-            <VThemeProvider dark>
+            <VThemeProvider theme="dark">
               <VAvatar
                 color="#31404f"
                 size="88"
               >
-                <VIcon large>
+                <VIcon size="large">
                   {{ icon }}
                 </VIcon>
               </VAvatar>
@@ -40,7 +40,7 @@
               {{ $t(title) }}
             </VCardTitle>
 
-            <VCardText class="subtitle-1">
+            <VCardText class="text-subtitle-1">
               {{ $t(text) }}
             </VCardText>
           </VCard>

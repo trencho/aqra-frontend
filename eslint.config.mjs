@@ -4,26 +4,33 @@ import pluginVue from 'eslint-plugin-vue';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
+  ...pluginVue.configs['flat/essential'],
+  pluginJs.configs.recommended,
   {
     files: ['**/*.{js,mjs,cjs,vue}'],
     languageOptions: {
-      globals: globals.browser,
-      parser: parserVue,
+      // node globals as well as browser: `process.env` is read in
+      // src/services/axios.js and substituted at build time.
+      globals: { ...globals.browser, ...globals.node },
       parserOptions: {
-        parser: parserBabel,
         ecmaVersion: 'latest',
         sourceType: 'module',
-        ecmaFeatures: { jsx: true },
       },
     },
-  },
-  pluginJs.configs.recommended,
-  ...pluginVue.configs['flat/essential'],
-  {
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/no-reserved-component-names': 'off',
       'vue/require-default-prop': 'off',
     },
+  },
+  {
+    ignores: [
+      'dist/',
+      'coverage/',
+      'android/',
+      'ios/',
+      'node_modules/',
+      '.yarn/',
+    ],
   },
 ];

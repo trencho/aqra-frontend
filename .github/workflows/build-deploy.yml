@@ -1,9 +1,18 @@
-name: Deploy Vue app
+name: Deploy AQRA frontend
 
+# Gated on CI rather than firing on every push. Previously any push to master
+# went straight to production with nothing having built, linted or tested it --
+# a broken build was discovered by the server rebuilding it.
 on:
-  push:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
     branches:
       - master
+  # Manual escape hatch, e.g. to redeploy an unchanged commit.
+  workflow_dispatch:
 
 env:
   OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
@@ -24,9 +33,21 @@ env:
 permissions:
   contents: read
 
+# Two quick pushes previously raced on the same server directory, both running
+# git reset --hard and rebuilding concurrently. Deploys now queue instead, and
+# an in-flight one is never cancelled half-way.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # workflow_run fires on failure too, so the conclusion must be checked
+    # explicitly or a red CI run would still deploy.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout

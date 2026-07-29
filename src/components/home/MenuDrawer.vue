@@ -2,34 +2,28 @@
   <VNavigationDrawer
     v-model="drawer"
     class="menuDrawer"
-    app
-    dark
     temporary
   >
     <VList>
-      <VListItemContent>
-        <VListItemTitle class="text-h6">
-          AQRA
-        </VListItemTitle>
-        <VListItemSubtitle> Air Quality REST API </VListItemSubtitle>
-      </VListItemContent>
+      <VListItem
+        title="AQRA"
+        subtitle="Air Quality REST API"
+      />
       <VDivider />
       <VListItem
         v-for="(link, i) in links"
         :key="i"
-        @click="changeTab(link.id)"
-      >
-        <VListItemIcon>
-          <v-icon>{{ link.icon }}</v-icon>
-        </VListItemIcon>
-        <VListItemTitle>{{ $t(link.title) }}</VListItemTitle>
-      </VListItem>
+        :title="$t(link.title)"
+        :prepend-icon="link.icon"
+        @click="store.changeTab(link.id)"
+      />
     </VList>
   </VNavigationDrawer>
 </template>
 
 <script>
-import { mapActions } from 'vuex';
+import { mapStores } from 'pinia';
+import { useAirPollutionStore } from '@/stores/airPollution';
 import { TabIds } from '@/constants/navigationTabs';
 
 export default {
@@ -63,16 +57,20 @@ export default {
   },
 
   computed: {
+    ...mapStores(useAirPollutionStore),
+
+    store() {
+      return this.airPollutionStore;
+    },
+
     drawer: {
       get() {
-        return this.$store.state.airPollution.drawer;
+        return this.store.drawer;
       },
       set(val) {
-        this.setDrawer(val);
+        this.store.setDrawer(val);
       },
     },
   },
-
-  methods: mapActions('airPollution', ['setDrawer', 'changeTab']),
 };
 </script>

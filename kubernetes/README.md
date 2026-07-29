@@ -1,5 +1,16 @@
 # Single node kubernetes cluster
 
+> **Why the secret is still called `vue-secret`.** The Deployment, Service and
+> Ingress were renamed `vue` → `aqra-frontend`, but the SealedSecret was not.
+> It carries no scope annotation, so it uses bitnami's default *strict* scope
+> and is encrypted against its `namespace/name` pair (`aqra/vue-secret`).
+> Renaming it makes it undecryptable and the pod never starts. Renaming it
+> properly means re-sealing from the plaintext with the cluster's public key —
+> see "Retrieve sealed secrets from the cluster" below.
+>
+> Separately, every key it holds is dead config: none is `VITE_`-prefixed, so
+> none of it reaches the browser bundle.
+
 ###### Apply sealed secrets controller and generate sealed secrets from existing secrets
 
 ```
@@ -21,7 +32,7 @@ kubectl kustomize kubernetes > kubernetes/resources.yml
 
 ```
 kubectl apply -f kubernetes/resources.yml
-kubectl apply -f kubernetes/vue-deployment.yml
+kubectl apply -f kubernetes/aqra-frontend-deployment.yml
 ```
 
 ###### Get deployed pods in namespace aqra
@@ -59,11 +70,11 @@ kubectl exec -n aqra --stdin --tty [pod-name] -- /bin/bash
 ###### Delete and reapply deployments if changes are made to the Docker images
 
 ```
-kubectl delete -f kubernetes/vue-deployment.yml
+kubectl delete -f kubernetes/aqra-frontend-deployment.yml
 ```
 
 ```
-kubectl apply -f kubernetes/vue-deployment.yml
+kubectl apply -f kubernetes/aqra-frontend-deployment.yml
 ```
 
 ###### Retrieve sealed secrets from the cluster

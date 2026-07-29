@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+# Least privilege by default; no job here needs write access.
+permissions:
+  contents: read
+
+# A newer push supersedes an in-flight run for the same ref. Not applied to
+# master, where every commit should keep its own recorded result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  build:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      # Must come BEFORE setup-node. setup-node's `cache: yarn` shells out to
+      # `yarn cache dir` while it runs, and the runner's preinstalled global
+      # yarn is 1.x, which refuses to run at all against a packageManager field
+      # pinning 4.x. Enabling corepack first puts the right yarn on PATH.
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          # Current LTS. Deliberately not 26, which does not become LTS until
+          # 2026-10-28.
+          node-version: 24
+          cache: yarn
+
+      # --immutable fails if yarn.lock would change, which is the point: it
+      # proves the committed lockfile is complete and current.
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test with coverage
+        run: yarn test:coverage
+
+      - name: Build
+        run: yarn build

@@ -156,6 +156,10 @@ dist
 #
 # Recommended template: Node.gitignore
 
+# Android build output
+android/.gradle/
+android/.idea/
+
 # Project files
 vue-secret.yml
 package-lock.json

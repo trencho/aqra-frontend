@@ -50,5 +50,12 @@ export class Sensor {
 }
 
 function formatPosition(position) {
+  // A sensor with no position used to throw here, one guard away from the
+  // `if (!sensor) return null` above. city.js handles the same case by
+  // returning an empty coordinate pair; match it.
+  if (!position) {
+    return [];
+  }
+
   return position.split(',');
 }

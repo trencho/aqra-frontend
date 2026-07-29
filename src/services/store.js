@@ -1,10 +1,3 @@
-import Vue from 'vue';
-import Vuex, { Store } from 'vuex';
+import { createPinia } from 'pinia';
 
-import { modules } from '@/store';
-
-Vue.use(Vuex);
-
-export const store = new Store({
-  modules,
-});
+export const pinia = createPinia();
