@@ -2,11 +2,12 @@
   <div>
     <VRow no-gutters>
       <VImg
-        :height="'calc(100vh - ' + $vuetify.application.top + 'px)'"
+        :height="belowAppBar()"
         :src="background"
       >
-        <VThemeProvider dark>
-          <VContainer fill-height>
+        <!-- Vuetify 3 replaced the boolean `dark` prop with a named theme. -->
+        <VThemeProvider theme="dark">
+          <VContainer class="fill-height">
             <VRow
               align="center"
               class="marginAuto"
@@ -40,6 +41,7 @@
 import background from '@/assets/air-pollution.jpg';
 import logo from '@/assets/logo.svg';
 import name from '@/assets/name.svg';
+import { belowAppBar } from '@/constants/layout';
 
 export default {
   name: 'WelcomePage',
@@ -50,6 +52,10 @@ export default {
       name,
       background,
     };
+  },
+
+  methods: {
+    belowAppBar,
   },
 };
 </script>

@@ -4,10 +4,7 @@ import pluginVue from 'eslint-plugin-vue';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  // vue2-essential, not essential: the default preset targets Vue 3 and flags
-  // `beforeDestroy` in favour of `beforeUnmount`, which does not exist in Vue 2.
-  // Switch to flat/essential as part of the Vue 3 migration.
-  ...pluginVue.configs['flat/vue2-essential'],
+  ...pluginVue.configs['flat/essential'],
   pluginJs.configs.recommended,
   {
     files: ['**/*.{js,mjs,cjs,vue}'],

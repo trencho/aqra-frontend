@@ -2,18 +2,14 @@
   <div>
     <div
       id="map"
-      :style="
-        'height: calc(100vh - ' +
-          $vuetify.application.top +
-          'px); width: 100%, z-index=1'
-      "
+      :style="mapStyle"
     />
     <div class="hidden-sm-and-down">
       <Filters
         class="filterLarge"
         :selected="selected"
         @setName="setName"
-        @setValue="setValue"
+        @setValue="store.setValue"
         @setPollutant="setPollutant"
         @changeBoundaries="changeBoundaries"
         @changeCityMarkers="changeCityMarkers"
@@ -25,19 +21,16 @@
     </div>
     <div class="hidden-md-and-up">
       <VBtn
-        dark
-        fab
+        icon
         class="scrollButton"
-        @click="$vuetify.goTo(500)"
+        @click="scrollDown"
       >
-        <v-icon color="white">
-          mdi-chevron-down
-        </v-icon>
+        <VIcon color="white"> mdi-chevron-down </VIcon>
       </VBtn>
       <Filters
         :selected="selected"
         @setName="setName"
-        @setValue="setValue"
+        @setValue="store.setValue"
         @setPollutant="setPollutant"
         @changeBoundaries="changeBoundaries"
         @changeCityMarkers="changeCityMarkers"
@@ -51,13 +44,15 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex';
+import { mapStores } from 'pinia';
 
 import L from 'leaflet';
 
-import Filters from './Filters';
+import Filters from './Filters.vue';
 
+import { useAirPollutionStore } from '@/stores/airPollution';
 import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
+import { belowAppBar } from '@/constants/layout';
 import { CreateLayer, Layers } from '@/constants/layers';
 import {
   createBaseLayer,
@@ -90,27 +85,28 @@ export default {
   },
 
   computed: {
-    ...mapState('airPollution', [
-      'cities',
-      'nameInput',
-      'sensorInput',
-      'pollutantInput',
-      'showCityMarkersInput',
-      'showForAllCitiesInput',
-      'showSensorMarkersInput',
-      'showForAllSensorsInput',
-      'showCityBoundariesInput',
-    ]),
+    ...mapStores(useAirPollutionStore),
+
+    store() {
+      return this.airPollutionStore;
+    },
+    mapStyle() {
+      return {
+        height: belowAppBar(),
+        width: '100%',
+        zIndex: 1,
+      };
+    },
     allCities() {
-      return this.cities ? Object.values(this.cities) : [];
+      return this.store.cities ? Object.values(this.store.cities) : [];
     },
     sliderValid() {
-      return !!this.pollutantInput.value;
+      return !!this.store.pollutantInput.value;
     },
   },
 
   beforeMount() {
-    this.initMapPage();
+    this.store.initMapPage();
   },
 
   mounted() {
@@ -122,22 +118,26 @@ export default {
     this.cityMarkers = mapCities(this.map, this.allCities);
   },
 
-  beforeDestroy() {
+  // Vue 3 renamed beforeDestroy to beforeUnmount. Left unrenamed, the map
+  // instance is never torn down and leaks on every tab switch.
+  beforeUnmount() {
     if (this.map) {
       this.map.remove();
     }
   },
 
   methods: {
-    ...mapActions('airPollution', ['setValue', 'initMapPage']),
+    scrollDown() {
+      window.scrollTo({ top: 500, behavior: 'smooth' });
+    },
 
     async setName(config) {
-      await this.setValue(config);
+      await this.store.setValue(config);
       if (!config.value) {
         return;
       }
 
-      const city = this.cities[config.value];
+      const city = this.store.cities[config.value];
       if (!city) {
         return;
       }
@@ -148,18 +148,18 @@ export default {
     async setPollutant(config) {
       this.heatLayers = removeLayer(this.map, this.heatLayers);
 
-      await this.setValue(config);
+      await this.store.setValue(config);
       if (!config.value) {
         return;
       }
 
-      if (this.showForAllCitiesInput.value) {
+      if (this.store.showForAllCitiesInput.value) {
         this.selected = {
           cities: this.allCities,
           pollutant: config.value,
           selected: Layers.AllCities,
         };
-      } else if (this.showForAllSensorsInput.value) {
+      } else if (this.store.showForAllSensorsInput.value) {
         this.selected = {
           cities: this.allCities,
           pollutant: config.value,
@@ -167,9 +167,9 @@ export default {
         };
       } else {
         this.selected = {
-          city: this.cities[this.nameInput.value],
+          city: this.store.cities[this.store.nameInput.value],
           pollutant: config.value,
-          sensorId: this.sensorInput.value,
+          sensorId: this.store.sensorInput.value,
           selected: Layers.SelectedSensor,
         };
       }
@@ -185,7 +185,7 @@ export default {
     },
 
     async changeBoundaries(config) {
-      await this.setValue(config);
+      await this.store.setValue(config);
 
       if (config.value) {
         this.polygons = createCityBoundaries(this.map, this.allCities);
@@ -195,7 +195,7 @@ export default {
     },
 
     async changeCityMarkers(config) {
-      await this.setValue(config);
+      await this.store.setValue(config);
 
       if (config.value) {
         this.cityMarkers = mapCities(this.map, this.allCities);
@@ -205,17 +205,17 @@ export default {
     },
 
     async setShowForAllCities(config) {
-      await this.setValue(config);
+      await this.store.setValue(config);
       this.heatLayers = removeLayer(this.map, this.heatLayers);
     },
 
     async setShowForAllSensors(config) {
-      await this.setValue(config);
+      await this.store.setValue(config);
       this.heatLayers = removeLayer(this.map, this.heatLayers);
     },
 
     async changeSensorMarkers(config) {
-      await this.setValue(config);
+      await this.store.setValue(config);
 
       if (config.value) {
         this.sensorMarkers = mapSensorsInCities(this.map, this.allCities);
@@ -224,6 +224,11 @@ export default {
       }
     },
 
+    // NOTE: toggleDrawer, decrement, increment and playSlider below are dead --
+    // nothing in this template binds them, and SliderFilter.vue owns the live
+    // copies. Retained here only so this commit stays a pure migration;
+    // Phase 8 deletes them. sliderChange, by contrast, IS live: the two
+    // <Filters> above bind it.
     toggleDrawer() {
       this.drawer = !this.drawer;
     },

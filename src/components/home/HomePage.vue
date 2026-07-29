@@ -1,11 +1,9 @@
 <template>
   <div>
     <VAppBar
-      app
       flat
       color="#292929"
       height="60"
-      fixed
       class="appBar"
     >
       <VContainer class="noMargin homePage">
@@ -13,31 +11,28 @@
           <div class="flex">
             <VImg
               :src="logo"
-              contain
               height="48"
               width="48"
               max-width="48"
-              @click="$vuetify.goTo(0)"
+              @click="scrollToTop"
             />
             <VAppBarNavIcon
               color="white"
               class="hidden-md-and-up"
-              @click="setDrawer(!drawer)"
+              @click="store.setDrawer(!store.drawer)"
             />
 
             <VTabs
-              background-color="transparent"
-              dark
+              v-model="activeTab"
+              bg-color="transparent"
               grow
-              :value="tabId"
             >
               <VTab
                 v-for="tab in tabs"
                 :key="tab.id"
-                dark
+                :value="tab.id"
                 class="hidden-sm-and-down"
-                small
-                @change="changeTab(tab.id)"
+                size="small"
               >
                 {{ $t(tab.title) }}
               </VTab>
@@ -51,10 +46,12 @@
     <MenuDrawer />
 
     <VMain>
-      <Content v-if="tabId === TabIds.Home" />
-      <Map v-if="tabId === TabIds.PollutionMap" />
-      <Statistics v-if="tabId === TabIds.Statistics" />
-      <SwaggerDocumentation v-if="tabId === TabIds.SwaggerDocumentation" />
+      <Content v-if="store.tabId === TabIds.Home" />
+      <Map v-if="store.tabId === TabIds.PollutionMap" />
+      <Statistics v-if="store.tabId === TabIds.Statistics" />
+      <SwaggerDocumentation
+        v-if="store.tabId === TabIds.SwaggerDocumentation"
+      />
     </VMain>
 
     <Footer />
@@ -62,17 +59,17 @@
 </template>
 
 <script>
-import { mapActions, mapState } from 'vuex';
+import { mapStores } from 'pinia';
 
-import Footer from './Footer';
-import MenuDrawer from './MenuDrawer';
-import Map from '@/components/map/Map';
-import Content from '@/components/content/Content';
-import TranslationButton from './TranslationButton';
-import Statistics from '@/components/statistics/Statistics';
-import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation';
+import Footer from './Footer.vue';
+import MenuDrawer from './MenuDrawer.vue';
+import Map from '@/components/map/Map.vue';
+import Content from '@/components/content/Content.vue';
+import TranslationButton from './TranslationButton.vue';
+import Statistics from '@/components/statistics/Statistics.vue';
+import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation.vue';
 
-import { LocaleId } from '@/constants/locales';
+import { useAirPollutionStore } from '@/stores/airPollution';
 import { TabIds, Tabs } from '@/constants/navigationTabs';
 
 import logo from '@/assets/logo.svg';
@@ -89,25 +86,45 @@ export default {
     TranslationButton,
     SwaggerDocumentation,
   },
+
   data() {
     return {
       logo,
       TabIds,
       tabs: Tabs,
-      locales: Object.values(LocaleId),
     };
   },
 
   computed: {
-    ...mapState('airPollution', ['tabId', 'drawer']),
+    // mapStores exposes the store as `airPollutionStore`; alias it for brevity.
+    ...mapStores(useAirPollutionStore),
+
+    store() {
+      return this.airPollutionStore;
+    },
+
+    // VTabs is v-model driven in Vuetify 3+; the old `:value` + `@change`
+    // pairing no longer emits.
+    activeTab: {
+      get() {
+        return this.store.tabId;
+      },
+      set(id) {
+        this.store.changeTab(id);
+      },
+    },
   },
 
   async beforeMount() {
-    await this.initHomePage();
+    await this.store.initHomePage();
   },
 
   methods: {
-    ...mapActions('airPollution', ['changeTab', 'initHomePage', 'setDrawer']),
+    // Replaces $vuetify.goTo, which Vuetify 3 removed in favour of the useGoTo
+    // composable -- not usable from an Options API component.
+    scrollToTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
   },
 };
 </script>

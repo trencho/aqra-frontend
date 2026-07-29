@@ -2,10 +2,7 @@
   <div class="filters">
     <div>
       {{ $t('common.filters') }}
-      <VDivider
-        dark
-        class="marginTop12 marginBottom30"
-      />
+      <VDivider class="marginTop12 marginBottom30" />
       <InputFilters
         class="flex flex1 filterInputs"
         @setName="$emit('setName', $event)"
@@ -27,8 +24,8 @@
 </template>
 
 <script>
-import InputFilters from './InputFilters';
-import SliderFilter from './SliderFilter';
+import InputFilters from './InputFilters.vue';
+import SliderFilter from './SliderFilter.vue';
 
 export default {
   name: 'Filters',
@@ -41,8 +38,21 @@ export default {
   props: {
     selected: {
       type: Object,
+      default: null,
     },
   },
+
+  emits: [
+    'setName',
+    'setValue',
+    'setPollutant',
+    'changeBoundaries',
+    'changeCityMarkers',
+    'changeSensorMarkers',
+    'setShowForAllCities',
+    'setShowForAllSensors',
+    'sliderChange',
+  ],
 
   data() {
     return {
@@ -50,6 +60,9 @@ export default {
     };
   },
 
+  // NOTE: toggleDrawer was here and is dead -- nothing in this template binds
+  // it, and it is the third copy of the same method (see Map.vue and
+  // SliderFilter.vue). Phase 8 removes it along with the others.
   methods: {
     toggleDrawer() {
       this.drawer = !this.drawer;

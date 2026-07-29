@@ -1,120 +1,104 @@
 <template>
   <div>
     <VCheckbox
-      :input-value="showForAllCitiesInput.value"
-      :label="$t(showForAllCitiesInput.label)"
+      :model-value="store.showForAllCitiesInput.value"
+      :label="$t(store.showForAllCitiesInput.label)"
       class="inputFilter"
-      dark
-      v-bind="showForAllCitiesInput"
-      @change="
+      @update:model-value="
         $emit('setShowForAllCities', {
-          input: showForAllCitiesInput,
+          input: store.showForAllCitiesInput,
           value: $event,
         })
       "
     />
     <VCheckbox
-      :input-value="showForAllSensorsInput.value"
-      :label="$t(showForAllSensorsInput.label)"
+      :model-value="store.showForAllSensorsInput.value"
+      :label="$t(store.showForAllSensorsInput.label)"
       class="inputFilter"
-      dark
-      v-bind="showForAllSensorsInput"
-      @change="
+      @update:model-value="
         $emit('setShowForAllSensors', {
-          input: showForAllSensorsInput,
+          input: store.showForAllSensorsInput,
           value: $event,
         })
       "
     />
-    <VDivider
-      dark
-      class="marginBottom30"
-    />
+    <VDivider class="marginBottom30" />
     <VCheckbox
-      :input-value="showCityBoundariesInput.value"
-      :label="$t(showCityBoundariesInput.label)"
+      :model-value="store.showCityBoundariesInput.value"
+      :label="$t(store.showCityBoundariesInput.label)"
       class="inputFilter"
-      dark
-      v-bind="showCityBoundariesInput"
-      @change="
+      @update:model-value="
         $emit('changeBoundaries', {
-          input: showCityBoundariesInput,
+          input: store.showCityBoundariesInput,
           value: $event,
         })
       "
     />
     <VCheckbox
-      :input-value="showCityMarkersInput.value"
-      :label="$t(showCityMarkersInput.label)"
+      :model-value="store.showCityMarkersInput.value"
+      :label="$t(store.showCityMarkersInput.label)"
       class="inputFilter"
-      dark
-      v-bind="showCityMarkersInput"
-      @change="
+      @update:model-value="
         $emit('changeCityMarkers', {
-          input: showCityMarkersInput,
+          input: store.showCityMarkersInput,
           value: $event,
         })
       "
     />
     <VCheckbox
-      :input-value="showSensorMarkersInput.value"
-      :label="$t(showSensorMarkersInput.label)"
+      :model-value="store.showSensorMarkersInput.value"
+      :label="$t(store.showSensorMarkersInput.label)"
       class="inputFilter"
-      dark
-      v-bind="showSensorMarkersInput"
-      @change="
+      @update:model-value="
         $emit('changeSensorMarkers', {
-          input: showSensorMarkersInput,
+          input: store.showSensorMarkersInput,
           value: $event,
         })
       "
     />
     <VSelect
-      v-if="!nameInput.hidden"
-      :label="$t(nameInput.label)"
+      v-if="!store.nameInput.hidden"
+      :model-value="store.nameInput.value"
+      :items="store.nameInput.items"
+      :label="$t(store.nameInput.label)"
       class="inputFilter width250"
-      dark
-      item-text="label"
+      item-title="label"
       item-value="value"
-      v-bind="nameInput"
-      @change="
+      @update:model-value="
         $emit('setName', {
-          input: nameInput,
+          input: store.nameInput,
           value: $event,
         })
       "
     />
     <VSelect
-      v-if="!sensorInput.hidden"
-      :label="$t(sensorInput.label)"
+      v-if="!store.sensorInput.hidden"
+      :model-value="store.sensorInput.value"
+      :items="store.sensorInput.items"
+      :label="$t(store.sensorInput.label)"
       class="inputFilter width250"
-      dark
-      item-text="label"
+      item-title="label"
       item-value="value"
-      v-bind="sensorInput"
-      @change="
+      @update:model-value="
         $emit('setValue', {
-          input: sensorInput,
+          input: store.sensorInput,
           value: $event,
         })
       "
     />
-    <VDivider
-      dark
-      class="marginBottom30"
-    />
+    <VDivider class="marginBottom30" />
     <VSelect
+      :model-value="store.pollutantInput.value"
+      :items="store.pollutantInput.items"
       :hint="$t('common.pollutantHelp')"
-      :label="$t(pollutantInput.label)"
+      :label="$t(store.pollutantInput.label)"
       class="inputFilter width250 marginTop24"
-      dark
-      item-text="label"
+      item-title="label"
       item-value="value"
       persistent-hint
-      v-bind="pollutantInput"
-      @change="
+      @update:model-value="
         $emit('setPollutant', {
-          input: pollutantInput,
+          input: store.pollutantInput,
           value: $event,
         })
       "
@@ -123,23 +107,31 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapStores } from 'pinia';
+import { useAirPollutionStore } from '@/stores/airPollution';
 
 export default {
   name: 'InputFilters',
 
+  // Vue 3 warns about undeclared emits, and an undeclared event also falls
+  // through to the root element as a native listener.
+  emits: [
+    'setName',
+    'setValue',
+    'setPollutant',
+    'changeBoundaries',
+    'changeCityMarkers',
+    'changeSensorMarkers',
+    'setShowForAllCities',
+    'setShowForAllSensors',
+  ],
+
   computed: {
-    ...mapState('airPollution', [
-      'cities',
-      'nameInput',
-      'sensorInput',
-      'pollutantInput',
-      'showCityMarkersInput',
-      'showForAllCitiesInput',
-      'showSensorMarkersInput',
-      'showForAllSensorsInput',
-      'showCityBoundariesInput',
-    ]),
+    ...mapStores(useAirPollutionStore),
+
+    store() {
+      return this.airPollutionStore;
+    },
   },
 };
 </script>

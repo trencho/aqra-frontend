@@ -1,47 +1,47 @@
 <template>
-  <div :style="'height: 100%'">
+  <div style="height: 100%">
     <VSlider
       v-model="slider"
       class="slider"
       :disabled="!sliderValid"
-      max="23"
-      min="0"
+      :max="23"
+      :min="0"
+      :step="1"
       thumb-label="always"
-      tick-size="24"
       track-color="white"
       track-fill-color="white"
-      vertical
-      @change="sliderChange"
+      direction="vertical"
+      @update:model-value="sliderChange"
     >
-      <template #thumb-label="{ value }">
-        {{ selected && selected.selectedTime[value] }}
+      <template #thumb-label="{ modelValue }">
+        {{ selected && selected.selectedTime[modelValue] }}
       </template>
       <template #prepend>
-        <v-icon
+        <VIcon
           color="white"
           @click="decrement"
         >
           mdi-minus
-        </v-icon>
+        </VIcon>
       </template>
 
       <template #append>
         <div class="sliderButtons">
           <VBtn
             :disabled="!sliderValid"
-            depressed
-            fab
-            x-small
+            variant="flat"
+            icon
+            size="x-small"
             @click="playSlider"
           >
-            <v-icon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+            <VIcon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</VIcon>
           </VBtn>
-          <v-icon
+          <VIcon
             color="white"
             @click="increment"
           >
             mdi-plus
-          </v-icon>
+          </VIcon>
         </div>
       </template>
     </VSlider>
@@ -49,7 +49,8 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapStores } from 'pinia';
+import { useAirPollutionStore } from '@/stores/airPollution';
 
 export default {
   name: 'SliderFilter',
@@ -58,8 +59,11 @@ export default {
     drawer: Boolean,
     selected: {
       type: Object,
+      default: null,
     },
   },
+
+  emits: ['sliderChange'],
 
   data() {
     return {
@@ -70,10 +74,21 @@ export default {
   },
 
   computed: {
-    ...mapState('airPollution', ['pollutantInput']),
-    sliderValid() {
-      return !!this.pollutantInput.value;
+    ...mapStores(useAirPollutionStore),
+
+    store() {
+      return this.airPollutionStore;
     },
+    sliderValid() {
+      return !!this.store.pollutantInput.value;
+    },
+  },
+
+  // playSlider starts a setInterval that nothing used to stop. Leaving
+  // playback running and switching tabs unmounted the component while the
+  // timer kept firing against a dead instance, forever.
+  beforeUnmount() {
+    clearInterval(this.interval);
   },
 
   methods: {
