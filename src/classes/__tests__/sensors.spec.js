@@ -33,22 +33,16 @@ describe('Sensor.fromApi', () => {
     expect(Sensor.fromApi(apiSensor).position).toEqual(['41.9981', '21.4254']);
   });
 
-  // CHARACTERIZATION TEST -- pins a known bug, not desired behaviour.
-  //
-  // sensors.js guards a missing *sensor* but not a missing *position*, so
-  // formatPosition() calls .split() on null and throws. City.fromApi handles
-  // the identical case correctly by returning []. Because no store action has
-  // a try/catch, this TypeError escapes as an unhandled rejection and blanks
-  // the view.
-  //
-  // Phase 8 should make this return [] to match city.js; when it does, replace
-  // the assertion below with `toEqual([])`.
-  it('currently THROWS when position is missing (known bug, see Phase 8)', () => {
-    expect(() => Sensor.fromApi({ ...apiSensor, position: null })).toThrow(
-      TypeError
+  // Regression guard: this used to throw. formatPosition() called .split() on
+  // null one guard away from the `if (!sensor) return null` above, so a sensor
+  // with no position took out the whole view -- and with no try/catch anywhere
+  // in src/, it surfaced as an unhandled rejection. Now matches city.js.
+  it('returns an empty position when it is missing, rather than throwing', () => {
+    expect(Sensor.fromApi({ ...apiSensor, position: null }).position).toEqual(
+      []
     );
-    expect(() =>
-      Sensor.fromApi({ ...apiSensor, position: undefined })
-    ).toThrow(TypeError);
+    expect(
+      Sensor.fromApi({ ...apiSensor, position: undefined }).position
+    ).toEqual([]);
   });
 });

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { mapHistoryToSeries, chartConfig } from '../createStatistics';
+import {
+  mapHistoryToSeries,
+  chartConfig,
+  seriesColor,
+  SERIES_COLORS,
+} from '../createStatistics';
+import { PollutantsLabels } from '@/constants/pollutants';
 
 const historyData = {
   'sensor-1': {
@@ -68,30 +74,82 @@ describe('mapHistoryToSeries', () => {
     expect(series(['not-a-pollutant'])[0].label).toBeUndefined();
   });
 
-  // CHARACTERIZATION TESTS -- pins a known defect, not desired behaviour.
-  //
-  // createStatistics.js:11 picks colours with Math.random(), which has two
-  // problems: the same chart never renders twice the same (so it cannot be
-  // snapshot-tested), and when the random value is small the hex string is
-  // shorter than 6 digits and is not a valid CSS colour at all.
-  //
-  // Phase 8 replaces this with a fixed palette indexed by series position.
-  // When it does, replace these two tests with an exact-colour assertion.
-  it('currently assigns a RANDOM borderColor (see Phase 8)', () => {
+  // Regression guards. Colours used to come from
+  // '#' + Math.floor(Math.random() * 16777215).toString(16), which meant the
+  // same chart never rendered twice the same AND a small random value produced
+  // a hex string shorter than six digits -- not a valid CSS colour.
+  it('assigns a stable colour for a given series position', () => {
     const colours = new Set(
       Array.from({ length: 40 }, () => series(['pm10'])[0].borderColor)
     );
 
-    // With 40 draws over 16.7M values, collisions are vanishingly unlikely.
-    expect(colours.size).toBeGreaterThan(1);
+    expect(colours.size).toBe(1);
   });
 
-  it('can emit a malformed short hex colour (see Phase 8)', () => {
-    // Every colour starts with '#', but the digit count is not guaranteed to
-    // be 6 -- that is precisely the bug.
-    const colour = series(['pm10'])[0].borderColor;
+  it('always emits a full six-digit hex colour', () => {
+    const all = series(Object.keys(PollutantsLabels));
 
-    expect(colour).toMatch(/^#[0-9a-f]{1,6}$/);
+    for (const s of all) {
+      expect(s.borderColor).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
+  it('gives each series in a chart a distinct colour', () => {
+    const colours = series(['pm10', 'pm2_5', 'no2']).map((s) => s.borderColor);
+
+    expect(new Set(colours).size).toBe(3);
+  });
+
+  it('wraps the palette rather than running out of colours', () => {
+    const many = Array.from(
+      { length: SERIES_COLORS.length + 2 },
+      () => 'pm10'
+    );
+
+    const colours = series(many).map((s) => s.borderColor);
+
+    expect(colours[SERIES_COLORS.length]).toBe(colours[0]);
+    expect(colours.every(Boolean)).toBe(true);
+  });
+
+  // Regression guard: a default parameter only applies to `undefined`, never
+  // to `null` -- and initStatisticPage() sets pollutantInput.value to null, so
+  // this used to throw. Only the Show button's :disabled attribute kept it
+  // unreachable in the UI.
+  it('treats a null pollutant selection as empty rather than throwing', () => {
+    expect(
+      mapHistoryToSeries({
+        sensorId: 'sensor-1',
+        historyData,
+        selectedPollutants: null,
+      })
+    ).toEqual([]);
+  });
+
+  it('treats null historyData as empty rather than throwing', () => {
+    const [pm10] = mapHistoryToSeries({
+      sensorId: 'sensor-1',
+      historyData: null,
+      selectedPollutants: ['pm10'],
+    });
+
+    expect(pm10.data).toBeUndefined();
+  });
+});
+
+describe('seriesColor', () => {
+  it('is stable for a given index', () => {
+    expect(seriesColor(0)).toBe(seriesColor(0));
+  });
+
+  it('wraps around the palette', () => {
+    expect(seriesColor(SERIES_COLORS.length)).toBe(seriesColor(0));
+  });
+
+  it('only contains valid six-digit hex colours', () => {
+    for (const colour of SERIES_COLORS) {
+      expect(colour).toMatch(/^#[0-9a-f]{6}$/);
+    }
   });
 });
 

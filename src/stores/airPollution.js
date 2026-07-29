@@ -5,6 +5,7 @@ import { Sensor } from '@/classes/sensors';
 import { Pollutant } from '@/classes/pollutant';
 import { Forecast } from '@/classes/forecast';
 import { aqra } from '@/services/api';
+import { mapWithConcurrency } from '@/utils/concurrency';
 import { TabIds } from '@/constants/navigationTabs';
 import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
 
@@ -66,12 +67,58 @@ export const useAirPollutionStore = defineStore('airPollution', {
     showSensorMarkersInput: {},
     showForAllSensorsInput: {},
     showCityBoundariesInput: {},
+
+    /** Last request failure, for display. Null when the last attempt succeeded. */
+    error: null,
+    /** Number of requests currently in flight. */
+    pending: 0,
   }),
 
+  getters: {
+    isLoading: (state) => state.pending > 0,
+    hasError: (state) => state.error !== null,
+  },
+
   actions: {
+    // --- request plumbing ---------------------------------------------------
+
+    /**
+     * Run an API call, converting every failure into store state instead of an
+     * unhandled rejection.
+     *
+     * Every action used to test `result.status === 200` and do nothing
+     * otherwise -- but axios rejects on 4xx/5xx rather than resolving, so that
+     * check never saw a failure and the rejection escaped the action entirely.
+     * There was no try/catch anywhere in src/, so a single failed request left
+     * the UI stuck with no feedback.
+     *
+     * @returns {Promise<{ok: boolean, data: any}>}
+     */
+    async request(call) {
+      this.pending += 1;
+      try {
+        const result = await call();
+
+        if (result?.status === 200) {
+          this.error = null;
+          return { ok: true, data: result.data };
+        }
+
+        this.error = `Request failed with status ${result?.status ?? 'unknown'}`;
+        return { ok: false, data: null };
+      } catch (cause) {
+        this.error = cause?.message ?? 'Request failed';
+        return { ok: false, data: null };
+      } finally {
+        this.pending -= 1;
+      }
+    },
+
+    clearError() {
+      this.error = null;
+    },
+
     // --- formerly mutations -------------------------------------------------
-    // Pinia has no separate mutation concept: these mutate state directly and
-    // are called by the async actions below.
 
     setSensorInputOptions(options) {
       this.sensorInput.value = null;
@@ -91,22 +138,30 @@ export const useAirPollutionStore = defineStore('airPollution', {
     },
 
     setSensorsByCity({ cityName, sensors }) {
-      if (!this.cities) {
+      // Guards the city, not just the container. Clearing the city select
+      // sends null, and an unknown name reaches here too; both used to throw
+      // while assigning `.sensors` on undefined.
+      const city = this.cities?.[cityName];
+      if (!city) {
         return;
       }
-      this.cities[cityName].sensors = mapList(sensors, 'sensorId');
+      city.sensors = mapList(sensors, 'sensorId');
     },
 
     setForecastForSensor({ sensorId, forecast, cityName }) {
-      if (!this.cities[cityName].sensors) {
+      const sensor = this.cities?.[cityName]?.sensors?.[sensorId];
+      if (!sensor) {
         return;
       }
-      const selected = this.cities[cityName].sensors?.[sensorId];
-      selected.forecast = forecast;
+      sensor.forecast = forecast;
     },
 
     setForecastForCity({ forecast, cityName }) {
-      this.cities[cityName].forecast = forecast;
+      const city = this.cities?.[cityName];
+      if (!city) {
+        return;
+      }
+      city.forecast = forecast;
     },
 
     setPollutantsForSensor({ sensorId, pollutants }) {
@@ -245,30 +300,33 @@ export const useAirPollutionStore = defineStore('airPollution', {
       if (this.cities?.length) {
         return this.cities;
       }
-      const result = await aqra.getDataForAllCities();
 
-      if (result.status === 200) {
-        const cities = result.data.map(City.fromApi);
-        this.cities = mapList(cities, 'cityName');
-
-        return cities;
+      const { ok, data } = await this.request(() => aqra.getDataForAllCities());
+      if (!ok) {
+        return [];
       }
 
-      return [];
+      const cities = data.map(City.fromApi);
+      this.cities = mapList(cities, 'cityName');
+
+      return cities;
     },
 
     async getSensorsByCityName(cityName) {
       if (this.cities?.[cityName]?.sensors) {
-        return this.cities?.[cityName].sensors;
-      }
-      const result = await aqra.getAvailableSensorsForCity(cityName);
-      if (result.status === 200) {
-        const sensors = result.data.map(Sensor.fromApi);
-        this.setSensorsByCity({ sensors, cityName });
-        return sensors;
+        return this.cities[cityName].sensors;
       }
 
-      return [];
+      const { ok, data } = await this.request(() =>
+        aqra.getAvailableSensorsForCity(cityName)
+      );
+      if (!ok) {
+        return [];
+      }
+
+      const sensors = data.map(Sensor.fromApi);
+      this.setSensorsByCity({ sensors, cityName });
+      return sensors;
     },
 
     async getSensorsForAllCities() {
@@ -276,10 +334,8 @@ export const useAirPollutionStore = defineStore('airPollution', {
         return;
       }
 
-      await Promise.all(
-        Object.values(this.cities).map((c) =>
-          this.getSensorsByCityName(c.cityName)
-        )
+      await mapWithConcurrency(Object.values(this.cities), (c) =>
+        this.getSensorsByCityName(c.cityName)
       );
     },
 
@@ -289,17 +345,18 @@ export const useAirPollutionStore = defineStore('airPollution', {
       }
 
       await this.getSensorsForAllCities();
-      await Promise.all(
-        Object.values(this.cities)
-          .map((c) =>
-            Object.values(c.sensors || {}).map((s) =>
-              this.getForecastBySensorId({
-                sensorId: s.sensorId,
-                cityName: c.cityName,
-              })
-            )
-          )
-          .flat()
+
+      const pairs = Object.values(this.cities)
+        .map((c) =>
+          Object.values(c.sensors || {}).map((s) => ({
+            sensorId: s.sensorId,
+            cityName: c.cityName,
+          }))
+        )
+        .flat();
+
+      await mapWithConcurrency(pairs, (pair) =>
+        this.getForecastBySensorId(pair)
       );
     },
 
@@ -308,13 +365,11 @@ export const useAirPollutionStore = defineStore('airPollution', {
         return;
       }
 
-      await Promise.all(
-        Object.values(this.cities).map((c) =>
-          this.getForecastByCoordinatesForCity({
-            position: c.position,
-            cityName: c.cityName,
-          })
-        )
+      await mapWithConcurrency(Object.values(this.cities), (c) =>
+        this.getForecastByCoordinatesForCity({
+          position: c.position,
+          cityName: c.cityName,
+        })
       );
     },
 
@@ -325,18 +380,17 @@ export const useAirPollutionStore = defineStore('airPollution', {
       if (cached) {
         return cached;
       }
-      const result = await aqra.getForecastBySpecificCoordinates(
-        position[0],
-        position[1]
-      );
-      if (result.status === 200) {
-        const forecast = Forecast.fromApi(result.data);
 
-        this.setForecastForCity({ forecast, cityName });
-        return forecast;
+      const { ok, data } = await this.request(() =>
+        aqra.getForecastBySpecificCoordinates(position?.[0], position?.[1])
+      );
+      if (!ok) {
+        return [];
       }
 
-      return [];
+      const forecast = Forecast.fromApi(data);
+      this.setForecastForCity({ forecast, cityName });
+      return forecast;
     },
 
     async getForecastBySensorId({ sensorId, cityName }) {
@@ -344,54 +398,54 @@ export const useAirPollutionStore = defineStore('airPollution', {
       if (cached) {
         return cached;
       }
-      const result = await aqra.getForecastForSpecificSensor(
-        cityName,
-        sensorId
-      );
-      if (result.status === 200) {
-        const forecast = Forecast.fromApi(result.data);
 
-        this.setForecastForSensor({ sensorId, forecast, cityName });
-        return forecast;
+      const { ok, data } = await this.request(() =>
+        aqra.getForecastForSpecificSensor(cityName, sensorId)
+      );
+      if (!ok) {
+        return [];
       }
 
-      return [];
+      const forecast = Forecast.fromApi(data);
+      this.setForecastForSensor({ sensorId, forecast, cityName });
+      return forecast;
     },
 
     async getPollutantsBySensorId(sensorId) {
       if (this.pollutantsBySensorId?.[sensorId]) {
-        return this.pollutantsBySensorId?.[sensorId];
+        return this.pollutantsBySensorId[sensorId];
       }
-      const result = await aqra.getDataForAllAvailablePollutantsBySensorId(
-        this.nameInput.value,
-        sensorId
+
+      const { ok, data } = await this.request(() =>
+        aqra.getDataForAllAvailablePollutantsBySensorId(
+          this.nameInput.value,
+          sensorId
+        )
       );
-      if (result.status === 200) {
-        const pollutants = result.data.map(Pollutant.fromApi);
-
-        this.setPollutantsForSensor({ sensorId, pollutants });
-        return pollutants;
+      if (!ok) {
+        return [];
       }
 
-      return [];
+      const pollutants = data.map(Pollutant.fromApi);
+      this.setPollutantsForSensor({ sensorId, pollutants });
+      return pollutants;
     },
 
     async getHistoryDataBySensorId(sensorId) {
       if (this.historyData?.[sensorId]) {
-        return this.historyData?.[sensorId];
+        return this.historyData[sensorId];
       }
-      const result = await aqra.getDataForHistoricalPollution(
-        this.nameInput.value,
-        sensorId
+
+      const { ok, data } = await this.request(() =>
+        aqra.getDataForHistoricalPollution(this.nameInput.value, sensorId)
       );
-      if (result.status === 200) {
-        const historyData = Forecast.fromApi(result.data);
-
-        this.setHistoryData({ sensorId, historyData });
-        return historyData;
+      if (!ok) {
+        return [];
       }
 
-      return [];
+      const historyData = Forecast.fromApi(data);
+      this.setHistoryData({ sensorId, historyData });
+      return historyData;
     },
   },
 });

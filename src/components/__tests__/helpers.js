@@ -24,6 +24,22 @@ export function stubBrowserApis() {
     dispatchEvent: vi.fn(),
   }));
   window.scrollTo = vi.fn();
+
+  // VOverlay (and therefore VMenu, VSnackbar, VDialog) reads visualViewport
+  // when positioning, which jsdom does not implement at all.
+  if (!window.visualViewport) {
+    window.visualViewport = {
+      width: 1024,
+      height: 768,
+      offsetLeft: 0,
+      offsetTop: 0,
+      scale: 1,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    };
+    global.visualViewport = window.visualViewport;
+  }
+
   global.ResizeObserver = class {
     observe() {}
     unobserve() {}

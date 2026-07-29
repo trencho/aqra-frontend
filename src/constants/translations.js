@@ -28,6 +28,7 @@ export const translations = {
       mail: 'Mail',
       gitHub: 'GitHub',
       showStatistics: 'Show statistics',
+      dismiss: 'Dismiss',
       pollutantHelp: 'Choose value in order to see the map',
       pollutantStatisticHelp:
         'Choose value in order to see the statistics of the past week',
@@ -85,6 +86,7 @@ export const translations = {
       mail: 'Mail',
       gitHub: 'GitHub',
       showStatistics: 'Прикажи ја статистиката',
+      dismiss: 'Отфрли',
       pollutantHelp: 'Одберете загадувач за да ја видите топлинската мапа',
       pollutantStatisticHelp:
         'Одберете загадувач за дa видите статисктичка состојба за изминатата недела',

@@ -73,12 +73,9 @@ export default {
     return {
       map: null,
       slider: 0,
-      drawer: true,
       polygons: null,
       selected: null,
-      interval: null,
       heatLayers: null,
-      isPlaying: false,
       cityMarkers: null,
       sensorMarkers: null,
     };
@@ -224,28 +221,6 @@ export default {
       }
     },
 
-    // NOTE: toggleDrawer, decrement, increment and playSlider below are dead --
-    // nothing in this template binds them, and SliderFilter.vue owns the live
-    // copies. Retained here only so this commit stays a pure migration;
-    // Phase 8 deletes them. sliderChange, by contrast, IS live: the two
-    // <Filters> above bind it.
-    toggleDrawer() {
-      this.drawer = !this.drawer;
-    },
-
-    decrement() {
-      this.sliderChange(this.slider--);
-    },
-
-    increment() {
-      if (this.slider === 23) {
-        this.slider = 0;
-        return;
-      }
-
-      this.sliderChange(this.slider++);
-    },
-
     sliderChange(time) {
       this.heatLayers = removeLayer(this.map, this.heatLayers);
 
@@ -258,16 +233,6 @@ export default {
         selectedTime: conf.time,
       };
       this.heatLayers = [conf.heatLayer];
-    },
-
-    playSlider() {
-      this.isPlaying = !this.isPlaying;
-
-      if (this.isPlaying) {
-        this.interval = setInterval(this.increment, 500);
-      } else {
-        clearInterval(this.interval);
-      }
     },
   },
 };

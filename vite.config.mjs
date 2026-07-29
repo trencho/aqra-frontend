@@ -57,10 +57,10 @@ export default defineConfig({
       // store.js (a one-line createPinia call), and the branches of
       // TranslationButton's menu that only open on real pointer interaction.
       thresholds: {
-        statements: 89,
-        branches: 86,
-        functions: 85,
-        lines: 89,
+        statements: 92,
+        branches: 91,
+        functions: 88,
+        lines: 92,
       },
     },
   },

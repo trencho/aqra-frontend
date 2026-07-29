@@ -54,19 +54,5 @@ export default {
     'sliderChange',
   ],
 
-  data() {
-    return {
-      drawer: true,
-    };
-  },
-
-  // NOTE: toggleDrawer was here and is dead -- nothing in this template binds
-  // it, and it is the third copy of the same method (see Map.vue and
-  // SliderFilter.vue). Phase 8 removes it along with the others.
-  methods: {
-    toggleDrawer() {
-      this.drawer = !this.drawer;
-    },
-  },
 };
 </script>

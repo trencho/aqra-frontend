@@ -15,6 +15,7 @@ vi.mock('@/services/api', () => ({
 const { aqra } = await import('@/services/api');
 const { useAirPollutionStore } = await import('../airPollution');
 const { TabIds } = await import('@/constants/navigationTabs');
+const { DEFAULT_CONCURRENCY } = await import('@/utils/concurrency');
 
 const ok = (data) => Promise.resolve({ status: 200, data });
 const notOk = (status) => Promise.resolve({ status, data: null });
@@ -92,16 +93,120 @@ describe('getCities', () => {
     expect(store.cities).toEqual({});
   });
 
-  // CHARACTERIZATION -- axios rejects on 4xx/5xx rather than resolving, so the
-  // `status === 200` check never sees a failure and the rejection escapes the
-  // action entirely. There is no try/catch anywhere in src/.
-  //
-  // Phase 8 gives this a real error path; when it does, replace this with an
-  // assertion that the store surfaces a user-visible error instead.
-  it('currently lets a rejected request escape unhandled (see Phase 8)', async () => {
+  // Regression guard: axios rejects on 4xx/5xx rather than resolving, so the
+  // `status === 200` check never saw a failure and the rejection escaped the
+  // action entirely -- there was no try/catch anywhere in src/, so the UI was
+  // left stuck with no feedback.
+  it('surfaces a rejected request as store error state, not a rejection', async () => {
     aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
 
-    await expect(store.getCities()).rejects.toThrow('Network Error');
+    await expect(store.getCities()).resolves.toEqual([]);
+    expect(store.error).toBe('Network Error');
+    expect(store.hasError).toBe(true);
+  });
+
+  it('records an error for a non-200 too', async () => {
+    aqra.getDataForAllCities.mockReturnValue(notOk(503));
+
+    await store.getCities();
+
+    expect(store.error).toContain('503');
+  });
+
+  it('clears a previous error once a request succeeds', async () => {
+    aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
+    await store.getCities();
+    expect(store.hasError).toBe(true);
+
+    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    await store.getCities();
+
+    expect(store.error).toBeNull();
+    expect(store.hasError).toBe(false);
+  });
+
+  it('clearError resets the error state', async () => {
+    aqra.getDataForAllCities.mockRejectedValue(new Error('boom'));
+    await store.getCities();
+
+    store.clearError();
+
+    expect(store.error).toBeNull();
+  });
+});
+
+describe('loading state', () => {
+  it('reports loading while a request is in flight and not after', async () => {
+    let resolve;
+    aqra.getDataForAllCities.mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      })
+    );
+
+    const inFlight = store.getCities();
+    expect(store.isLoading).toBe(true);
+
+    resolve({ status: 200, data: [] });
+    await inFlight;
+
+    expect(store.isLoading).toBe(false);
+  });
+
+  it('stops reporting loading even when the request fails', async () => {
+    aqra.getDataForAllCities.mockRejectedValue(new Error('boom'));
+
+    await store.getCities();
+
+    expect(store.isLoading).toBe(false);
+  });
+});
+
+describe('resilience of the mutation helpers', () => {
+  // These four used to guard the cities container but not the individual city,
+  // so `this.cities[cityName]` was dereferenced blind. Clearing the city
+  // select sends null and an unknown name reaches here too -- both threw.
+  it('setSensorsByCity ignores an unknown or null city', () => {
+    expect(() =>
+      store.setSensorsByCity({ cityName: null, sensors: [] })
+    ).not.toThrow();
+    expect(() =>
+      store.setSensorsByCity({ cityName: 'atlantis', sensors: [] })
+    ).not.toThrow();
+  });
+
+  it('setForecastForSensor ignores an unknown city or sensor', () => {
+    expect(() =>
+      store.setForecastForSensor({
+        sensorId: null,
+        cityName: null,
+        forecast: {},
+      })
+    ).not.toThrow();
+  });
+
+  it('setForecastForCity ignores an unknown city', () => {
+    expect(() =>
+      store.setForecastForCity({ cityName: 'atlantis', forecast: {} })
+    ).not.toThrow();
+  });
+
+  it('getSensorsByCityName resolves to [] for an unknown city', async () => {
+    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+
+    await expect(store.getSensorsByCityName('atlantis')).resolves.toEqual([
+      API_SENSOR,
+    ].map(() => expect.anything()));
+  });
+
+  it('getForecastBySensorId resolves rather than throwing with no city', async () => {
+    aqra.getForecastForSpecificSensor.mockReturnValue(
+      ok({ latitude: 1, longitude: 2, data: [] })
+    );
+
+    await expect(
+      store.getForecastBySensorId({ sensorId: null, cityName: null })
+    ).resolves.toBeDefined();
   });
 });
 
@@ -311,22 +416,35 @@ describe('bulk fan-out actions', () => {
     expect(aqra.getForecastForSpecificSensor).toHaveBeenCalledTimes(2);
   });
 
-  // CHARACTERIZATION -- these Promise.all fan-outs have no concurrency limit,
-  // so a large city list fires every request at once. Phase 8 bounds them;
-  // this records that today there is no bound.
-  it('currently issues every request concurrently, unbounded (see Phase 8)', async () => {
+  // Regression guard: these fan-outs were bare Promise.all over every city x
+  // sensor with no limit, so a large list queued hundreds of requests in the
+  // browser, each burning its client timeout while waiting its turn.
+  it('caps concurrent requests at the configured limit', async () => {
+    // Distinct positions matter: getForecastByCoordinatesForCity short-circuits
+    // on a city already holding a forecast for the same position object, so
+    // reusing one position would make 29 of the 30 cache hits.
+    const cities = Object.fromEntries(
+      Array.from({ length: 30 }, (_, i) => [
+        `city-${i}`,
+        { ...API_CITY, cityName: `city-${i}`, position: [`${i}`, `${i}`] },
+      ])
+    );
+    store.cities = cities;
+
     let inFlight = 0;
     let peak = 0;
     aqra.getForecastBySpecificCoordinates.mockImplementation(async () => {
       peak = Math.max(peak, ++inFlight);
-      await Promise.resolve();
+      await new Promise((r) => setTimeout(r, 0));
       inFlight--;
       return { status: 200, data: { latitude: 1, longitude: 2, data: [] } };
     });
 
     await store.getForecastForAllCities();
 
-    expect(peak).toBe(2);
+    expect(aqra.getForecastBySpecificCoordinates).toHaveBeenCalledTimes(30);
+    expect(peak).toBeLessThanOrEqual(DEFAULT_CONCURRENCY);
+    expect(peak).toBeGreaterThan(1);
   });
 });
 

@@ -300,15 +300,15 @@ describe('Statistics', () => {
     wrapper.unmount();
   });
 
-  // CHARACTERIZATION -- mapHistoryToSeries declares `selectedPollutants = []`,
-  // but a JS default parameter only applies to `undefined`, never to `null`.
-  // initStatisticPage() sets pollutantInput.value to null, so this path throws.
-  // The UI is saved only by the Show button's :disabled guard; nothing in the
-  // function itself is safe. Phase 8 should coalesce null to [].
-  it('currently THROWS when the pollutant selection is null (see Phase 8)', async () => {
+  // Regression guard: mapHistoryToSeries declares `selectedPollutants = []`,
+  // but a JS default only applies to `undefined`, never to `null` -- and
+  // initStatisticPage() sets that value to null, so this threw. The UI was
+  // saved only by the Show button's :disabled attribute.
+  it('renders nothing when the pollutant selection is null', async () => {
     const wrapper = mountIt(null);
 
-    await expect(wrapper.vm.createStatistics()).rejects.toThrow(TypeError);
+    await expect(wrapper.vm.createStatistics()).resolves.toBeUndefined();
+    expect(wrapper.vm.chartData.datasets).toEqual([]);
     wrapper.unmount();
   });
 });

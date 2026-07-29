@@ -45,6 +45,36 @@
     </VAppBar>
     <MenuDrawer />
 
+    <!--
+      Request failures used to be invisible: every action checked
+      `result.status === 200` and did nothing otherwise, while axios rejected
+      on 4xx/5xx, so the rejection escaped unhandled and the UI simply sat
+      there. The store now records the failure; this surfaces it.
+    -->
+    <VSnackbar
+      :model-value="store.hasError"
+      color="error"
+      location="top"
+      :timeout="-1"
+      @update:model-value="store.clearError()"
+    >
+      {{ store.error }}
+      <template #actions>
+        <VBtn
+          variant="text"
+          @click="store.clearError()"
+        >
+          {{ $t('common.dismiss') }}
+        </VBtn>
+      </template>
+    </VSnackbar>
+
+    <VProgressLinear
+      v-if="store.isLoading"
+      indeterminate
+      color="primary"
+    />
+
     <VMain>
       <Content v-if="store.tabId === TabIds.Home" />
       <Map v-if="store.tabId === TabIds.PollutionMap" />

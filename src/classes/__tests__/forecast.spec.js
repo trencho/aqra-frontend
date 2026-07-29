@@ -51,20 +51,34 @@ describe('Forecast.fromApi', () => {
     expect(Forecast.fromApi({ ...apiForecast, data: null }).data).toEqual([]);
   });
 
-  // CHARACTERIZATION TEST -- pins a known bug, not desired behaviour.
-  //
-  // mapData() guards a missing `data`, but the line directly above it calls
-  // latitude.toString() with no guard at all. A record missing either
-  // coordinate throws, one line away from code that handles the same class of
-  // problem correctly.
-  //
-  // Phase 8 should guard these; when it does, update this assertion.
-  it('currently THROWS when a coordinate is missing (known bug, see Phase 8)', () => {
-    expect(() => Forecast.fromApi({ ...apiForecast, latitude: null })).toThrow(
-      TypeError
+  // Regression guard: these used to throw. mapData() guarded its argument
+  // while the line directly above it called latitude.toString() unguarded.
+  it('returns an empty position when a coordinate is missing', () => {
+    expect(Forecast.fromApi({ ...apiForecast, latitude: null }).position).toEqual(
+      []
     );
-    expect(() => Forecast.fromApi({ ...apiForecast, longitude: null })).toThrow(
-      TypeError
-    );
+    expect(
+      Forecast.fromApi({ ...apiForecast, longitude: null }).position
+    ).toEqual([]);
+    expect(
+      Forecast.fromApi({ ...apiForecast, latitude: undefined }).position
+    ).toEqual([]);
+  });
+
+  it('still maps the data when the coordinates are missing', () => {
+    const result = Forecast.fromApi({ ...apiForecast, latitude: null });
+
+    expect(result.data).toHaveLength(2);
+  });
+
+  it('preserves a zero coordinate rather than treating it as missing', () => {
+    // 0,0 is a legitimate (if unlikely) position; a truthiness check loses it.
+    const result = Forecast.fromApi({
+      ...apiForecast,
+      latitude: 0,
+      longitude: 0,
+    });
+
+    expect(result.position).toEqual(['0', '0']);
   });
 });

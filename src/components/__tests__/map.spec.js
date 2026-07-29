@@ -142,23 +142,20 @@ describe('Map filter handling', () => {
     wrapper.unmount();
   });
 
-  // CHARACTERIZATION -- setSensorsByCity guards `!this.cities` but not
-  // `this.cities[cityName]`, so any cityName absent from the loaded map throws
-  // while assigning `.sensors` on undefined.
-  //
-  // Both cases below are ordinary user actions: clearing the city select sends
-  // null, and Map.vue's own `if (!config.value) return` guard never runs
-  // because the store throws first. Same shape as the setForecastForSensor gap
-  // below. Phase 8 should guard all of them.
+  // Regression guard: setSensorsByCity guarded `!this.cities` but not
+  // `this.cities[cityName]`, so any name absent from the loaded map threw
+  // while assigning `.sensors` on undefined. Both cases below are ordinary
+  // user actions -- clearing the select sends null -- and Map.vue's own
+  // `if (!config.value) return` guard never ran, because the store threw first.
   it.each([
     ['cleared (null)', null],
     ['an unknown city', 'atlantis'],
-  ])('currently THROWS when the city is %s (see Phase 8)', async (_, value) => {
+  ])('handles the city being %s without throwing', async (_, value) => {
     const { wrapper, store } = mountIt();
 
     await expect(
       wrapper.vm.setName({ input: store.nameInput, value })
-    ).rejects.toThrow(TypeError);
+    ).resolves.toBeUndefined();
     expect(mapInstance.fitBounds).not.toHaveBeenCalled();
     wrapper.unmount();
   });
@@ -296,18 +293,16 @@ describe('Map pollutant selection', () => {
     wrapper.unmount();
   });
 
-  // CHARACTERIZATION -- setForecastForSensor guards `.sensors` but not
-  // `this.cities[cityName]` itself, so picking a pollutant with no city
-  // selected dereferences cities[null] and throws. Reachable in the real UI:
-  // setValue only skips the single-sensor fetch when an "all" toggle is on.
-  // Pre-existing -- the Vuex SET_FORECAST_FOR_SENSOR mutation had the same
-  // gap. Phase 8 should guard it.
-  it('currently THROWS when a pollutant is picked with no city (see Phase 8)', async () => {
+  // Regression guard: setForecastForSensor guarded `.sensors` but not
+  // `this.cities[cityName]`, so picking a pollutant before a city
+  // dereferenced cities[null] and threw. Reachable in the real UI -- setValue
+  // only skips the single-sensor fetch when an "all" toggle is on.
+  it('handles a pollutant picked with no city selected', async () => {
     const { wrapper, store } = mountIt();
 
     await expect(
       store.getForecastBySensorId({ sensorId: null, cityName: null })
-    ).rejects.toThrow(TypeError);
+    ).resolves.toBeDefined();
     wrapper.unmount();
   });
 
