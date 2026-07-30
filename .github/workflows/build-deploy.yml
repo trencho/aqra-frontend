@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.1
 
       - name: Install OpenVPN
         run: |
@@ -65,6 +65,12 @@ jobs:
           echo "${{ secrets.CLIENT_CERT }}" | sudo tee /etc/openvpn/client.crt > /dev/null
           echo "${{ secrets.TLS_CRYPT_KEY }}" | sudo tee /etc/openvpn/tls-crypt.key > /dev/null
 
+      # Emits a Node 20 deprecation warning: the action declares
+      # `using: node20` and GitHub now force-runs it on Node 24. v3.1.0 is the
+      # latest release (June 2024) and still declares node20, so there is
+      # nothing to bump to -- this is upstream and cannot be fixed here. The
+      # forced runtime works; the warning is cosmetic until GitHub drops the
+      # shim, at which point this needs replacing rather than upgrading.
       - name: Connect to VPN
         uses: kota65535/github-openvpn-connect-action@v3.1.0
         with:
