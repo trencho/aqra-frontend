@@ -12,19 +12,14 @@ export const DEFAULT_CONCURRENCY = 6;
  * Like `Promise.all(items.map(fn))`, but with at most `limit` calls in flight.
  *
  * Results keep the order of `items`, regardless of completion order.
- *
- * @param {Array} items
- * @param {(item: any, index: number) => Promise<any>} fn
- * @param {number} limit
- * @returns {Promise<Array>}
  */
-export async function mapWithConcurrency(
-  items,
-  fn,
-  limit = DEFAULT_CONCURRENCY
-) {
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[] | null | undefined,
+  fn: (item: T, index: number) => Promise<R>,
+  limit: number = DEFAULT_CONCURRENCY
+): Promise<R[]> {
   const list = [...(items || [])];
-  const results = new Array(list.length);
+  const results = new Array<R>(list.length);
 
   if (!list.length) {
     return results;
@@ -33,10 +28,14 @@ export async function mapWithConcurrency(
   const size = Math.max(1, Math.min(limit, list.length));
   let cursor = 0;
 
-  const worker = async () => {
+  const worker = async (): Promise<void> => {
     while (cursor < list.length) {
       const index = cursor++;
-      results[index] = await fn(list[index], index);
+      // Non-null assertion rather than a guard: the loop condition above
+      // already establishes index < list.length. noUncheckedIndexedAccess
+      // cannot see that, and adding a runtime check would introduce a branch
+      // no test can reach.
+      results[index] = await fn(list[index]!, index);
     }
   };
 
