@@ -5,8 +5,11 @@
   />
 </template>
 
-<script>
+<script lang="ts">
+import type { ChartData, ChartOptions } from 'chart.js';
 import { Chart, registerables } from 'chart.js';
+import type { PropType } from 'vue';
+import { defineComponent } from 'vue';
 import { Line } from 'vue-chartjs';
 
 // Chart.js 3+ is tree-shakeable: without registering the controllers, scales
@@ -20,22 +23,25 @@ import { Line } from 'vue-chartjs';
 // exists.
 Chart.register(...registerables);
 
-export default {
+export default defineComponent({
   name: 'LineChart',
 
   components: {
     Line,
   },
 
+  // `type: Object` alone infers Record<string, any>, which the wrapped Line
+  // component rejects -- it wants a ChartData with a `datasets` array. PropType
+  // narrows the runtime validator's Object to the real chart shape.
   props: {
     chartData: {
-      type: Object,
+      type: Object as PropType<ChartData<'line'>>,
       required: true,
     },
     options: {
-      type: Object,
+      type: Object as PropType<ChartOptions<'line'>>,
       required: true,
     },
   },
-};
+});
 </script>

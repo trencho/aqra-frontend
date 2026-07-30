@@ -38,13 +38,14 @@
   </VMenu>
 </template>
 
-<script>
+<script lang="ts">
 import { mapStores } from 'pinia';
+import { defineComponent } from 'vue';
 
 import { LocaleId } from '@/constants/locales';
 import { useLocaleStore } from '@/stores/locale';
 
-export default {
+export default defineComponent({
   name: 'TranslationButton',
 
   data() {
@@ -60,5 +61,5 @@ export default {
       return this.localeStore;
     },
   },
-};
+});
 </script>

@@ -21,13 +21,14 @@
   </VNavigationDrawer>
 </template>
 
-<script>
+<script lang="ts">
 import { mapStores } from 'pinia';
+import { defineComponent } from 'vue';
 
 import { TabIds } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
 
-export default {
+export default defineComponent({
   name: 'MenuDrawer',
 
   data() {
@@ -68,10 +69,10 @@ export default {
       get() {
         return this.store.drawer;
       },
-      set(val) {
+      set(val: boolean) {
         this.store.setDrawer(val);
       },
     },
   },
-};
+});
 </script>

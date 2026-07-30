@@ -43,14 +43,30 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import type {
+  HeatLayer,
+  LatLngBoundsExpression,
+  Map as LeafletMap,
+  Marker,
+  Polygon,
+} from 'leaflet';
 import L from 'leaflet';
 import { mapStores } from 'pinia';
+import { defineComponent } from 'vue';
 
+import type { City } from '@/classes/city';
 import { CreateLayer, Layers } from '@/constants/layers';
 import { belowAppBar } from '@/constants/layout';
 import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
 import { useAirPollutionStore } from '@/stores/airPollution';
+import type {
+  LayerKind,
+  PollutantKey,
+  SetValueConfig,
+} from '@/types/domain';
+import type { SelectedLayer } from '@/types/map';
+import type { HeatLayerResult } from '@/utils/createMap';
 import {
   createBaseLayer,
   createCityBoundaries,
@@ -61,22 +77,66 @@ import {
 
 import Filters from './Filters.vue';
 
-export default {
+type LayerFactory = (
+  map: LeafletMap,
+  options: SelectedLayer & { time: number }
+) => HeatLayerResult;
+
+/**
+ * The three factories take structurally different option objects -- one wants
+ * `city` plus `sensorId`, two want `cities` -- so indexing them with a runtime
+ * LayerKind and passing one merged shape is not something the compiler can
+ * verify. This single cast records the contract the .js relied on implicitly,
+ * instead of an `as never` at each of the two call sites.
+ */
+const createLayer = CreateLayer as unknown as Record<LayerKind, LayerFactory>;
+
+/**
+ * Re-asserts a Leaflet instance's own type after Vue's reactive typing.
+ *
+ * Vue maps a class instance held in `data()` through its reactive unwrapping
+ * types, which rebuild it structurally and drop private members. Leaflet's `Map`
+ * has private members, so `this.map` stops satisfying Leaflet's own `Map`
+ * parameter type despite being exactly that at runtime -- fifteen call sites
+ * would otherwise each need a cast.
+ *
+ * Module-scope rather than a computed or a method, deliberately: it adds nothing
+ * to the component's public instance, so no spec sees a new property.
+ *
+ * Worth doing properly later: storing the map with `markRaw()` fixes this at the
+ * root and stops Vue deep-proxying a Leaflet instance, which is a known
+ * Leaflet/Vue hazard in its own right. That is a runtime change, so it is not
+ * being made inside a type migration.
+ */
+function asMap(map: unknown): LeafletMap {
+  return map as LeafletMap;
+}
+
+export default defineComponent({
   name: 'Map',
 
   components: {
     Filters,
   },
 
+  // Every field here was `null`, which TypeScript infers as the type `null` --
+  // so each later assignment of a real Leaflet object was an error. The
+  // annotations describe what actually gets stored.
+  //
+  // `map` is non-null from mounted() onwards but null before it, and the methods
+  // below dereference it unguarded, exactly as they always have. The
+  // assertions at those call sites record that rather than adding guards that
+  // would change behaviour on a path that cannot occur (no method here runs
+  // before mount).
   data() {
     return {
-      map: null,
+      map: null as LeafletMap | null,
       slider: 0,
-      polygons: null,
-      selected: null,
-      heatLayers: null,
-      cityMarkers: null,
-      sensorMarkers: null,
+      polygons: null as Polygon[] | null,
+      selected: null as SelectedLayer | null,
+      heatLayers: null as HeatLayer[] | null,
+      cityMarkers: null as Marker[] | null,
+      sensorMarkers: null as Marker[] | null,
     };
   },
 
@@ -110,8 +170,8 @@ export default {
 
     this.map = L.map('map').setView(MACEDONIA_COORDINATES, MIN_ZOOM);
 
-    createBaseLayer(this.map);
-    this.cityMarkers = mapCities(this.map, this.allCities);
+    createBaseLayer(asMap(this.map));
+    this.cityMarkers = mapCities(asMap(this.map), this.allCities);
   },
 
   // Vue 3 renamed beforeDestroy to beforeUnmount. Left unrenamed, the map
@@ -127,22 +187,25 @@ export default {
       window.scrollTo({ top: 500, behavior: 'smooth' });
     },
 
-    async setName(config) {
+    async setName(config: SetValueConfig) {
       await this.store.setValue(config);
       if (!config.value) {
         return;
       }
 
-      const city = this.store.cities[config.value];
+      const city = this.store.cities[config.value as string];
       if (!city) {
         return;
       }
 
-      this.map.fitBounds(city.borders);
+      // Same string-coordinate story as createMap's asLatLng: borders are
+      // string pairs straight from the API and Leaflet coerces them. Asserted,
+      // not converted.
+      asMap(this.map).fitBounds(city.borders as unknown as LatLngBoundsExpression);
     },
 
-    async setPollutant(config) {
-      this.heatLayers = removeLayer(this.map, this.heatLayers);
+    async setPollutant(config: SetValueConfig) {
+      this.heatLayers = removeLayer(asMap(this.map), this.heatLayers);
 
       await this.store.setValue(config);
       if (!config.value) {
@@ -152,24 +215,24 @@ export default {
       if (this.store.showForAllCitiesInput.value) {
         this.selected = {
           cities: this.allCities,
-          pollutant: config.value,
+          pollutant: config.value as PollutantKey,
           selected: Layers.AllCities,
         };
       } else if (this.store.showForAllSensorsInput.value) {
         this.selected = {
           cities: this.allCities,
-          pollutant: config.value,
+          pollutant: config.value as PollutantKey,
           selected: Layers.AllSensors,
         };
       } else {
         this.selected = {
-          city: this.store.cities[this.store.nameInput.value],
-          pollutant: config.value,
-          sensorId: this.store.sensorInput.value,
+          city: this.store.cities[this.store.nameInput.value as string],
+          pollutant: config.value as PollutantKey,
+          sensorId: this.store.sensorInput.value as string,
           selected: Layers.SelectedSensor,
         };
       }
-      const conf = CreateLayer[this.selected.selected](this.map, {
+      const conf = createLayer[this.selected.selected](asMap(this.map), {
         ...this.selected,
         time: this.slider,
       });
@@ -180,59 +243,68 @@ export default {
       this.heatLayers = [conf.heatLayer];
     },
 
-    async changeBoundaries(config) {
+    async changeBoundaries(config: SetValueConfig) {
       await this.store.setValue(config);
 
       if (config.value) {
-        this.polygons = createCityBoundaries(this.map, this.allCities);
+        this.polygons = createCityBoundaries(asMap(this.map), this.allCities);
       } else {
-        this.polygons = removeLayer(this.map, this.polygons);
+        this.polygons = removeLayer(asMap(this.map), this.polygons);
       }
     },
 
-    async changeCityMarkers(config) {
+    async changeCityMarkers(config: SetValueConfig) {
       await this.store.setValue(config);
 
       if (config.value) {
-        this.cityMarkers = mapCities(this.map, this.allCities);
+        this.cityMarkers = mapCities(asMap(this.map), this.allCities);
       } else {
-        this.cityMarkers = removeLayer(this.map, this.cityMarkers);
+        this.cityMarkers = removeLayer(asMap(this.map), this.cityMarkers);
       }
     },
 
-    async setShowForAllCities(config) {
+    async setShowForAllCities(config: SetValueConfig) {
       await this.store.setValue(config);
-      this.heatLayers = removeLayer(this.map, this.heatLayers);
+      this.heatLayers = removeLayer(asMap(this.map), this.heatLayers);
     },
 
-    async setShowForAllSensors(config) {
+    async setShowForAllSensors(config: SetValueConfig) {
       await this.store.setValue(config);
-      this.heatLayers = removeLayer(this.map, this.heatLayers);
+      this.heatLayers = removeLayer(asMap(this.map), this.heatLayers);
     },
 
-    async changeSensorMarkers(config) {
+    async changeSensorMarkers(config: SetValueConfig) {
       await this.store.setValue(config);
 
       if (config.value) {
-        this.sensorMarkers = mapSensorsInCities(this.map, this.allCities);
+        // Cast because City.sensors is optional but mapSensorsInCities requires
+        // it -- which is the known gap that function documents: a city whose
+        // sensors have not loaded yet throws, and a characterization test pins
+        // that. The cast preserves it rather than hiding it behind a guard.
+        this.sensorMarkers = mapSensorsInCities(
+          asMap(this.map),
+          this.allCities as Array<
+            City & { sensors: NonNullable<City['sensors']> }
+          >
+        );
       } else {
-        this.sensorMarkers = removeLayer(this.map, this.sensorMarkers);
+        this.sensorMarkers = removeLayer(asMap(this.map), this.sensorMarkers);
       }
     },
 
-    sliderChange(time) {
-      this.heatLayers = removeLayer(this.map, this.heatLayers);
+    sliderChange(time: number) {
+      this.heatLayers = removeLayer(asMap(this.map), this.heatLayers);
 
-      const conf = CreateLayer[this.selected.selected](this.map, {
-        ...this.selected,
+      const conf = createLayer[this.selected!.selected](asMap(this.map), {
+        ...this.selected!,
         time,
       });
       this.selected = {
-        ...this.selected,
+        ...this.selected!,
         selectedTime: conf.time,
       };
       this.heatLayers = [conf.heatLayer];
     },
   },
-};
+});
 </script>

@@ -106,12 +106,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { mapStores } from 'pinia';
+import { defineComponent } from 'vue';
 
 import { useAirPollutionStore } from '@/stores/airPollution';
 
-export default {
+export default defineComponent({
   name: 'InputFilters',
 
   // Vue 3 warns about undeclared emits, and an undeclared event also falls
@@ -134,5 +135,5 @@ export default {
       return this.airPollutionStore;
     },
   },
-};
+});
 </script>

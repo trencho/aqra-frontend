@@ -28,15 +28,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+
 import avatar from '@/assets/avatar.png';
 
-export default {
+export default defineComponent({
   name: 'AboutMeSection',
   data() {
     return {
       avatar,
     };
   },
-};
+});
 </script>

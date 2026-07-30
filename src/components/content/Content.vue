@@ -15,13 +15,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+
 import AboutMeSection from './AboutMeSection.vue';
 import ContactMe from './ContactMe.vue';
 import ProjectInfoSection from './ProjectInfoSection.vue';
 import WelcomePage from './WelcomePage.vue';
 
-export default {
+export default defineComponent({
   name: 'Content',
 
   components: {
@@ -30,5 +32,5 @@ export default {
     AboutMeSection,
     ProjectInfoSection,
   },
-};
+});
 </script>

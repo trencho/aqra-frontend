@@ -1,0 +1,51 @@
+{
+  // @vue/tsconfig's dom preset already sets the parts that must not drift from
+  // the bundler: module ESNext, moduleResolution bundler, target ESNext,
+  // jsx preserve, verbatimModuleSyntax, skipLibCheck, and strict. Only the
+  // project-specific choices live here.
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+
+  // vue-tsc resolves .vue through @vue/language-core; plain tsc cannot.
+  // `yarn typecheck` therefore runs vue-tsc, never tsc.
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
+
+  "compilerOptions": {
+    // The migration is finished, so this is off: there is no .js left under
+    // src/, and leaving it on would silently accept a new one. A .js file added
+    // from here is a compile error, which is the point.
+    //
+    // Note this governs src/ only -- the root config files (vite.config.mjs,
+    // eslint.config.mjs) are outside `include` and are not type-checked.
+    "allowJs": false,
+
+    // The dom preset sets `types: []` to keep the global scope clean, so every
+    // ambient package has to be named explicitly.
+    //   vite/client -- import.meta.env and the .png/.svg asset modules
+    //   node        -- `global` in the test helpers, and node:* in tooling
+    "types": ["vite/client", "node"],
+
+    // Mirrors the `@` alias in vite.config.mjs. These two must move together;
+    // TypeScript does not read the Vite config, so a change to one silently
+    // diverges from the other.
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    // --- strictness ---------------------------------------------------------
+    //
+    // strict is inherited from the preset. These two are the sharp additions,
+    // enabled deliberately up front so no file is ever migrated twice.
+    //
+    // noUncheckedIndexedAccess is the expensive one: it makes every index read
+    // `T | undefined`. That is the correct description of `forecast.data[time]`
+    // -- the codebase has already shipped bugs there -- so the churn buys
+    // something rather than just being noise.
+    //
+    // exactOptionalPropertyTypes is left off by @vue/tsconfig on the grounds
+    // that it is "hard to land in the current ecosystem". That concern is about
+    // third-party declarations, which skipLibCheck already excludes from the
+    // check, so it only constrains our own code here.
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  }
+}

@@ -37,13 +37,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+
 import background from '@/assets/air-pollution.jpg';
 import logo from '@/assets/logo.svg';
 import name from '@/assets/name.svg';
 import { belowAppBar } from '@/constants/layout';
 
-export default {
+export default defineComponent({
   name: 'WelcomePage',
 
   data() {
@@ -57,5 +59,5 @@ export default {
   methods: {
     belowAppBar,
   },
-};
+});
 </script>

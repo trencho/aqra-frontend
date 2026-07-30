@@ -88,14 +88,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { mapStores } from 'pinia';
+import { defineComponent } from 'vue';
 
 import logo from '@/assets/logo.svg';
 import Content from '@/components/content/Content.vue';
 import Map from '@/components/map/Map.vue';
 import Statistics from '@/components/statistics/Statistics.vue';
 import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation.vue';
+import type { TabId } from '@/constants/navigationTabs';
 import { TabIds, Tabs } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
 
@@ -103,7 +105,7 @@ import Footer from './Footer.vue';
 import MenuDrawer from './MenuDrawer.vue';
 import TranslationButton from './TranslationButton.vue';
 
-export default {
+export default defineComponent({
   name: 'HomePage',
 
   components: {
@@ -138,7 +140,7 @@ export default {
       get() {
         return this.store.tabId;
       },
-      set(id) {
+      set(id: TabId) {
         this.store.changeTab(id);
       },
     },
@@ -155,5 +157,5 @@ export default {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
   },
-};
+});
 </script>

@@ -4,16 +4,18 @@
   </VApp>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+
 import HomePage from './components/home/HomePage.vue';
 
-export default {
+export default defineComponent({
   name: 'App',
 
   components: {
     HomePage,
   },
-};
+});
 </script>
 <style lang="scss" module>
 .application {

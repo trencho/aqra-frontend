@@ -48,6 +48,13 @@ jobs:
       - name: Lint
         run: yarn lint
 
+      # vue-tsc, not tsc: only vue-tsc resolves .vue single-file components.
+      # Added as a STEP, deliberately. The master ruleset requires the job name
+      # "Lint, test and build" as its status check -- renaming the job would
+      # silently detach that check and auto-merge would start merging ungated.
+      - name: Typecheck
+        run: yarn typecheck
+
       - name: Test with coverage
         run: yarn test:coverage
 
