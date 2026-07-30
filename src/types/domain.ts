@@ -81,10 +81,17 @@ export interface ForecastDatum {
   [pollutant: string]: number | string | undefined;
 }
 
-/** An option in one of the filter selects. */
+/**
+ * An option in one of the filter selects.
+ *
+ * Both fields admit undefined because the options are built from domain
+ * objects whose fields are optional: sensor options use `description` and
+ * `sensorId`, pollutant options use `name` and `value`, and none of those is
+ * guaranteed by the API.
+ */
 export interface SelectOption {
-  label: string;
-  value: string | null;
+  label: string | undefined;
+  value: string | null | undefined;
 }
 
 /**
@@ -110,3 +117,32 @@ export interface ToggleFilterInput {
 }
 
 export type FilterInput = SelectFilterInput | ToggleFilterInput;
+
+/**
+ * The shape `setValue` accepts: whichever filter input the emitting component
+ * owns, plus its new value.
+ *
+ * Structurally wider than FilterInput on purpose. Which input is passed and
+ * what type its value takes are correlated at runtime -- a 'name' input carries
+ * a string, a 'showForAllCities' input carries a boolean -- but the emitting
+ * component is what establishes that, and the store rediscovers it by switching
+ * on `input.id`. Expressing it as a discriminated union here would require every
+ * filter component to narrow before emitting, which is a component refactor
+ * rather than a typing change.
+ *
+ * The mutable `value` is therefore unsound in the same way the .js was: nothing
+ * stops a boolean being written into a select's value. The switch in setValue is
+ * what actually keeps them aligned.
+ */
+export interface FilterInputLike {
+  id: string;
+  label?: string | undefined;
+  value: string | boolean | null;
+  items?: SelectOption[] | undefined;
+  hidden?: boolean | undefined;
+}
+
+export interface SetValueConfig {
+  input: FilterInputLike;
+  value: string | boolean | null;
+}

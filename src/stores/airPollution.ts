@@ -1,28 +1,84 @@
+import type { AxiosResponse } from 'axios';
 import { defineStore } from 'pinia';
 
 import { City } from '@/classes/city';
 import { Forecast } from '@/classes/forecast';
 import { Pollutant } from '@/classes/pollutant';
 import { Sensor } from '@/classes/sensors';
+import type { TabId } from '@/constants/navigationTabs';
 import { TabIds } from '@/constants/navigationTabs';
 import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
 import { aqra } from '@/services/api';
+import type {
+  Position,
+  SelectFilterInput,
+  SelectOption,
+  SetValueConfig,
+  ToggleFilterInput,
+} from '@/types/domain';
 import { mapWithConcurrency } from '@/utils/concurrency';
+import { errorMessage } from '@/utils/errors';
 
-function mapList(list, entity) {
-  const map = {};
-  list.forEach((i) => (map[i[entity]] = i));
+export interface AirPollutionState {
+  drawer: boolean;
+
+  cities: Record<string, City>;
+  nameInput: SelectFilterInput;
+  sensorInput: SelectFilterInput;
+  historyData: Record<string, Forecast | null>;
+  pollutantInput: SelectFilterInput;
+  tabId: TabId;
+  forecastBySensorId: Record<string, Forecast | null>;
+  pollutantsBySensorId: Record<string, Array<Pollutant | null>>;
+  showCityMarkersInput: ToggleFilterInput;
+  showForAllCitiesInput: ToggleFilterInput;
+  showSensorMarkersInput: ToggleFilterInput;
+  showForAllSensorsInput: ToggleFilterInput;
+  showCityBoundariesInput: ToggleFilterInput;
+
+  /** Last request failure, for display. Null when the last attempt succeeded. */
+  error: string | null;
+  /** Number of requests currently in flight. */
+  pending: number;
+}
+
+/**
+ * A discriminated union so `if (!ok) return []` narrows `data` to non-null in
+ * the branch that follows. A plain `{ ok: boolean; data: T | null }` would leave
+ * every caller asserting.
+ */
+type RequestResult<T> = { ok: true; data: T } | { ok: false; data: null };
+
+/**
+ * Index a list by one of its fields.
+ *
+ * The element type includes null because every fromApi mapper returns null for
+ * a missing payload entry. A null entry throws here, exactly as it did before --
+ * the API does not send them, and adding a guard would be a behaviour change.
+ */
+function mapList<T extends object>(
+  list: Array<T | null>,
+  entity: keyof T
+): Record<string, T> {
+  const map: Record<string, T> = {};
+  list.forEach((i) => (map[i![entity] as string] = i!));
   return map;
 }
 
-function mapPollutants() {
+function mapPollutants(): SelectOption[] {
   return Object.values(Pollutants).map((p) => ({
     label: PollutantsLabels[p],
     value: p,
   }));
 }
 
-function cityFilterInputs(cities) {
+/**
+ * The three select filters, rebuilt from scratch on entering a page.
+ *
+ * `{} as SelectFilterInput` appears in the initial state below rather than here;
+ * this function always returns fully-formed inputs.
+ */
+function cityFilterInputs(cities: Record<string, City> | undefined) {
   return {
     nameInput: {
       id: 'name',
@@ -33,44 +89,51 @@ function cityFilterInputs(cities) {
         label: c.siteName,
         value: c.cityName,
       })),
-    },
+    } satisfies SelectFilterInput,
     sensorInput: {
       id: 'sensor',
       label: 'common.sensors',
       value: null,
       hidden: false,
       items: [],
-    },
+    } satisfies SelectFilterInput,
     pollutantInput: {
       id: 'pollutant',
       label: 'common.pollutants',
       value: null,
       items: [],
-    },
+    } satisfies SelectFilterInput,
   };
 }
 
 export const useAirPollutionStore = defineStore('airPollution', {
-  state: () => ({
+  // Annotated, which is the substance of converting this file. Inferred, every
+  // one of the eight filter-input fields below is `{}`, and every downstream
+  // `.value` / `.items` / `.hidden` / `.sensors` read is untyped.
+  //
+  // The eight `{} as ...` assertions record a real window: these start empty and
+  // are replaced wholesale by initMapPage() or initStatisticPage() before
+  // anything reads them. Typing them as Partial<...> instead would push
+  // undefined-handling into every consumer for a state that is never actually
+  // observed empty.
+  state: (): AirPollutionState => ({
     drawer: false,
 
     cities: {},
-    nameInput: {},
-    sensorInput: {},
+    nameInput: {} as SelectFilterInput,
+    sensorInput: {} as SelectFilterInput,
     historyData: {},
-    pollutantInput: {},
+    pollutantInput: {} as SelectFilterInput,
     tabId: TabIds.Home,
     forecastBySensorId: {},
     pollutantsBySensorId: {},
-    showCityMarkersInput: {},
-    showForAllCitiesInput: {},
-    showSensorMarkersInput: {},
-    showForAllSensorsInput: {},
-    showCityBoundariesInput: {},
+    showCityMarkersInput: {} as ToggleFilterInput,
+    showForAllCitiesInput: {} as ToggleFilterInput,
+    showSensorMarkersInput: {} as ToggleFilterInput,
+    showForAllSensorsInput: {} as ToggleFilterInput,
+    showCityBoundariesInput: {} as ToggleFilterInput,
 
-    /** Last request failure, for display. Null when the last attempt succeeded. */
     error: null,
-    /** Number of requests currently in flight. */
     pending: 0,
   }),
 
@@ -91,10 +154,10 @@ export const useAirPollutionStore = defineStore('airPollution', {
      * check never saw a failure and the rejection escaped the action entirely.
      * There was no try/catch anywhere in src/, so a single failed request left
      * the UI stuck with no feedback.
-     *
-     * @returns {Promise<{ok: boolean, data: any}>}
      */
-    async request(call) {
+    async request<T>(
+      call: () => Promise<AxiosResponse<T>>
+    ): Promise<RequestResult<T>> {
       this.pending += 1;
       try {
         const result = await call();
@@ -107,7 +170,9 @@ export const useAirPollutionStore = defineStore('airPollution', {
         this.error = `Request failed with status ${result?.status ?? 'unknown'}`;
         return { ok: false, data: null };
       } catch (cause) {
-        this.error = cause?.message ?? 'Request failed';
+        // `cause` is typed unknown under strict (useUnknownInCatchVariables),
+        // so the narrowing lives in one shared helper rather than here.
+        this.error = errorMessage(cause, 'Request failed');
         return { ok: false, data: null };
       } finally {
         this.pending -= 1;
@@ -120,58 +185,85 @@ export const useAirPollutionStore = defineStore('airPollution', {
 
     // --- formerly mutations -------------------------------------------------
 
-    setSensorInputOptions(options) {
+    setSensorInputOptions(options: Array<Sensor | null>) {
       this.sensorInput.value = null;
       this.pollutantInput.value = null;
       this.sensorInput.items = (options || []).map((o) => ({
-        label: o.description,
-        value: o.sensorId,
+        label: o?.description,
+        value: o?.sensorId,
       }));
     },
 
-    setPollutantInputOptions(options) {
+    setPollutantInputOptions(options: Array<Pollutant | null>) {
       this.pollutantInput.value = null;
       this.pollutantInput.items = (options || []).map((o) => ({
-        label: o.name,
-        value: o.value,
+        label: o?.name,
+        value: o?.value,
       }));
     },
 
-    setSensorsByCity({ cityName, sensors }) {
+    setSensorsByCity({
+      cityName,
+      sensors,
+    }: {
+      cityName: string | null | undefined;
+      sensors: Array<Sensor | null>;
+    }) {
       // Guards the city, not just the container. Clearing the city select
       // sends null, and an unknown name reaches here too; both used to throw
       // while assigning `.sensors` on undefined.
-      const city = this.cities?.[cityName];
+      const city = this.cities?.[cityName as string];
       if (!city) {
         return;
       }
       city.sensors = mapList(sensors, 'sensorId');
     },
 
-    setForecastForSensor({ sensorId, forecast, cityName }) {
-      const sensor = this.cities?.[cityName]?.sensors?.[sensorId];
+    setForecastForSensor({
+      sensorId,
+      forecast,
+      cityName,
+    }: {
+      sensorId: string | null | undefined;
+      forecast: Forecast | null;
+      cityName: string | null | undefined;
+    }) {
+      const sensor =
+        this.cities?.[cityName as string]?.sensors?.[sensorId as string];
       if (!sensor) {
         return;
       }
       sensor.forecast = forecast;
     },
 
-    setForecastForCity({ forecast, cityName }) {
-      const city = this.cities?.[cityName];
+    setForecastForCity({
+      forecast,
+      cityName,
+    }: {
+      forecast: Forecast | null;
+      cityName: string | null | undefined;
+    }) {
+      const city = this.cities?.[cityName as string];
       if (!city) {
         return;
       }
       city.forecast = forecast;
     },
 
-    setPollutantsForSensor({ sensorId, pollutants }) {
+    setPollutantsForSensor({
+      sensorId,
+      pollutants,
+    }: {
+      sensorId: string | null | undefined;
+      pollutants: Array<Pollutant | null>;
+    }) {
       this.pollutantsBySensorId = {
         ...this.pollutantsBySensorId,
-        [sensorId]: pollutants,
+        [sensorId as string]: pollutants,
       };
     },
 
-    setShowAllCities(value) {
+    setShowAllCities(value: boolean) {
       this.showForAllSensorsInput.value = false;
       this.nameInput.hidden = value;
       this.sensorInput.hidden = value;
@@ -181,7 +273,7 @@ export const useAirPollutionStore = defineStore('airPollution', {
       this.pollutantInput.value = null;
     },
 
-    setShowAllSensors(value) {
+    setShowAllSensors(value: boolean) {
       this.showForAllCitiesInput.value = false;
       this.nameInput.hidden = value;
       this.sensorInput.hidden = value;
@@ -191,10 +283,16 @@ export const useAirPollutionStore = defineStore('airPollution', {
       this.pollutantInput.value = null;
     },
 
-    setHistoryData({ sensorId, historyData }) {
+    setHistoryData({
+      sensorId,
+      historyData,
+    }: {
+      sensorId: string | null | undefined;
+      historyData: Forecast | null;
+    }) {
       this.historyData = {
         ...this.historyData,
-        [sensorId]: historyData,
+        [sensorId as string]: historyData,
       };
     },
 
@@ -240,30 +338,37 @@ export const useAirPollutionStore = defineStore('airPollution', {
 
     // --- ui -----------------------------------------------------------------
 
-    setDrawer(drawer) {
+    setDrawer(drawer: boolean) {
       this.drawer = drawer;
     },
 
-    changeTab(id) {
+    changeTab(id: TabId) {
       if (id !== this.tabId) {
         this.drawer = false;
       }
       this.tabId = id;
     },
 
-    async setValue(config) {
+    async setValue(config: SetValueConfig) {
       config.input.value = config.value;
 
+      // The `as` casts below are what the switch establishes: a 'name' case
+      // carries a city name, a 'showForAllCities' case carries a boolean. The
+      // correlation is real but lives in the emitting component, not the type.
       switch (config.input.id) {
         case 'name': {
-          const sensors = await this.getSensorsByCityName(config.value);
+          const sensors = await this.getSensorsByCityName(
+            config.value as string
+          );
           this.setSensorInputOptions(Object.values(sensors));
           break;
         }
         case 'sensor': {
-          const pollutants = await this.getPollutantsBySensorId(config.value);
+          const pollutants = await this.getPollutantsBySensorId(
+            config.value as string
+          );
           this.setPollutantInputOptions(pollutants);
-          await this.getHistoryDataBySensorId(config.value);
+          await this.getHistoryDataBySensorId(config.value as string);
           break;
         }
         case 'pollutant':
@@ -278,12 +383,12 @@ export const useAirPollutionStore = defineStore('airPollution', {
           }
           break;
         case 'showForAllCities': {
-          this.setShowAllCities(config.value);
+          this.setShowAllCities(config.value as boolean);
           await this.getForecastForAllCities();
           break;
         }
         case 'showForAllSensors': {
-          this.setShowAllSensors(config.value);
+          this.setShowAllSensors(config.value as boolean);
           await this.getForecastForAllSensors();
           break;
         }
@@ -296,8 +401,14 @@ export const useAirPollutionStore = defineStore('airPollution', {
 
     // --- data fetching ------------------------------------------------------
 
-    async getCities() {
-      if (this.cities?.length) {
+    async getCities(): Promise<Array<City | null> | Record<string, City>> {
+      // PRE-EXISTING BUG, preserved deliberately. `cities` is a Record keyed by
+      // city name, so `.length` is always undefined and this cache check never
+      // fires -- getCities refetches on every call. Typing the state is what
+      // exposed it. Fixing it (Object.keys(...).length) would start
+      // short-circuiting and change behaviour, so it is recorded as a follow-up
+      // rather than silently corrected inside a type migration.
+      if ((this.cities as { length?: number }).length) {
         return this.cities;
       }
 
@@ -312,9 +423,12 @@ export const useAirPollutionStore = defineStore('airPollution', {
       return cities;
     },
 
-    async getSensorsByCityName(cityName) {
-      if (this.cities?.[cityName]?.sensors) {
-        return this.cities[cityName].sensors;
+    async getSensorsByCityName(
+      cityName: string | null | undefined
+    ): Promise<Record<string, Sensor> | Array<Sensor | null>> {
+      const cached = this.cities?.[cityName as string]?.sensors;
+      if (cached) {
+        return cached;
       }
 
       const { ok, data } = await this.request(() =>
@@ -373,7 +487,16 @@ export const useAirPollutionStore = defineStore('airPollution', {
       );
     },
 
-    async getForecastByCoordinatesForCity({ position, cityName }) {
+    async getForecastByCoordinatesForCity({
+      position,
+      cityName,
+    }: {
+      position: Position;
+      cityName: string | null | undefined;
+    }): Promise<Forecast | null | never[]> {
+      // Identity comparison, not a value comparison: two cities with equal
+      // coordinates in different array instances both miss. Test fixtures that
+      // share one position array collapse into cache hits for the same reason.
       const cached = Object.values(this.cities).find(
         (c) => c.position === position
       )?.forecast;
@@ -393,8 +516,16 @@ export const useAirPollutionStore = defineStore('airPollution', {
       return forecast;
     },
 
-    async getForecastBySensorId({ sensorId, cityName }) {
-      const cached = this.cities?.[cityName]?.sensors?.[sensorId]?.forecast;
+    async getForecastBySensorId({
+      sensorId,
+      cityName,
+    }: {
+      sensorId: string | null | undefined;
+      cityName: string | null | undefined;
+    }): Promise<Forecast | null | never[]> {
+      const cached =
+        this.cities?.[cityName as string]?.sensors?.[sensorId as string]
+          ?.forecast;
       if (cached) {
         return cached;
       }
@@ -411,9 +542,12 @@ export const useAirPollutionStore = defineStore('airPollution', {
       return forecast;
     },
 
-    async getPollutantsBySensorId(sensorId) {
-      if (this.pollutantsBySensorId?.[sensorId]) {
-        return this.pollutantsBySensorId[sensorId];
+    async getPollutantsBySensorId(
+      sensorId: string | null | undefined
+    ): Promise<Array<Pollutant | null>> {
+      const cached = this.pollutantsBySensorId?.[sensorId as string];
+      if (cached) {
+        return cached;
       }
 
       const { ok, data } = await this.request(() =>
@@ -431,9 +565,12 @@ export const useAirPollutionStore = defineStore('airPollution', {
       return pollutants;
     },
 
-    async getHistoryDataBySensorId(sensorId) {
-      if (this.historyData?.[sensorId]) {
-        return this.historyData[sensorId];
+    async getHistoryDataBySensorId(
+      sensorId: string | null | undefined
+    ): Promise<Forecast | null | never[]> {
+      const cached = this.historyData?.[sensorId as string];
+      if (cached) {
+        return cached;
       }
 
       const { ok, data } = await this.request(() =>

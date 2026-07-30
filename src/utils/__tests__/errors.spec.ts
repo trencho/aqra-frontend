@@ -38,10 +38,12 @@ describe('errorMessage', () => {
     expect(errorMessage('a bare string', 'fallback')).toBe('fallback');
   });
 
-  // An empty message would render as a blank error banner, which reads as a
-  // rendering bug rather than a failed request.
-  it('falls back for an empty message', () => {
-    expect(errorMessage({ message: '' }, 'fallback')).toBe('fallback');
+  // CHARACTERIZATION -- an empty message is passed through, not replaced,
+  // because the `cause?.message ?? fallback` this replaces did the same. It
+  // renders as a blank error banner. Deliberately preserved; changing it is a
+  // behaviour fix, not part of the type migration.
+  it('passes an empty message through rather than falling back', () => {
+    expect(errorMessage({ message: '' }, 'fallback')).toBe('');
   });
 
   it('falls back when message is present but not a string', () => {
