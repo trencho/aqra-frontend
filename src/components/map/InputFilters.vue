@@ -108,6 +108,7 @@
 
 <script>
 import { mapStores } from 'pinia';
+
 import { useAirPollutionStore } from '@/stores/airPollution';
 
 export default {

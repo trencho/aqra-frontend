@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 // Leaflet needs real DOM layout, so the whole module is mocked and these tests
 // assert on the calls made to it rather than on rendered output.

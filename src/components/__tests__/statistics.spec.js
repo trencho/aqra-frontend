@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // These specs run the real store actions (stubActions: false), so setValue
 // reaches the API layer. Without this mock jsdom issues real XHRs, which
@@ -28,11 +28,12 @@ vi.mock('@/services/api', () => ({
   },
 }));
 
-import Statistics from '../statistics/Statistics.vue';
-import StatisticFilters from '../statistics/StatisticFilters.vue';
-import LineChart from '../statistics/LineChart.vue';
 import { useAirPollutionStore } from '@/stores/airPollution';
-import { stubBrowserApis, globalMountOptions } from './helpers';
+
+import LineChart from '../statistics/LineChart.vue';
+import StatisticFilters from '../statistics/StatisticFilters.vue';
+import Statistics from '../statistics/Statistics.vue';
+import { globalMountOptions,stubBrowserApis } from './helpers';
 
 const filterState = {
   airPollution: {

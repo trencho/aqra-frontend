@@ -91,18 +91,17 @@
 <script>
 import { mapStores } from 'pinia';
 
-import Footer from './Footer.vue';
-import MenuDrawer from './MenuDrawer.vue';
-import Map from '@/components/map/Map.vue';
+import logo from '@/assets/logo.svg';
 import Content from '@/components/content/Content.vue';
-import TranslationButton from './TranslationButton.vue';
+import Map from '@/components/map/Map.vue';
 import Statistics from '@/components/statistics/Statistics.vue';
 import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation.vue';
-
-import { useAirPollutionStore } from '@/stores/airPollution';
 import { TabIds, Tabs } from '@/constants/navigationTabs';
+import { useAirPollutionStore } from '@/stores/airPollution';
 
-import logo from '@/assets/logo.svg';
+import Footer from './Footer.vue';
+import MenuDrawer from './MenuDrawer.vue';
+import TranslationButton from './TranslationButton.vue';
 
 export default {
   name: 'HomePage',

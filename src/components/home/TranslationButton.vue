@@ -40,8 +40,9 @@
 
 <script>
 import { mapStores } from 'pinia';
-import { useLocaleStore } from '@/stores/locale';
+
 import { LocaleId } from '@/constants/locales';
+import { useLocaleStore } from '@/stores/locale';
 
 export default {
   name: 'TranslationButton',

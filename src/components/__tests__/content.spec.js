@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import Content from '../content/Content.vue';
-import WelcomePage from '../content/WelcomePage.vue';
-import AboutMeSection from '../content/AboutMeSection.vue';
-import ProjectInfoSection from '../content/ProjectInfoSection.vue';
-import ContactMe from '../content/ContactMe.vue';
-import SwaggerDocumentation from '../swaggerDocumentation/SwaggerDocumentation.vue';
 import { APP_BAR_HEIGHT } from '@/constants/layout';
-import { stubBrowserApis, globalMountOptions } from './helpers';
+
+import AboutMeSection from '../content/AboutMeSection.vue';
+import ContactMe from '../content/ContactMe.vue';
+import Content from '../content/Content.vue';
+import ProjectInfoSection from '../content/ProjectInfoSection.vue';
+import WelcomePage from '../content/WelcomePage.vue';
+import SwaggerDocumentation from '../swaggerDocumentation/SwaggerDocumentation.vue';
+import { globalMountOptions,stubBrowserApis } from './helpers';
 
 const mountIt = (Component) =>
   mount(Component, { global: globalMountOptions() });
