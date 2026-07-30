@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
+    "mock-api": "node scripts/mock-api.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",

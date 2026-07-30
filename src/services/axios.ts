@@ -3,6 +3,21 @@ import qs from 'qs';
 
 const DEFAULT_API_URL = 'https://aqra.feit.ukim.edu.mk/api/v1';
 
+/**
+ * The API root this build talks to.
+ *
+ * Exported because the axios instance is not the only consumer: the Swagger tab
+ * embeds `${API_BASE_URL}/apidocs/` in an iframe. That URL used to be hardcoded
+ * to production, so the documentation tab ignored VITE_AQRA_API_URL entirely
+ * and pointed at the live host even when every other request went somewhere
+ * else -- which made it the one tab a local mock server could not serve.
+ *
+ * Vite exposes env vars on import.meta.env, and only those prefixed VITE_.
+ * See .env.example.
+ */
+export const API_BASE_URL: string =
+  import.meta.env.VITE_AQRA_API_URL || DEFAULT_API_URL;
+
 /** Requests are abandoned after this long rather than hanging forever. */
 export const REQUEST_TIMEOUT_MS = 15000;
 
@@ -99,12 +114,9 @@ function toApiError(error: unknown): ApiError {
  * This module used to `export const axios = Axios` and then mutate
  * `Axios.defaults` in place, so its configuration leaked to every other
  * consumer of axios in the process.
- *
- * Vite exposes env vars on import.meta.env, and only those prefixed VITE_.
- * See .env.example.
  */
 export const axios = Axios.create({
-  baseURL: import.meta.env.VITE_AQRA_API_URL || DEFAULT_API_URL,
+  baseURL: API_BASE_URL,
   timeout: REQUEST_TIMEOUT_MS,
   headers: { Accept: '*' },
   paramsSerializer: { serialize: transformRequestOptions },
