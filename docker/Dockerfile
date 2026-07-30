@@ -1,7 +1,7 @@
 # Pinned to an explicit Alpine release rather than the floating `24-alpine`,
 # so a base-image change is a reviewable commit instead of a silent rebuild.
 # Dependabot's docker ecosystem raises the bumps.
-FROM node:24-alpine3.24 AS build-stage
+FROM node:26-alpine3.24 AS build-stage
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
