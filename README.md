@@ -31,6 +31,7 @@ Other scripts:
 | `yarn test:watch` | Run the tests in watch mode |
 | `yarn test:coverage` | Run with coverage; fails below the configured thresholds |
 | `yarn lint` | ESLint over the project |
+| `yarn typecheck` | `vue-tsc --noEmit` over `src/` — not `tsc`, which cannot read `.vue` |
 | `yarn format` | Prettier over the project |
 
 ## Configuration
@@ -98,9 +99,13 @@ npx cap open android   # or: npx cap open ios
 
 ## Contributing
 
-`yarn lint` and `yarn test` must pass. Dependencies are pinned to exact
-versions — no `^` or `~` ranges — and `yarn.lock` is committed, so
+`yarn lint`, `yarn typecheck` and `yarn test` must pass. Dependencies are pinned
+to exact versions — no `^` or `~` ranges — and `yarn.lock` is committed, so
 `yarn install --immutable` must succeed.
+
+The app is TypeScript under `strict`, plus `noUncheckedIndexedAccess` and
+`exactOptionalPropertyTypes`. `allowJs` is off, so a new `.js` file under `src/`
+is a compile error rather than an untyped island.
 
 ## Licence
 

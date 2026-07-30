@@ -10,16 +10,13 @@
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
 
   "compilerOptions": {
-    // --- migration scaffolding, removed in the final step -------------------
+    // The migration is finished, so this is off: there is no .js left under
+    // src/, and leaving it on would silently accept a new one. A .js file added
+    // from here is a compile error, which is the point.
     //
-    // Untouched .js files still need to resolve when a migrated .ts file
-    // imports them. checkJs stays off so a half-migrated tree does not report
-    // thousands of errors in files nobody has converted yet.
-    //
-    // Both of these go away once the last .js is gone; `allowJs: false` is the
-    // definition of "the migration is finished".
-    "allowJs": true,
-    "checkJs": false,
+    // Note this governs src/ only -- the root config files (vite.config.mjs,
+    // eslint.config.mjs) are outside `include` and are not type-checked.
+    "allowJs": false,
 
     // The dom preset sets `types: []` to keep the global scope clean, so every
     // ambient package has to be named explicitly.
