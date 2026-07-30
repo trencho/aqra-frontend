@@ -1,21 +1,23 @@
 import moment from 'moment-timezone';
 
-export class Forecast {
-  /**
-   * Forecast config
-   *
-   * @param {Object}                    config
-   * @param {Array}                     config.position
-   * @param {Array}                     config.data
-   */
+import type { ApiForecast, ApiForecastDatum } from '@/types/api';
+import type { ForecastDatum, Position } from '@/types/domain';
 
-  constructor(config) {
+export interface ForecastConfig {
+  position: Position;
+  data: ForecastDatum[];
+}
+
+export class Forecast {
+  data: ForecastDatum[];
+  position: Position;
+
+  constructor(config: ForecastConfig) {
     this.data = config.data;
     this.position = config.position;
   }
 
-  // Refactor to map API response to Forecast class
-  static fromApi(city) {
+  static fromApi(city?: ApiForecast | null): Forecast | null {
     if (!city) {
       return null;
     }
@@ -31,7 +33,12 @@ export class Forecast {
   }
 }
 
-function mapPosition(latitude, longitude) {
+function mapPosition(
+  latitude?: number | null,
+  longitude?: number | null
+): Position {
+  // Explicit null/undefined checks rather than truthiness: 0,0 is a legitimate
+  // position and a falsy test would discard it. Pinned by a test.
   if (latitude === null || latitude === undefined) {
     return [];
   }
@@ -42,7 +49,7 @@ function mapPosition(latitude, longitude) {
   return [latitude.toString(), longitude.toString()];
 }
 
-function mapData(data) {
+function mapData(data?: ApiForecastDatum[] | null): ForecastDatum[] {
   if (!data) {
     return [];
   }

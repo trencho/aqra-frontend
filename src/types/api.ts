@@ -57,7 +57,9 @@ export interface ApiSensor {
  * given sensor reports, and adds new ones without notice.
  */
 export interface ApiForecastDatum {
-  time?: number;
+  /** Unix seconds. Required: the guard in the mapper is on `data` being absent
+   *  entirely, never on an individual row lacking its timestamp. */
+  time: number;
   [pollutant: string]: number | undefined;
 }
 

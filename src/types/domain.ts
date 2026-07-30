@@ -59,8 +59,26 @@ export type Position = Array<string | undefined>;
  * seconds that ApiForecastDatum carries -- that substitution is the whole job
  * of Forecast.fromApi's mapData.
  */
-export interface ForecastDatum extends Partial<Record<PollutantKey, number>> {
+export interface ForecastDatum {
   time: string;
+  /**
+   * Pollutant readings, as an open index rather than
+   * `Partial<Record<PollutantKey, number>>`.
+   *
+   * Two reasons. The API returns whichever pollutants a given sensor reports
+   * and adds new ones without notice, so a closed record would be a lie. And
+   * under exactOptionalPropertyTypes a closed `aqi?: number` is not assignable
+   * from the spread in Forecast.fromApi's mapData, whose source index signature
+   * includes `undefined`.
+   *
+   * `string` is in the union because `time` above is a string and an index
+   * signature has to cover every property of the interface.
+   *
+   * The cost is that consumers reading a pollutant get a widened type and have
+   * to narrow to number -- which createMap has to do anyway, since Leaflet
+   * needs numbers.
+   */
+  [pollutant: string]: number | string | undefined;
 }
 
 /** An option in one of the filter selects. */
