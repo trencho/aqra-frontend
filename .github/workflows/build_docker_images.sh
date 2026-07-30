@@ -15,6 +15,7 @@ if [[ -f "${SOURCE_DIR_SHA_FILE}" ]] && [[ "$(cat "${SOURCE_DIR_SHA_FILE}")" == 
 fi
 
 echo "Changes detected. Building Docker images..."
-docker-compose -f "${SOURCE_DIR}/docker/docker-compose.yml" build
+# `docker compose` (v2 plugin), not the removed standalone `docker-compose` v1.
+docker compose -f "${SOURCE_DIR}/docker/docker-compose.yml" build
 
 echo "${current_sha}" > "${SOURCE_DIR_SHA_FILE}"
