@@ -89,3 +89,27 @@ spec:
             capabilities:
               drop:
                 - ALL
+              # Dropping ALL alone makes nginx fail to start:
+              #
+              #   [emerg] chown("/var/cache/nginx/client_temp", 101) failed
+              #           (1: Operation not permitted)
+              #
+              # docker/nginx.conf sets `user nginx`, so the master process --
+              # which runs as root -- chowns its temp directories to uid 101 at
+              # startup and forks workers as that user. Dropping ALL takes
+              # CAP_CHOWN away, and also strips root's ability to bind a port
+              # below 1024, so the listen on :80 would fail next.
+              #
+              # These four are the minimum that startup path needs. Nothing is
+              # added speculatively: each was traced to a specific syscall.
+              #
+              # This could not have been caught before 2026-07-31. The node
+              # could never pull this image -- it sat in ErrImageNeverPull for
+              # months because the build wrote to Docker's store while kubelet
+              # read containerd's -- so the securityContext had never once been
+              # exercised. The first successful pull was the first real test.
+              add:
+                - CHOWN
+                - SETUID
+                - SETGID
+                - NET_BIND_SERVICE
