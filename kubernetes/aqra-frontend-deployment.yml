@@ -34,10 +34,22 @@ spec:
             # VITE_-prefixed, so none reaches the browser bundle.
             - secretRef:
                 name: vue-secret
-          image: aqra-frontend
-          # Built on the node by build_docker_images.sh rather than pulled, so
-          # the renamed image must exist there before this rolls out.
-          imagePullPolicy: Never
+          image: ghcr.io/trencho/aqra-frontend:latest
+          # Pulled from GHCR, built by the build-and-push job in
+          # .github/workflows/build-deploy.yml.
+          #
+          # This was `image: aqra-frontend` with `imagePullPolicy: Never`,
+          # built on the node. That broke silently when the node moved to
+          # containerd: `docker build` writes to Docker's image store and
+          # kubelet reads containerd's. Every workload in this namespace sat in
+          # ErrImageNeverPull for months because of it.
+          #
+          # Always, not IfNotPresent, because the tag is mutable: reload_pods.sh
+          # triggers a rollout restart, and without Always a node holding an
+          # older :latest would happily reuse it and the deploy would be a
+          # no-op. The commit-SHA tag pushed alongside :latest is what to pin
+          # here if an immutable reference is ever wanted.
+          imagePullPolicy: Always
           name: aqra-frontend
           ports:
             - containerPort: 80

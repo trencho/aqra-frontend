@@ -41,13 +41,68 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # The image is built HERE, on the runner, and pushed to GHCR -- not on the
+  # deploy host.
+  #
+  # It used to be built on the node with `docker compose build` and consumed
+  # with `imagePullPolicy: Never`. That silently stopped working when the node
+  # moved to containerd: `docker build` writes to Docker's image store, kubelet
+  # reads containerd's, and the two are separate. Every workload on that node
+  # sat in ErrImageNeverPull for months as a result, with `docker images`
+  # cheerfully listing images the cluster could not see.
+  #
+  # Building here and pulling from a registry removes the whole class of
+  # problem: there is no node-local image store to go stale, and a prune, an
+  # image GC or another runtime switch can no longer strand the deployment.
+  # The node does not need Docker at all any more.
+  build-and-push:
+    name: Build and push the image
     runs-on: ubuntu-latest
     # workflow_run fires on failure too, so the conclusion must be checked
     # explicitly or a red CI run would still deploy.
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
+
+    permissions:
+      contents: read
+      # Required to push to GHCR. Deliberately scoped to this job rather than
+      # granted workflow-wide.
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3.11.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Two tags: :latest for the Deployment to track, and the commit SHA so a
+      # specific build can be identified and rolled back to.
+      - name: Build and push
+        uses: docker/build-push-action@v6.18.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          build-args: NODE_ENV=production
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    # Nothing is deployed unless an image was actually published.
+    needs: build-and-push
 
     steps:
       - name: Checkout
@@ -117,7 +172,8 @@ jobs:
             find .github/workflows -type f -name "*.sh" -exec chmod +x {} +
 
             echo "Executing deployment scripts..."
-            .github/workflows/build_docker_images.sh
+            # No build step here any more -- the image was built and pushed by
+            # the build-and-push job above, and the node pulls it from GHCR.
             .github/workflows/deploy_kubernetes_resources.sh
 
             echo "Restarting Kubernetes Deployments..."
