@@ -2,9 +2,15 @@ import type { LocaleId } from './locales';
 
 /**
  * One locale's messages. Flat under `common` -- there is only one namespace.
+ *
+ * The index signature is required, not decorative: vue-i18n's LocaleMessage is
+ * an indexable type, and without it createI18n's overload resolution fails on
+ * `messages` and then silently falls back to the legacy (non-Composition)
+ * signature, which reports `i18n.global.locale` as a plain string.
  */
 interface Messages {
   common: Record<string, string>;
+  [namespace: string]: Record<string, string>;
 }
 
 /**

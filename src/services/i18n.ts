@@ -1,6 +1,7 @@
 import { createI18n } from 'vue-i18n';
 
-import { LocaleId } from '@/constants/locales';
+import type { LocaleId } from '@/constants/locales';
+import { LocaleId as Locales } from '@/constants/locales';
 import { translations } from '@/constants/translations';
 
 export const i18n = createI18n({
@@ -8,8 +9,8 @@ export const i18n = createI18n({
   // which every component here already uses.
   legacy: false,
   globalInjection: true,
-  locale: LocaleId.en,
-  fallbackLocale: LocaleId.en,
+  locale: Locales.en,
+  fallbackLocale: Locales.en,
   messages: translations,
 });
 
@@ -20,6 +21,6 @@ export const i18n = createI18n({
  * `legacy: false` the locale lives on `i18n.global.locale`, which is a ref --
  * assigning to the object itself silently does nothing.
  */
-export function setI18nLocale(localeId) {
+export function setI18nLocale(localeId: LocaleId): void {
   i18n.global.locale.value = localeId;
 }
