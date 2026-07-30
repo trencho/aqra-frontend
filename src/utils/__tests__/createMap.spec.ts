@@ -118,20 +118,17 @@ describe('mapSensorsInCities', () => {
     expect(layerOf(at(markers, 0)).bindPopup).toHaveBeenCalledWith('Centar');
   });
 
-  // CHARACTERIZATION -- mapCities guards its argument with `(cities || [])`;
-  // this function does not guard `c.sensors`, so a city whose sensors have not
-  // been loaded yet throws. Enabling the sensor-markers toggle before sensors
-  // resolve hits exactly this.
-  //
-  // The cast is part of the characterization now: the parameter type requires
-  // `sensors`, so `{}` is deliberately not a valid argument, and this test
-  // asserts what the code does when handed one regardless.
-  it('currently THROWS for a city with no sensors loaded (known gap)', () => {
-    expect(() =>
-      mapSensorsInCities(asMap(map()), [
-        {} as { sensors: Record<string, { position: Position }> },
-      ])
-    ).toThrow(TypeError);
+  // This used to throw a TypeError, which the sensor-markers toggle reached
+  // whenever it was flipped before the sensor fetches resolved. `sensors` is
+  // optional on City, so `{}` is now a legal argument and needs no cast.
+  it('skips a city whose sensors have not loaded yet', () => {
+    const markers = mapSensorsInCities(asMap(map()), [
+      {},
+      { sensors: { a: { position: ['1', '2'], description: 'Centar' } } },
+    ]);
+
+    expect(markers).toHaveLength(1);
+    expect(layerOf(at(markers, 0)).bindPopup).toHaveBeenCalledWith('Centar');
   });
 });
 
@@ -222,11 +219,11 @@ describe('createHeatLayers (all cities)', () => {
     expect(points).toHaveLength(1);
   });
 
-  // CHARACTERIZATION -- createHeatLayer divides by PollutantRatio, these two do
-  // not. The same reading therefore produces a different heat intensity
-  // depending on which toggle is active, so the single-sensor and all-cities
-  // views are not on the same scale.
-  it('currently does NOT normalise by the pollutant ratio (inconsistent)', () => {
+  // All three layer factories are on one scale now. This one used to pass the
+  // raw reading through, so a pm10 value of 60 rendered as intensity 60 --
+  // sixty times the gradient's 1.0 ceiling, i.e. solid red -- while the
+  // single-sensor view rendered the same 60 as 0.05.
+  it('normalises by the pollutant ratio, as the single-sensor layer does', () => {
     createHeatLayers(asMap(map()), {
       cities: [{ forecast: forecast(60) }],
       pollutant: 'pm10',
@@ -237,8 +234,7 @@ describe('createHeatLayers (all cities)', () => {
     const [points] = at(L.heatLayer.mock.calls, 0);
     const [, , intensity] = at(points as Array<[string, string, number]>, 0);
 
-    expect(intensity).toBe(60);
-    expect(intensity).not.toBe(60 / PollutantRatio.pm10);
+    expect(intensity).toBe(60 / PollutantRatio.pm10);
   });
 });
 
@@ -275,5 +271,20 @@ describe('createSensorHeatLayers (all sensors)', () => {
 
     const [points] = at(L.heatLayer.mock.calls, 0);
     expect(points).toHaveLength(1);
+  });
+
+  // The other two tests here assert only how many points come out, which is why
+  // this factory silently kept the raw-reading scale while createHeatLayer used
+  // the normalised one. Assert the intensity, so a third scale cannot appear.
+  it('normalises by the pollutant ratio, like the other layer factories', () => {
+    createSensorHeatLayers(asMap(map()), {
+      cities: [{ sensors: { a: { forecast: forecast(60) } } }],
+      pollutant: 'pm10',
+    });
+
+    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [, , intensity] = at(points as Array<[string, string, number]>, 0);
+
+    expect(intensity).toBe(60 / PollutantRatio.pm10);
   });
 });

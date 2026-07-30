@@ -160,13 +160,4 @@ export type FilterValue = string | readonly string[] | boolean | null;
 export interface SetValueConfig {
   input: FilterInputLike;
   value: FilterValue;
-  /**
-   * Passed as `true` by the Statistics pollutant select and **read by nothing**.
-   * `setValue` switches on `input.id` and never looks at this flag.
-   *
-   * Declared rather than removed: deleting it from the one template that sets it
-   * is a change to a component, and the point of this step is typing. It is a
-   * dead payload field and is on the follow-up list.
-   */
-  isStatistics?: boolean | undefined;
 }

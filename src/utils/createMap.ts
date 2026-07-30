@@ -71,23 +71,22 @@ function asHeatPoint(position: Position, intensity: number): HeatLatLngTuple {
 }
 
 /**
- * Note the unguarded `c.sensors`.
+ * `sensors` is optional in the parameter type because it is optional on City,
+ * and a city whose sensors have not loaded yet is a state the app reaches: the
+ * sensor-markers toggle can be flipped before the fetches resolve.
  *
- * mapCities below guards its argument with `(cities || [])`; this does not, so a
- * city whose sensors have not loaded yet throws a TypeError. That is a real gap
- * -- enabling the sensor-markers toggle before sensors resolve hits it -- but it
- * is pinned by a characterization test
- * (`currently THROWS for a city with no sensors loaded (known gap)`), so adding
- * a guard here would be a behaviour change and would fail that test. Left as
- * is; fixing it means changing the test too, which is its own piece of work.
+ * This used to dereference `c.sensors` unguarded and throw a TypeError on
+ * exactly that path, one line away from mapCities' `(cities || [])`. Skipping
+ * such a city matches what every other helper in this module does with absent
+ * input, and the markers appear on the next render once the sensors arrive.
  */
 export function mapSensorsInCities(
   map: LeafletMap,
-  cities: Array<{ sensors: Record<string, SensorMarkerSource> }>
+  cities: Array<{ sensors?: Record<string, SensorMarkerSource> | undefined }>
 ): Marker[] {
   const markers: Marker[] = [];
   cities.forEach((c) =>
-    Object.values(c.sensors).forEach((s) => {
+    Object.values(c.sensors ?? {}).forEach((s) => {
       const marker = L.marker(asLatLng(s.position)).addTo(map);
       // `as string` because description is optional on a Sensor and Leaflet's
       // bindPopup does not accept undefined. Passing it through unchanged is
@@ -205,10 +204,14 @@ interface CreateHeatLayersOptions {
 }
 
 /**
- * Note this does NOT divide by PollutantRatio, where createHeatLayer above
- * does. The same reading therefore renders at a different intensity depending
- * on which toggle is active. That inconsistency is pre-existing and pinned by a
- * characterization test; it is not corrected here.
+ * Divides by PollutantRatio, as createHeatLayer above does.
+ *
+ * It used to pass the raw reading straight through, so the same measurement
+ * rendered at wildly different intensities depending on which toggle was
+ * active: a pm10 reading of 60 is an intensity of 0.05 through createHeatLayer
+ * and 60 -- far past the gradient's 1.0 ceiling, i.e. solid red -- through this
+ * one. Two views of the same data disagreeing about what counts as bad is worse
+ * than either scale being wrong.
  */
 export function createHeatLayers(
   map: LeafletMap,
@@ -218,7 +221,10 @@ export function createHeatLayers(
     .map((c) => {
       const reading = c.forecast?.data[time]?.[pollutant];
       return reading
-        ? asHeatPoint(c.forecast!.position, reading as number)
+        ? asHeatPoint(
+            c.forecast!.position,
+            (reading as number) / PollutantRatio[pollutant]
+          )
         : null;
     })
     // A narrowing predicate rather than `.filter((i) => i)`: same runtime
@@ -240,6 +246,7 @@ interface CreateSensorHeatLayersOptions {
   time?: number;
 }
 
+/** Divides by PollutantRatio, for the reason given on createHeatLayers above. */
 export function createSensorHeatLayers(
   map: LeafletMap,
   { cities, pollutant, time = 0 }: CreateSensorHeatLayersOptions
@@ -250,7 +257,10 @@ export function createSensorHeatLayers(
         .map((s) => {
           const reading = s.forecast?.data[time]?.[pollutant];
           return reading
-            ? asHeatPoint(s.forecast!.position, reading as number)
+            ? asHeatPoint(
+                s.forecast!.position,
+                (reading as number) / PollutantRatio[pollutant]
+              )
             : null;
         })
         .filter((p): p is HeatLatLngTuple => p !== null)

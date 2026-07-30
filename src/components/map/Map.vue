@@ -55,7 +55,6 @@ import L from 'leaflet';
 import { mapStores } from 'pinia';
 import { defineComponent } from 'vue';
 
-import type { City } from '@/classes/city';
 import { CreateLayer, Layers } from '@/constants/layers';
 import { belowAppBar } from '@/constants/layout';
 import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
@@ -277,16 +276,11 @@ export default defineComponent({
       await this.store.setValue(config);
 
       if (config.value) {
-        // Cast because City.sensors is optional but mapSensorsInCities requires
-        // it -- which is the known gap that function documents: a city whose
-        // sensors have not loaded yet throws, and a characterization test pins
-        // that. The cast preserves it rather than hiding it behind a guard.
-        this.sensorMarkers = mapSensorsInCities(
-          asMap(this.map),
-          this.allCities as Array<
-            City & { sensors: NonNullable<City['sensors']> }
-          >
-        );
+        // No cast needed: mapSensorsInCities takes `sensors` as optional, which
+        // is what it is on City, and skips a city whose sensors have not loaded
+        // yet. This used to assert the field present to preserve a TypeError on
+        // exactly the path this toggle reaches.
+        this.sensorMarkers = mapSensorsInCities(asMap(this.map), this.allCities);
       } else {
         this.sensorMarkers = removeLayer(asMap(this.map), this.sensorMarkers);
       }

@@ -42,7 +42,6 @@
         store.setValue({
           input: store.pollutantInput,
           value: $event,
-          isStatistics: true,
         })
       "
     />

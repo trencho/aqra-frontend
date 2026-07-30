@@ -11,14 +11,17 @@
  * with bare object literals, and rejected promises can carry anything at all.
  */
 /**
- * Faithful to the `cause?.message ?? fallback` this replaces, which means an
- * empty-string message is returned as-is rather than falling back. That renders
- * as a blank error banner, which is a pre-existing wart -- but changing it here
- * would be an unrequested behaviour change during a type migration. Recorded as
- * a follow-up instead.
+ * An empty message falls back.
+ *
+ * It used to be returned as-is, faithful to the `cause?.message ?? fallback`
+ * this replaced. But the store assigns the result to `error`, and `hasError` is
+ * `error !== null` -- so an empty message opened the snackbar with nothing in
+ * it: a red bar, a dismiss button, and no indication of what went wrong. A
+ * fallback exists precisely for "there is no usable message here", and an empty
+ * string is that case.
  */
 export function errorMessage(error: unknown, fallback: string): string {
   const message = (error as { message?: unknown } | null | undefined)?.message;
 
-  return typeof message === 'string' ? message : fallback;
+  return typeof message === 'string' && message !== '' ? message : fallback;
 }
