@@ -9,7 +9,11 @@ jobs:
   auto-merge:
     name: Auto-merge patch and minor updates
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    # Gate on the PR's author, not on github.actor. github.actor is whoever
+    # triggered the run, so it flips to a human's name the moment anyone
+    # pushes to or reruns the branch -- and the job then silently stops
+    # gating anything. The PR author is stable for the life of the PR.
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
 
     permissions:
       contents: write
@@ -28,8 +32,15 @@ jobs:
       # manager, and Vuetify 2 -> 4 rewrote most of the component API.
       #
       # `gh pr merge --auto` queues the merge; it lands only once every
-      # required check passes. Since master deploys to production after CI,
-      # nothing merges here that has not built, linted and tested green.
+      # required check passes. That gate is real only because master carries a
+      # ruleset requiring CI's "Lint, test and build" job -- without required
+      # checks, --auto merges immediately and gates nothing. The security scan
+      # is deliberately NOT required: a newly published advisory against an
+      # unchanged lockfile would otherwise block every routine bump.
+      #
+      # Auto-merge also needs `allow_auto_merge` on the repo, which is only
+      # available on public or Pro repos. This workflow existed for a day
+      # against a free private repo, where the step could not have worked.
       - name: Enable auto-merge
         if: >-
           steps.metadata.outputs.update-type ==
