@@ -9,7 +9,10 @@ const { setI18nLocale } = await import('@/services/i18n');
 const { useLocaleStore } = await import('../locale');
 const { LocaleId } = await import('@/constants/locales');
 
-let store;
+// ReturnType<typeof useLocaleStore> rather than `any`: this is what makes
+// `store.locale` and `store.setLocale` checked, so a renamed action or a locale
+// typed wrongly fails here instead of at runtime.
+let store: ReturnType<typeof useLocaleStore>;
 
 beforeEach(() => {
   setActivePinia(createPinia());

@@ -1,7 +1,9 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { at } from '@/__tests__/support/expect';
 import { PollutantsLabels } from '@/constants/pollutants';
 
+import type { HistoryBySensorId } from '../createStatistics';
 import {
   chartConfig,
   mapHistoryToSeries,
@@ -9,7 +11,10 @@ import {
   seriesColor,
 } from '../createStatistics';
 
-const historyData = {
+// Typed, so the fixture is checked against the shape the function declares --
+// which is how the `[]`-vs-`{}` default bug that this conversion fixed became
+// visible in the first place.
+const historyData: HistoryBySensorId = {
   'sensor-1': {
     data: [
       { time: '15/01/2024 10:30', pm10: 42, pm2_5: 21 },
@@ -18,12 +23,19 @@ const historyData = {
   },
 };
 
-const series = (selectedPollutants) =>
+// `string[] | null` and not PollutantKey[]: one test deliberately passes
+// 'not-a-pollutant' to assert it yields an undefined label, and another passes
+// null to assert it is treated as empty rather than throwing.
+const series = (selectedPollutants: string[] | null) =>
   mapHistoryToSeries({
     sensorId: 'sensor-1',
     historyData,
     selectedPollutants,
   });
+
+/** The nth series, failing clearly if the call produced fewer than expected. */
+const seriesAt = (selectedPollutants: string[] | null, index: number) =>
+  at(series(selectedPollutants), index);
 
 describe('mapHistoryToSeries', () => {
   it('produces one series per selected pollutant', () => {
@@ -31,26 +43,23 @@ describe('mapHistoryToSeries', () => {
   });
 
   it('labels each series with its human-readable pollutant name', () => {
-    const [pm10, pm25] = series(['pm10', 'pm2_5']);
-
-    expect(pm10.label).toBe('PM10');
-    expect(pm25.label).toBe('PM2.5');
+    expect(seriesAt(['pm10', 'pm2_5'], 0).label).toBe('PM10');
+    expect(seriesAt(['pm10', 'pm2_5'], 1).label).toBe('PM2.5');
   });
 
   it('extracts the readings for the requested pollutant only', () => {
-    const [pm10] = series(['pm10']);
-
-    expect(pm10.data).toEqual([42, 45]);
+    expect(seriesAt(['pm10'], 0).data).toEqual([42, 45]);
   });
 
   it('carries the timestamps alongside the readings', () => {
-    const [pm10] = series(['pm10']);
-
-    expect(pm10.time).toEqual(['15/01/2024 10:30', '15/01/2024 11:30']);
+    expect(seriesAt(['pm10'], 0).time).toEqual([
+      '15/01/2024 10:30',
+      '15/01/2024 11:30',
+    ]);
   });
 
   it('disables area fill', () => {
-    expect(series(['pm10'])[0].fill).toBe(false);
+    expect(seriesAt(['pm10'], 0).fill).toBe(false);
   });
 
   it('returns no series when nothing is selected', () => {
@@ -62,18 +71,21 @@ describe('mapHistoryToSeries', () => {
   });
 
   it('yields undefined data for a sensor with no history, without throwing', () => {
-    const [pm10] = mapHistoryToSeries({
-      sensorId: 'unknown-sensor',
-      historyData,
-      selectedPollutants: ['pm10'],
-    });
+    const pm10 = at(
+      mapHistoryToSeries({
+        sensorId: 'unknown-sensor',
+        historyData,
+        selectedPollutants: ['pm10'],
+      }),
+      0
+    );
 
     expect(pm10.data).toBeUndefined();
     expect(pm10.time).toBeUndefined();
   });
 
   it('gives an unrecognised pollutant an undefined label', () => {
-    expect(series(['not-a-pollutant'])[0].label).toBeUndefined();
+    expect(seriesAt(['not-a-pollutant'], 0).label).toBeUndefined();
   });
 
   // Regression guards. Colours used to come from
@@ -82,7 +94,7 @@ describe('mapHistoryToSeries', () => {
   // a hex string shorter than six digits -- not a valid CSS colour.
   it('assigns a stable colour for a given series position', () => {
     const colours = new Set(
-      Array.from({ length: 40 }, () => series(['pm10'])[0].borderColor)
+      Array.from({ length: 40 }, () => seriesAt(['pm10'], 0).borderColor)
     );
 
     expect(colours.size).toBe(1);
@@ -110,7 +122,7 @@ describe('mapHistoryToSeries', () => {
 
     const colours = series(many).map((s) => s.borderColor);
 
-    expect(colours[SERIES_COLORS.length]).toBe(colours[0]);
+    expect(at(colours, SERIES_COLORS.length)).toBe(at(colours, 0));
     expect(colours.every(Boolean)).toBe(true);
   });
 
@@ -119,21 +131,18 @@ describe('mapHistoryToSeries', () => {
   // this used to throw. Only the Show button's :disabled attribute kept it
   // unreachable in the UI.
   it('treats a null pollutant selection as empty rather than throwing', () => {
-    expect(
-      mapHistoryToSeries({
-        sensorId: 'sensor-1',
-        historyData,
-        selectedPollutants: null,
-      })
-    ).toEqual([]);
+    expect(series(null)).toEqual([]);
   });
 
   it('treats null historyData as empty rather than throwing', () => {
-    const [pm10] = mapHistoryToSeries({
-      sensorId: 'sensor-1',
-      historyData: null,
-      selectedPollutants: ['pm10'],
-    });
+    const pm10 = at(
+      mapHistoryToSeries({
+        sensorId: 'sensor-1',
+        historyData: null,
+        selectedPollutants: ['pm10'],
+      }),
+      0
+    );
 
     expect(pm10.data).toBeUndefined();
   });

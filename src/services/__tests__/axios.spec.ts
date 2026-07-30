@@ -1,4 +1,7 @@
-import { describe, expect,it } from 'vitest';
+import type { AxiosResponse } from 'axios';
+import { describe, expect, it } from 'vitest';
+
+import { at } from '@/__tests__/support/expect';
 
 import {
   ApiError,
@@ -6,6 +9,26 @@ import {
   REQUEST_TIMEOUT_MS,
   transformRequestOptions,
 } from '../axios';
+
+/**
+ * The interceptor handler pair, which axios does not expose in its public types.
+ *
+ * These tests deliberately reach for `interceptors.response.handlers` so the
+ * error-mapping logic can be exercised without issuing a real request. That is
+ * an internal, so it needs a local declaration -- written out rather than cast
+ * to `any`, so the handlers' own arguments and return values stay checked.
+ */
+interface ResponseHandler {
+  fulfilled: (response: AxiosResponse) => AxiosResponse;
+  rejected: (error: unknown) => Promise<never>;
+}
+
+const responseHandlers = () =>
+  (
+    axios.interceptors.response as unknown as {
+      handlers: ResponseHandler[];
+    }
+  ).handlers;
 
 describe('transformRequestOptions', () => {
   it('serializes a flat object as key=value pairs', () => {
@@ -49,9 +72,13 @@ describe('the axios instance', () => {
   });
 
   it('wires transformRequestOptions in as the params serializer', () => {
-    expect(axios.defaults.paramsSerializer.serialize).toBe(
-      transformRequestOptions
-    );
+    // paramsSerializer is declared as a union of the options object and a bare
+    // function, so `.serialize` needs the object arm named explicitly.
+    const serializer = axios.defaults.paramsSerializer as {
+      serialize?: unknown;
+    };
+
+    expect(serializer.serialize).toBe(transformRequestOptions);
   });
 
   it('accepts any content type', () => {
@@ -76,23 +103,26 @@ describe('the axios instance', () => {
   });
 
   it('no longer carries the lodash.set monkey-patch', () => {
-    expect(axios.set).toBeUndefined();
+    // `set` is not on AxiosInstance -- which is the point of the test: it was a
+    // monkey-patch this module used to add. Asserting its absence needs the
+    // wider view.
+    expect((axios as unknown as Record<string, unknown>).set).toBeUndefined();
   });
 
   it('installs a response interceptor', () => {
-    expect(axios.interceptors.response.handlers.length).toBeGreaterThan(0);
+    expect(responseHandlers().length).toBeGreaterThan(0);
   });
 });
 
 describe('the response interceptor', () => {
   // Reach the handlers the interceptor registered, so the error-mapping logic
   // is exercised without issuing a real request.
-  const handlers = () => axios.interceptors.response.handlers[0];
+  const handlers = () => at(responseHandlers(), 0);
 
-  const reject = (error) => handlers().rejected(error);
+  const reject = (error: unknown) => handlers().rejected(error);
 
   it('passes a successful response straight through', () => {
-    const response = { status: 200, data: { ok: true } };
+    const response = { status: 200, data: { ok: true } } as AxiosResponse;
 
     expect(handlers().fulfilled(response)).toBe(response);
   });
