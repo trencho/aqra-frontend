@@ -12,7 +12,10 @@ services:
     env_file:
       - path: .env
         required: false
-    image: aqra-frontend:latest
+    # Matches what CI publishes, so a local `docker compose build` produces an
+    # image tagged identically to the deployed one. The deploy no longer uses
+    # this file -- it is for local runs only.
+    image: ghcr.io/trencho/aqra-frontend:latest
     networks:
       - network
     ports:

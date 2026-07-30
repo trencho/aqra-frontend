@@ -18,13 +18,21 @@ old `vue`-named objects, and **nothing in the deploy pipeline removes them** —
 a Deployment's `selector` is immutable, so this is a delete-and-recreate, not a
 rolling update. Do this once, by hand, in a window where someone can watch.
 
-1. **Build the renamed image on the node first.** The Deployment sets
-   `imagePullPolicy: Never`, so if `aqra-frontend:latest` is not already in the
-   node's local Docker it will never start.
+1. **Make sure the image has been published.** The Deployment pulls
+   `ghcr.io/trencho/aqra-frontend:latest`, built and pushed by the
+   `build-and-push` job in `.github/workflows/build-deploy.yml`. Nothing is
+   built on the node any more.
+
+   Confirm the package exists and is **public** — a private GHCR package makes
+   the node's pull fail with `401 Unauthorized`, and the pod never starts:
 
    ```
-   docker compose -f docker/docker-compose.yml build
+   docker pull ghcr.io/trencho/aqra-frontend:latest    # from anywhere, unauthenticated
    ```
+
+   If that fails, either flip the package to public under
+   *Packages → aqra-frontend → Package settings → Change visibility*, or add an
+   `imagePullSecret` (see below).
 
 2. **Remove the old objects.** The old Service selects
    `io.kompose.service: vue`, which the new pods do not carry, so leaving it in
@@ -44,6 +52,36 @@ rolling update. Do this once, by hand, in a window where someone can watch.
    ```
 
 The SealedSecret is *not* part of this rename — see the note above.
+
+### If the GHCR package must stay private
+
+Public is simpler and appropriate here — the image is a static Vue build plus
+nginx, and the repository is already public. If it is kept private, the node
+needs credentials:
+
+```
+kubectl create secret docker-registry ghcr \
+  --docker-server=ghcr.io \
+  --docker-username=<github-username> \
+  --docker-password=<PAT with read:packages> \
+  -n aqra
+```
+
+and the Deployment's pod spec needs `imagePullSecrets: [{name: ghcr}]`. That is
+a credential to rotate and a manifest change, which is why public is preferred.
+
+### Why the image is pulled rather than built on the node
+
+The node runs **containerd**, not Docker. `docker build` writes to Docker's
+image store; kubelet reads containerd's. They are separate, so an image built
+on the node with `docker compose build` is invisible to the cluster —
+`docker images` lists it while the pod sits in `ErrImageNeverPull`. Every
+workload in this namespace was stranded that way for months.
+
+Pulling from a registry removes the failure mode entirely: there is no
+node-local store to go stale, and neither a prune, an image GC, nor another
+runtime switch can strand the deployment again. Do not reintroduce
+`imagePullPolicy: Never`.
 
 ###### Apply sealed secrets controller and generate sealed secrets from existing secrets
 

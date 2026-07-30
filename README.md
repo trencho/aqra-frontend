@@ -69,6 +69,9 @@ The image is a multi-stage build: Node compiles the bundle, nginx serves it.
 `docker/nginx.conf` carries the SPA fallback so deep links survive a refresh.
 See [docker/README.md](docker/README.md) for more.
 
+These commands are for running locally. Deployments use the image CI publishes
+to GHCR, not a locally-built one.
+
 ## Kubernetes
 
 Manifests live in `kubernetes/`, targeting the `aqra` namespace:
@@ -77,8 +80,8 @@ Manifests live in `kubernetes/`, targeting the `aqra` namespace:
 kubectl kustomize kubernetes/ | kubectl apply -f -
 ```
 
-The Deployment uses `imagePullPolicy: Never`, so the image must be built on the
-node itself rather than pulled from a registry. See
+The Deployment pulls `ghcr.io/trencho/aqra-frontend:latest`, built and pushed by
+CI — nothing is built on the node. See
 [kubernetes/README.md](kubernetes/README.md).
 
 ## Mobile
