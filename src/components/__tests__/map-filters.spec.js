@@ -6,13 +6,13 @@
  * `@change` -> `@update:model-value`, and `item-text` -> `item-title` all fail
  * SILENTLY. The component still renders; it just stops emitting.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import Filters from '../map/Filters.vue';
 import InputFilters from '../map/InputFilters.vue';
 import SliderFilter from '../map/SliderFilter.vue';
-import Filters from '../map/Filters.vue';
-import { stubBrowserApis, globalMountOptions } from './helpers';
+import { globalMountOptions,stubBrowserApis } from './helpers';
 
 const inputState = {
   airPollution: {

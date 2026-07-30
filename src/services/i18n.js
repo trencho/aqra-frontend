@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n';
+
 import { LocaleId } from '@/constants/locales';
 import { translations } from '@/constants/translations';
 

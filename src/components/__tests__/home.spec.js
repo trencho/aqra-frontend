@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { beforeEach,describe, expect, it } from 'vitest';
 
-import MenuDrawer from '../home/MenuDrawer.vue';
-import TranslationButton from '../home/TranslationButton.vue';
-import Footer from '../home/Footer.vue';
-import { TabIds } from '@/constants/navigationTabs';
 import { LocaleId } from '@/constants/locales';
+import { TabIds } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
 import { useLocaleStore } from '@/stores/locale';
-import { stubBrowserApis, globalMountOptions, mountInApp } from './helpers';
+
+import Footer from '../home/Footer.vue';
+import MenuDrawer from '../home/MenuDrawer.vue';
+import TranslationButton from '../home/TranslationButton.vue';
+import { globalMountOptions, mountInApp,stubBrowserApis } from './helpers';
 
 beforeEach(() => {
   stubBrowserApis();

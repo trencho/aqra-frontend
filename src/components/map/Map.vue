@@ -44,16 +44,13 @@
 </template>
 
 <script>
+import L from 'leaflet';
 import { mapStores } from 'pinia';
 
-import L from 'leaflet';
-
-import Filters from './Filters.vue';
-
-import { useAirPollutionStore } from '@/stores/airPollution';
-import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
-import { belowAppBar } from '@/constants/layout';
 import { CreateLayer, Layers } from '@/constants/layers';
+import { belowAppBar } from '@/constants/layout';
+import { MACEDONIA_COORDINATES, MIN_ZOOM } from '@/constants/map';
+import { useAirPollutionStore } from '@/stores/airPollution';
 import {
   createBaseLayer,
   createCityBoundaries,
@@ -61,6 +58,8 @@ import {
   mapSensorsInCities,
   removeLayer,
 } from '@/utils/createMap';
+
+import Filters from './Filters.vue';
 
 export default {
   name: 'Map',

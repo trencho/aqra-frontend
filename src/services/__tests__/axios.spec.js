@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import {
-  transformRequestOptions,
-  axios,
   ApiError,
+  axios,
   REQUEST_TIMEOUT_MS,
+  transformRequestOptions,
 } from '../axios';
 
 describe('transformRequestOptions', () => {

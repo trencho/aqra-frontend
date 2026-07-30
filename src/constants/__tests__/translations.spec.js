@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
-import { translations } from '../translations';
 import { LocaleId } from '../locales';
+import { translations } from '../translations';
 
 const makeI18n = (locale) =>
   createI18n({
