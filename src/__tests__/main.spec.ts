@@ -17,6 +17,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { present } from '@/__tests__/support/expect';
 import { stubBrowserApis } from '@/components/__tests__/helpers';
 
 // Leaflet needs real layout, which jsdom has none of.
@@ -45,7 +46,7 @@ describe('main.js', () => {
   it('evaluates and mounts the app into #app', async () => {
     await expect(import('@/main.ts')).resolves.toBeDefined();
 
-    expect(document.querySelector('#app').innerHTML).not.toBe('');
+    expect(present(document.querySelector('#app')).innerHTML).not.toBe('');
   });
 
   it('loads leaflet.heat after Leaflet, so L.heatLayer is registered', async () => {

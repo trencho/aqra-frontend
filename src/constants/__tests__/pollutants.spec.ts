@@ -1,12 +1,17 @@
 import { describe, expect,it } from 'vitest';
 
+import type { PollutantKey } from '@/types/domain';
+
 import {
   PollutantRatio,
   Pollutants,
   PollutantsLabels,
 } from '../pollutants';
 
-const POLLUTANT_KEYS = [
+// Typed as PollutantKey[] so this list is itself checked against the union in
+// src/types/domain.ts -- a pollutant added to the union but not to this list, or
+// a typo here, is now a compile error rather than a silently weaker test.
+const POLLUTANT_KEYS: PollutantKey[] = [
   'aqi',
   'co',
   'nh3',

@@ -1,4 +1,6 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { at } from '@/__tests__/support/expect';
 
 // Mock the axios module before importing api.js, so `aqra`'s functions close
 // over the mock rather than the real (globally-mutated) axios singleton.
@@ -9,11 +11,16 @@ vi.mock('../axios', () => ({
 const { axios } = await import('../axios');
 const { aqra } = await import('../api');
 
+// vi.mocked re-types the real axios.get signature as the mock it actually is at
+// runtime, which is what makes `.mock` and `.mockClear` reachable. Casting to
+// `any` would work too and would stop checking the call arguments.
+const get = vi.mocked(axios.get);
+
 /** The URL the single axios.get call was made with. */
-const calledUrl = () => axios.get.mock.calls.at(-1)[0];
+const calledUrl = () => at(get.mock.calls, get.mock.calls.length - 1)[0];
 
 beforeEach(() => {
-  axios.get.mockClear();
+  get.mockClear();
 });
 
 describe('aqra API — URL construction', () => {

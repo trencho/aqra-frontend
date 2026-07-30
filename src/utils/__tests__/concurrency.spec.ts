@@ -5,7 +5,7 @@ import { DEFAULT_CONCURRENCY,mapWithConcurrency } from '../concurrency';
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
 /** Runs fn over items while recording the peak number of overlapping calls. */
-async function withPeakTracking(items, limit) {
+async function withPeakTracking(items: number[], limit: number) {
   let inFlight = 0;
   let peak = 0;
 
@@ -40,7 +40,7 @@ describe('mapWithConcurrency', () => {
   });
 
   it('applies the function to every item exactly once', async () => {
-    const fn = vi.fn(async (n) => n);
+    const fn = vi.fn(async (n: number) => n);
 
     await mapWithConcurrency([1, 2, 3, 4, 5], fn, 2);
 
@@ -98,7 +98,7 @@ describe('mapWithConcurrency', () => {
 
   it('propagates a rejection from the mapped function', async () => {
     await expect(
-      mapWithConcurrency([1, 2, 3], async (n) => {
+      mapWithConcurrency([1, 2, 3], async (n: number) => {
         if (n === 2) {
           throw new Error('boom');
         }
