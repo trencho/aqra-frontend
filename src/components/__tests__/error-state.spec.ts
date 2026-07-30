@@ -9,8 +9,12 @@
  * there was no try/catch anywhere in src/ -- so a failed request left the UI
  * sitting in its loading state with the only evidence in the browser console.
  */
+import type { AxiosResponse } from 'axios';
 import { createPinia,setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { axiosResponse } from '@/__tests__/support/expect';
+import type { ApiCity } from '@/types/api';
 
 vi.mock('@/services/api', () => ({
   aqra: {
@@ -41,7 +45,10 @@ const { i18n } = await import('@/services/i18n');
 const { vuetify } = await import('@/services/vuetify');
 const { stubBrowserApis, mountInApp } = await import('./helpers');
 
-let store;
+// Typed rather than left as `any`: this spec drives the real store actions,
+// so `store.error`, `store.isLoading` and `store.pending` are exactly what it
+// is asserting about, and they should be checked.
+let store: ReturnType<typeof useAirPollutionStore>;
 
 // HomePage renders VAppBar and VMain, which inject their layout from VApp and
 // throw "Could not find injected layout" if mounted standalone under
@@ -57,7 +64,7 @@ beforeEach(() => {
   setActivePinia(createPinia());
   store = useAirPollutionStore();
   vi.clearAllMocks();
-  aqra.getDataForAllCities.mockResolvedValue({ status: 200, data: [] });
+  vi.mocked(aqra.getDataForAllCities).mockResolvedValue(axiosResponse([], 200));
 });
 
 describe('error surfacing', () => {
@@ -72,7 +79,7 @@ describe('error surfacing', () => {
   it('renders the failure message once a request fails', async () => {
     const wrapper = mountHome();
 
-    aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('Network Error'));
     await store.getCities();
     await wrapper.vm.$nextTick();
 
@@ -83,7 +90,7 @@ describe('error surfacing', () => {
 
   it('offers a dismiss action that clears the error', async () => {
     const wrapper = mountHome();
-    aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('Network Error'));
     await store.getCities();
     await wrapper.vm.$nextTick();
 
@@ -96,11 +103,11 @@ describe('error surfacing', () => {
 
   it('does not stay stuck after a later request succeeds', async () => {
     const wrapper = mountHome();
-    aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('Network Error'));
     await store.getCities();
     expect(store.hasError).toBe(true);
 
-    aqra.getDataForAllCities.mockResolvedValue({ status: 200, data: [] });
+    vi.mocked(aqra.getDataForAllCities).mockResolvedValue(axiosResponse([], 200));
     await store.getCities();
     await wrapper.vm.$nextTick();
 
@@ -111,7 +118,7 @@ describe('error surfacing', () => {
   it('reports a non-200 as well as a rejection', async () => {
     const wrapper = mountHome();
 
-    aqra.getDataForAllCities.mockResolvedValue({ status: 500, data: null });
+    vi.mocked(aqra.getDataForAllCities).mockResolvedValue(axiosResponse(null, 500));
     await store.getCities();
 
     expect(store.error).toContain('500');
@@ -122,8 +129,11 @@ describe('error surfacing', () => {
 describe('loading indication', () => {
   it('shows progress while a request is in flight', async () => {
     const wrapper = mountHome();
-    let resolve;
-    aqra.getDataForAllCities.mockReturnValue(
+    // Captured out of the executor, which TypeScript cannot see always runs
+    // synchronously -- hence the definite-assignment annotation rather than a
+    // guard at the call site below.
+    let resolve!: (response: AxiosResponse<ApiCity[]>) => void;
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(
       new Promise((r) => {
         resolve = r;
       })
@@ -133,7 +143,7 @@ describe('loading indication', () => {
     await wrapper.vm.$nextTick();
     expect(store.isLoading).toBe(true);
 
-    resolve({ status: 200, data: [] });
+    resolve(axiosResponse([], 200));
     await inFlight;
     await wrapper.vm.$nextTick();
 

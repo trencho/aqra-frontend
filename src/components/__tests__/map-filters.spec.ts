@@ -9,6 +9,10 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { at, emittedPayload, present } from '@/__tests__/support/expect';
+import type { SetValueConfig } from '@/types/domain';
+import type { SelectedLayer } from '@/types/map';
+
 import Filters from '../map/Filters.vue';
 import InputFilters from '../map/InputFilters.vue';
 import SliderFilter from '../map/SliderFilter.vue';
@@ -66,12 +70,11 @@ describe('InputFilters', () => {
   it('emits setShowForAllCities with the input and new value', async () => {
     const wrapper = mountIt();
 
-    await wrapper.findAllComponents({ name: 'VCheckbox' })[0].setValue(true);
+    await at(wrapper.findAllComponents({ name: 'VCheckbox' }), 0).setValue(true);
 
-    const emitted = wrapper.emitted('setShowForAllCities');
-    expect(emitted).toBeTruthy();
-    expect(emitted[0][0].value).toBe(true);
-    expect(emitted[0][0].input.id).toBe('showForAllCities');
+    const emitted = emittedPayload<SetValueConfig>(wrapper, 'setShowForAllCities');
+        expect(emitted.value).toBe(true);
+    expect(emitted.input.id).toBe('showForAllCities');
     wrapper.unmount();
   });
 
@@ -79,24 +82,22 @@ describe('InputFilters', () => {
     const wrapper = mountIt();
     const boxes = wrapper.findAllComponents({ name: 'VCheckbox' });
 
-    await boxes[2].setValue(true);
-    await boxes[3].setValue(false);
-    await boxes[4].setValue(true);
+    await at(boxes, 2).setValue(true);
+    await at(boxes, 3).setValue(false);
+    await at(boxes, 4).setValue(true);
 
-    expect(wrapper.emitted('changeBoundaries')[0][0].value).toBe(true);
-    expect(wrapper.emitted('changeCityMarkers')[0][0].value).toBe(false);
-    expect(wrapper.emitted('changeSensorMarkers')[0][0].value).toBe(true);
+    expect(emittedPayload<SetValueConfig>(wrapper, 'changeBoundaries').value).toBe(true);
+    expect(emittedPayload<SetValueConfig>(wrapper, 'changeCityMarkers').value).toBe(false);
+    expect(emittedPayload<SetValueConfig>(wrapper, 'changeSensorMarkers').value).toBe(true);
     wrapper.unmount();
   });
 
   it('emits setName when a city is chosen', async () => {
     const wrapper = mountIt();
 
-    await wrapper
-      .findAllComponents({ name: 'VSelect' })[0]
-      .setValue('skopje');
+    await at(wrapper.findAllComponents({ name: 'VSelect' }), 0).setValue('skopje');
 
-    expect(wrapper.emitted('setName')[0][0]).toMatchObject({
+    expect(emittedPayload<SetValueConfig>(wrapper, 'setName')).toMatchObject({
       value: 'skopje',
     });
     wrapper.unmount();
@@ -105,9 +106,9 @@ describe('InputFilters', () => {
   it('emits setPollutant from the third select', async () => {
     const wrapper = mountIt();
 
-    await wrapper.findAllComponents({ name: 'VSelect' })[2].setValue('pm10');
+    await at(wrapper.findAllComponents({ name: 'VSelect' }), 2).setValue('pm10');
 
-    expect(wrapper.emitted('setPollutant')[0][0].value).toBe('pm10');
+    expect(emittedPayload<SetValueConfig>(wrapper, 'setPollutant').value).toBe('pm10');
     wrapper.unmount();
   });
 
@@ -134,7 +135,7 @@ describe('InputFilters', () => {
 
   it('passes items through to the selects using item-title', () => {
     const wrapper = mountIt();
-    const select = wrapper.findAllComponents({ name: 'VSelect' })[0];
+    const select = at(wrapper.findAllComponents({ name: 'VSelect' }), 0);
 
     expect(select.props('items')).toEqual([
       { label: 'Skopje', value: 'skopje' },
@@ -146,10 +147,17 @@ describe('InputFilters', () => {
 });
 
 describe('SliderFilter', () => {
-  const mountIt = (pollutantValue = 'pm10') =>
+  // `string | null`: one test passes null to prove the slider stays disabled
+  // until a pollutant is chosen.
+  const mountIt = (pollutantValue: string | null = 'pm10') =>
     mount(SliderFilter, {
       props: {
-        selected: { selectedTime: Array.from({ length: 24 }, (_, i) => `${i}:00`) },
+        // Only selectedTime is read by the thumb-label slot under test, so
+        // the prop is deliberately partial -- cast rather than invent a
+        // layer kind and pollutant this test says nothing about.
+        selected: {
+          selectedTime: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+        } as unknown as SelectedLayer,
       },
       global: globalMountOptions({
         initialState: {
@@ -199,7 +207,7 @@ describe('SliderFilter', () => {
 
     wrapper.vm.increment();
 
-    expect(wrapper.emitted('sliderChange')[0][0]).toBe(0);
+    expect(emittedPayload<SetValueConfig>(wrapper, 'sliderChange')).toBe(0);
     expect(wrapper.vm.slider).toBe(1);
     wrapper.unmount();
   });
@@ -222,7 +230,9 @@ describe('SliderFilter', () => {
     expect(wrapper.vm.isPlaying).toBe(true);
 
     vi.advanceTimersByTime(1500);
-    expect(wrapper.emitted('sliderChange').length).toBeGreaterThanOrEqual(3);
+    expect(present(wrapper.emitted('sliderChange')).length).toBeGreaterThanOrEqual(
+      3
+    );
 
     wrapper.vm.playSlider();
     expect(wrapper.vm.isPlaying).toBe(false);
@@ -259,8 +269,8 @@ describe('Filters', () => {
     inputs.vm.$emit('setPollutant', { value: 'pm10' });
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.emitted('setName')[0][0]).toEqual({ value: 'skopje' });
-    expect(wrapper.emitted('setPollutant')[0][0]).toEqual({ value: 'pm10' });
+    expect(emittedPayload<SetValueConfig>(wrapper, 'setName')).toEqual({ value: 'skopje' });
+    expect(emittedPayload<SetValueConfig>(wrapper, 'setPollutant')).toEqual({ value: 'pm10' });
     wrapper.unmount();
   });
 
@@ -273,7 +283,7 @@ describe('Filters', () => {
     wrapper.findComponent(SliderFilter).vm.$emit('sliderChange', 7);
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.emitted('sliderChange')[0][0]).toBe(7);
+    expect(emittedPayload<SetValueConfig>(wrapper, 'sliderChange')).toBe(7);
     wrapper.unmount();
   });
 });

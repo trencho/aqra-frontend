@@ -3,6 +3,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach,describe, expect, it } from 'vitest';
 
+import { at } from '@/__tests__/support/expect';
 import { LocaleId } from '@/constants/locales';
 import { TabIds } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
@@ -49,7 +50,7 @@ describe('MenuDrawer', () => {
     const wrapper = mountIt();
     const store = useAirPollutionStore();
 
-    await wrapper.findAllComponents({ name: 'VListItem' })[2].trigger('click');
+    await at(wrapper.findAllComponents({ name: 'VListItem' }), 2).trigger('click');
 
     expect(store.tabId).toBe(TabIds.PollutionMap);
     wrapper.unmount();

@@ -1,3 +1,4 @@
+import type { AxiosResponse } from 'axios';
 import { expect } from 'vitest';
 
 /**
@@ -40,4 +41,38 @@ export function at<T>(items: readonly T[], index: number): T {
   expect(item, `expected an element at index ${index}`).toBeDefined();
 
   return item as T;
+}
+
+/**
+ * A minimal axios response, for mocking an endpoint's resolution.
+ *
+ * The store reads only `status` and `data`, so building the other dozen fields
+ * of AxiosResponse -- headers, config, request -- would be inventing values no
+ * assertion looks at. One cast here beats one per `mockResolvedValue` call.
+ *
+ * `data` is deliberately loose: several tests resolve with a null or malformed
+ * body specifically to check the store's error handling.
+ */
+export function axiosResponse<T>(data: unknown, status = 200): AxiosResponse<T> {
+  return { status, data } as AxiosResponse<T>;
+}
+
+/**
+ * The first argument of the nth emission of `event`, failing if it never fired.
+ *
+ * `wrapper.emitted('x')[0][0].value` was previously unchecked in both
+ * directions: `emitted` is `unknown[][] | undefined`, so neither the emission
+ * nor the payload's shape was verified, and a component that stopped emitting
+ * failed with a TypeError rather than a useful message. Naming the payload type
+ * at the call site fixes both.
+ */
+export function emittedPayload<T>(
+  wrapper: { emitted(event: string): unknown[][] | undefined },
+  event: string,
+  index = 0
+): T {
+  const emissions = wrapper.emitted(event);
+  expect(emissions, `expected the component to emit "${event}"`).toBeTruthy();
+
+  return at(at(emissions as unknown[][], index), 0) as T;
 }

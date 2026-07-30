@@ -3,6 +3,8 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { at } from '@/__tests__/support/expect';
+
 // These specs run the real store actions (stubActions: false), so setValue
 // reaches the API layer. Without this mock jsdom issues real XHRs, which
 // surface as unhandled AxiosErrors and fail the run even when every
@@ -91,7 +93,7 @@ describe('StatisticFilters', () => {
     const wrapper = mountIt();
 
     expect(
-      wrapper.findAllComponents({ name: 'VSelect' })[2].props('multiple')
+      at(wrapper.findAllComponents({ name: 'VSelect' }), 2).props('multiple')
     ).toBe(true);
     wrapper.unmount();
   });
@@ -136,9 +138,7 @@ describe('StatisticFilters', () => {
     });
     const store = useAirPollutionStore();
 
-    await wrapper
-      .findAllComponents({ name: 'VSelect' })[0]
-      .setValue('skopje');
+    await at(wrapper.findAllComponents({ name: 'VSelect' }), 0).setValue('skopje');
 
     expect(store.setValue).toHaveBeenCalledWith(
       expect.objectContaining({ value: 'skopje' })
@@ -229,7 +229,9 @@ describe('Statistics', () => {
   // three filter inputs from scratch and resets their values -- so seeding via
   // createTestingPinia's initialState is overwritten before any test runs.
   // Seed the store after mounting instead.
-  const mountIt = (pollutants = ['pm10']) => {
+  // `string[] | null` and not just string[]: one test below passes null to
+  // prove a null selection renders nothing instead of throwing.
+  const mountIt = (pollutants: string[] | null = ['pm10']) => {
     const wrapper = mount(Statistics, {
       global: {
         ...globalMountOptions({
@@ -243,7 +245,11 @@ describe('Statistics', () => {
     const store = useAirPollutionStore();
     store.sensorInput.value = 'sensor-1';
     store.pollutantInput.value = pollutants;
-    store.historyData = filterState.airPollution.historyData;
+    // Cast at the seam: the fixture carries only `data`, which is all
+    // mapHistoryToSeries reads, where the store field is typed as full
+    // Forecast instances.
+    store.historyData =
+      filterState.airPollution.historyData as unknown as typeof store.historyData;
 
     return wrapper;
   };
@@ -262,8 +268,8 @@ describe('Statistics', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.vm.chartData.datasets).toHaveLength(1);
-    expect(wrapper.vm.chartData.datasets[0].label).toBe('PM10');
-    expect(wrapper.vm.chartData.datasets[0].data).toEqual([42, 45]);
+    expect(at(wrapper.vm.chartData.datasets, 0).label).toBe('PM10');
+    expect(at(wrapper.vm.chartData.datasets, 0).data).toEqual([42, 45]);
     wrapper.unmount();
   });
 

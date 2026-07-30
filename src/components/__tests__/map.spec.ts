@@ -3,6 +3,9 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { present } from '@/__tests__/support/expect';
+import type { City } from '@/classes/city';
+
 // Leaflet needs real layout, so both it and the map helpers are mocked; these
 // tests assert the component's orchestration, not Leaflet's rendering.
 const mapInstance = {
@@ -86,6 +89,12 @@ const CITY = {
   },
 };
 
+// Cast once, where the fixture is declared, rather than at each use. This
+// fixture deliberately carries only the fields Map.vue reads -- the tests
+// exercise the component's orchestration, not City's shape, which city.spec
+// already covers against the real payload type.
+const cities = { skopje: CITY as unknown as City };
+
 const mountIt = () => {
   const wrapper = mount(Map, {
     global: {
@@ -95,7 +104,7 @@ const mountIt = () => {
   });
 
   const store = useAirPollutionStore();
-  store.cities = { skopje: CITY };
+  store.cities = cities;
   return { wrapper, store };
 };
 
@@ -245,7 +254,7 @@ describe('Map pollutant selection', () => {
       value: 'pm10',
     });
 
-    expect(wrapper.vm.selected.selected).toBe(Layers.SelectedSensor);
+    expect(present(wrapper.vm.selected).selected).toBe(Layers.SelectedSensor);
     wrapper.unmount();
   });
 
@@ -260,7 +269,7 @@ describe('Map pollutant selection', () => {
       value: 'pm10',
     });
 
-    expect(wrapper.vm.selected.selected).toBe(Layers.AllCities);
+    expect(present(wrapper.vm.selected).selected).toBe(Layers.AllCities);
     wrapper.unmount();
   });
 
@@ -275,7 +284,7 @@ describe('Map pollutant selection', () => {
       value: 'pm10',
     });
 
-    expect(wrapper.vm.selected.selected).toBe(Layers.AllSensors);
+    expect(present(wrapper.vm.selected).selected).toBe(Layers.AllSensors);
     wrapper.unmount();
   });
 
@@ -315,7 +324,7 @@ describe('Map pollutant selection', () => {
       input: store.pollutantInput,
       value: 'pm10',
     });
-    createMap.removeLayer.mockClear();
+    vi.mocked(createMap.removeLayer).mockClear();
 
     wrapper.vm.sliderChange(5);
 

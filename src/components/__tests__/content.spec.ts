@@ -2,6 +2,7 @@
 
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Component } from 'vue';
 
 import { APP_BAR_HEIGHT } from '@/constants/layout';
 
@@ -11,9 +12,9 @@ import Content from '../content/Content.vue';
 import ProjectInfoSection from '../content/ProjectInfoSection.vue';
 import WelcomePage from '../content/WelcomePage.vue';
 import SwaggerDocumentation from '../swaggerDocumentation/SwaggerDocumentation.vue';
-import { globalMountOptions,stubBrowserApis } from './helpers';
+import { globalMountOptions, stubBrowserApis, vmOf } from './helpers';
 
-const mountIt = (Component) =>
+const mountIt = (Component: Component) =>
   mount(Component, { global: globalMountOptions() });
 
 beforeEach(() => {
@@ -89,7 +90,7 @@ describe('ContactMe', () => {
     window.open = open;
     const wrapper = mountIt(ContactMe);
 
-    wrapper.vm.openLinkedIn();
+    vmOf<{ openLinkedIn(): void }>(wrapper).openLinkedIn();
 
     expect(open).toHaveBeenCalledWith(
       expect.stringContaining('linkedin.com'),
@@ -103,7 +104,7 @@ describe('ContactMe', () => {
     window.open = open;
     const wrapper = mountIt(ContactMe);
 
-    wrapper.vm.openGithub();
+    vmOf<{ openGithub(): void }>(wrapper).openGithub();
 
     expect(open).toHaveBeenCalledWith(
       'https://github.com/trencho',
@@ -144,7 +145,9 @@ describe('SwaggerDocumentation', () => {
   it('sizes the frame to the viewport below the app bar', () => {
     const wrapper = mountIt(SwaggerDocumentation);
 
-    expect(wrapper.vm.frameStyle.height).toBe(
+    expect(
+      vmOf<{ frameStyle: Record<string, string> }>(wrapper).frameStyle.height
+    ).toBe(
       `calc(100vh - ${APP_BAR_HEIGHT}px)`
     );
     wrapper.unmount();
