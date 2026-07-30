@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:mock": "vite --mode mock",
+    "mock-api": "node scripts/mock-api.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -36,6 +38,7 @@
     "vue": "3.5.40",
     "vue-chartjs": "5.3.4",
     "vue-i18n": "11.4.8",
+    "vue-router": "4.6.4",
     "vuetify": "4.1.6"
   },
   "devDependencies": {

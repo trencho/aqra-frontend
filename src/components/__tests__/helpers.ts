@@ -4,10 +4,25 @@ import type { StateTree } from 'pinia';
 import { vi } from 'vitest';
 import type { Component } from 'vue';
 import { h } from 'vue';
+import type { Router } from 'vue-router';
+import { createMemoryHistory } from 'vue-router';
 import { VApp } from 'vuetify/components';
 
+import { createAppRouter } from '@/router';
 import { i18n } from '@/services/i18n';
 import { vuetify } from '@/services/vuetify';
+
+/**
+ * A fresh router per mount, on memory history.
+ *
+ * Fresh because a router carries its current location, so sharing one would let
+ * a spec that navigates decide where the next spec starts. Memory history
+ * because jsdom's location is shared across a file and driving real history
+ * entries leaks the same way.
+ */
+export function testRouter(): Router {
+  return createAppRouter(createMemoryHistory());
+}
 
 /**
  * Browser APIs Vuetify 3+ touches on mount that jsdom does not implement.
@@ -82,6 +97,8 @@ export function globalMountOptions({
 }: GlobalMountOptions = {}) {
   return {
     plugins: [
+      // Pinia first: the router's afterEach resolves the store, and the initial
+      // navigation is dispatched when the router plugin installs.
       createTestingPinia({
         createSpy: vi.fn,
         stubActions,
@@ -91,6 +108,7 @@ export function globalMountOptions({
         // error. Omitting the key entirely is what "no seed state" means.
         ...(initialState ? { initialState } : {}),
       }),
+      testRouter(),
       i18n,
       vuetify,
     ],

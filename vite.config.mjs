@@ -53,6 +53,12 @@ export default defineConfig({
         'src/utils/**',
         'src/constants/**',
         'src/stores/**',
+        // A new top-level source directory is invisible to coverage until it is
+        // listed here -- it does not fail, it simply is not counted, and the
+        // totals go UP because the denominator never grew. Three variants of
+        // that trap have already been found in this file; adding a directory
+        // under src/ means adding it here in the same change.
+        'src/router/**',
       ],
       exclude: ['src/**/__tests__/**'],
       reporter: ['text', 'lcov'],
@@ -67,11 +73,15 @@ export default defineConfig({
       // decrement/increment/playSlider (Phase 8 deletes them), services/
       // store.js (a one-line createPinia call), and the branches of
       // TranslationButton's menu that only open on real pointer interaction.
+      // Raised with the router work, which moved the real figures to
+      // 94.18/93.72/89.81/93.96. Roughly a point of headroom each, matching
+      // what these carried before -- enough that an unrelated refactor does not
+      // go red, tight enough that losing a covered path does.
       thresholds: {
-        statements: 92,
-        branches: 91,
-        functions: 88,
-        lines: 92,
+        statements: 93,
+        branches: 92,
+        functions: 89,
+        lines: 93,
       },
     },
   },

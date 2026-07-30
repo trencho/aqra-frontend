@@ -38,12 +38,12 @@ describe('errorMessage', () => {
     expect(errorMessage('a bare string', 'fallback')).toBe('fallback');
   });
 
-  // CHARACTERIZATION -- an empty message is passed through, not replaced,
-  // because the `cause?.message ?? fallback` this replaces did the same. It
-  // renders as a blank error banner. Deliberately preserved; changing it is a
-  // behaviour fix, not part of the type migration.
-  it('passes an empty message through rather than falling back', () => {
-    expect(errorMessage({ message: '' }, 'fallback')).toBe('');
+  // The store assigns this to `error`, and `hasError` is `error !== null`, so
+  // an empty message used to open the snackbar with nothing in it -- a red bar
+  // and a dismiss button telling the user only that something unspecified
+  // failed. "No usable message" is exactly what the fallback is for.
+  it('falls back on an empty message rather than showing a blank banner', () => {
+    expect(errorMessage({ message: '' }, 'fallback')).toBe('fallback');
   });
 
   it('falls back when message is present but not a string', () => {

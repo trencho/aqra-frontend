@@ -76,12 +76,12 @@
     />
 
     <VMain>
-      <Content v-if="store.tabId === TabIds.Home" />
-      <Map v-if="store.tabId === TabIds.PollutionMap" />
-      <Statistics v-if="store.tabId === TabIds.Statistics" />
-      <SwaggerDocumentation
-        v-if="store.tabId === TabIds.SwaggerDocumentation"
-      />
+      <!--
+        Was four v-ifs against a number in the store, which is why the app had
+        no URLs, no deep links and no back button. The routing table is derived
+        from the same Tabs constant the tab bar above iterates.
+      -->
+      <RouterView />
     </VMain>
 
     <Footer />
@@ -93,12 +93,8 @@ import { mapStores } from 'pinia';
 import { defineComponent } from 'vue';
 
 import logo from '@/assets/logo.svg';
-import Content from '@/components/content/Content.vue';
-import Map from '@/components/map/Map.vue';
-import Statistics from '@/components/statistics/Statistics.vue';
-import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation.vue';
 import type { TabId } from '@/constants/navigationTabs';
-import { TabIds, Tabs } from '@/constants/navigationTabs';
+import { tabById,Tabs } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
 
 import Footer from './Footer.vue';
@@ -109,19 +105,14 @@ export default defineComponent({
   name: 'HomePage',
 
   components: {
-    Map,
     Footer,
-    Content,
     MenuDrawer,
-    Statistics,
     TranslationButton,
-    SwaggerDocumentation,
   },
 
   data() {
     return {
       logo,
-      TabIds,
       tabs: Tabs,
     };
   },
@@ -136,12 +127,16 @@ export default defineComponent({
 
     // VTabs is v-model driven in Vuetify 3+; the old `:value` + `@change`
     // pairing no longer emits.
+    //
+    // The setter navigates rather than writing the store directly; the router's
+    // afterEach then calls changeTab. Writing both here would let the tab bar
+    // and the URL disagree whenever navigation is cancelled or redirected.
     activeTab: {
       get() {
         return this.store.tabId;
       },
       set(id: TabId) {
-        this.store.changeTab(id);
+        void this.$router.push(tabById(id).path);
       },
     },
   },

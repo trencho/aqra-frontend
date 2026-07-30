@@ -404,15 +404,20 @@ export const useAirPollutionStore = defineStore('airPollution', {
 
     // --- data fetching ------------------------------------------------------
 
-    async getCities(): Promise<Array<City | null> | Record<string, City>> {
-      // PRE-EXISTING BUG, preserved deliberately. `cities` is a Record keyed by
-      // city name, so `.length` is always undefined and this cache check never
-      // fires -- getCities refetches on every call. Typing the state is what
-      // exposed it. Fixing it (Object.keys(...).length) would start
-      // short-circuiting and change behaviour, so it is recorded as a follow-up
-      // rather than silently corrected inside a type migration.
-      if ((this.cities as { length?: number }).length) {
-        return this.cities;
+    /**
+     * The cache check used to be `this.cities.length`. `cities` is a Record
+     * keyed by city name, so that is always `undefined` and the guard never
+     * fired: every call refetched every city. Typing the state is what exposed
+     * it, and it was left in place through the migration so the behaviour
+     * change would not be buried in a type change.
+     *
+     * Returns an array on both paths now. It used to return the Record when it
+     * (nominally) hit the cache and an array otherwise, so the declared type
+     * was a union no caller could act on without narrowing first.
+     */
+    async getCities(): Promise<City[]> {
+      if (Object.keys(this.cities).length) {
+        return Object.values(this.cities);
       }
 
       const { ok, data } = await this.request(() => aqra.getDataForAllCities());
@@ -420,10 +425,9 @@ export const useAirPollutionStore = defineStore('airPollution', {
         return [];
       }
 
-      const cities = data.map(City.fromApi);
-      this.cities = mapList(cities, 'cityName');
+      this.cities = mapList(data.map(City.fromApi), 'cityName');
 
-      return cities;
+      return Object.values(this.cities);
     },
 
     async getSensorsByCityName(

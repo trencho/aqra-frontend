@@ -103,6 +103,34 @@ describe('getCities', () => {
     expect(present(store.cities.skopje).position).toEqual(['41.99', '21.42']);
   });
 
+  // The guard used to be `this.cities.length` on a Record keyed by city name,
+  // so it was always undefined and never fired: every call refetched every
+  // city. Nothing caught it because no test called getCities twice and counted.
+  it('serves the second call from the cache without refetching', async () => {
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
+
+    const first = await store.getCities();
+    const second = await store.getCities();
+
+    expect(aqra.getDataForAllCities).toHaveBeenCalledTimes(1);
+    expect(second).toEqual(first);
+  });
+
+  // A failed request stores nothing, so the cache must stay cold -- otherwise
+  // one early failure would wedge the app on an empty city list forever.
+  it('retries after a failed request rather than caching the failure', async () => {
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValueOnce(
+      new Error('Network Error')
+    );
+    expect(await store.getCities()).toEqual([]);
+
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
+    const retried = await store.getCities();
+
+    expect(aqra.getDataForAllCities).toHaveBeenCalledTimes(2);
+    expect(retried).toHaveLength(1);
+  });
+
   it('returns an empty array and stores nothing on a non-200', async () => {
     vi.mocked(aqra.getDataForAllCities).mockReturnValue(notOk(500));
 

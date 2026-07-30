@@ -33,6 +33,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import App from './App.vue';
+import { router } from './router';
 import { pinia } from './services/store';
 import { i18n } from './services/i18n';
 import { vuetify } from './services/vuetify';
@@ -60,9 +61,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+// pinia before router: the router's afterEach resolves the store, so the active
+// pinia has to exist by the time the first navigation is dispatched.
 createApp(App)
   .component('FontAwesomeIcon', FontAwesomeIcon)
   .use(pinia)
+  .use(router)
   .use(i18n)
   .use(vuetify)
   .mount('#app');

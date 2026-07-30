@@ -11,10 +11,11 @@
  * `$t` unavailable because i18n was registered in legacy mode.
  */
 import { createTestingPinia } from '@pinia/testing';
-import { mount } from '@vue/test-utils';
+import {mount } from '@vue/test-utils';
 import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App.vue';
+import { testRouter } from '@/components/__tests__/helpers';
 import { TabIds } from '@/constants/navigationTabs';
 import { i18n } from '@/services/i18n';
 import { vuetify } from '@/services/vuetify';
@@ -40,6 +41,10 @@ const mountApp = () =>
     global: {
       plugins: [
         createTestingPinia({ createSpy: vi.fn, stubActions: false }),
+        // Which view renders is the router's decision now, so the real tree
+        // does not mount without one. A fresh memory router per call keeps
+        // each test's navigation out of the next one's starting location.
+        testRouter(),
         i18n,
         vuetify,
       ],
@@ -107,16 +112,51 @@ describe('App mounts under Vue 3', () => {
     wrapper.unmount();
   });
 
-  it('switches tabs through the store action', async () => {
+  // Navigating is what switches tabs now; the store mirrors the route via the
+  // router's afterEach rather than driving it. This used to call changeTab
+  // directly, which no longer changes what renders -- and that is the point of
+  // the change, so the test asserts both halves: the view swaps *and* the store
+  // agrees afterwards.
+  it('switches tabs by navigating, and syncs the store to the route', async () => {
     const wrapper = mountApp();
     const store = useAirPollutionStore();
 
-    store.changeTab(TabIds.SwaggerDocumentation);
+    await wrapper.vm.$router.push('/api-docs');
     await wrapper.vm.$nextTick();
 
     expect(store.tabId).toBe(TabIds.SwaggerDocumentation);
     // The Swagger tab is a plain <iframe> now that vue-iframes is gone.
     expect(wrapper.find('iframe').exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  // The other direction: selecting a tab in the bar has to change the URL, not
+  // just the store, or the tab bar and the address bar drift apart. VTabs is
+  // v-model driven, so this is what a click on a tab ultimately emits.
+  it('changes the URL when a tab is selected in the tab bar', async () => {
+    const wrapper = mountApp();
+    const router = wrapper.vm.$router;
+    // Navigating before the initial navigation has settled races with it.
+    await router.isReady();
+
+    // HomePage's activeTab setter calls `void $router.push(...)`, so there is
+    // no promise to await from out here -- and flushPromises is NOT enough:
+    // the guard chain outlives a single macrotask, and the assertion then reads
+    // the old path and fails for a reason that has nothing to do with the code.
+    // Hook the router's own completion instead, which is exact.
+    const navigated = new Promise<void>((resolve) => {
+      const stop = router.afterEach(() => {
+        stop();
+        resolve();
+      });
+    });
+
+    wrapper
+      .findComponent({ name: 'VTabs' })
+      .vm.$emit('update:modelValue', TabIds.Statistics);
+    await navigated;
+
+    expect(router.currentRoute.value.path).toBe('/statistics');
     wrapper.unmount();
   });
 
