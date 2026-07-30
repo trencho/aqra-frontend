@@ -43,13 +43,13 @@ beforeEach(() => {
 
 describe('main.js', () => {
   it('evaluates and mounts the app into #app', async () => {
-    await expect(import('@/main.js')).resolves.toBeDefined();
+    await expect(import('@/main.ts')).resolves.toBeDefined();
 
     expect(document.querySelector('#app').innerHTML).not.toBe('');
   });
 
   it('loads leaflet.heat after Leaflet, so L.heatLayer is registered', async () => {
-    await import('@/main.js');
+    await import('@/main.ts');
     const L = (await import('leaflet')).default;
 
     // If leaflet.heat were evaluated before Leaflet, the import above would
@@ -59,7 +59,7 @@ describe('main.js', () => {
   });
 
   it('rewrites the Leaflet default marker icon URLs for the bundler', async () => {
-    await import('@/main.js');
+    await import('@/main.ts');
     const L = (await import('leaflet')).default;
 
     // Leaflet resolves its default marker images relative to its own CSS,

@@ -7,6 +7,10 @@
  * `L is not defined` before the app mounts. The autofix hoists side-effect
  * imports to the top of the file, which puts it first and breaks the boot.
  *
+ * Converting this file to TypeScript changes none of that: the hazard is a
+ * runtime evaluation-order property, and the type checker is blind to it.
+ * src/__tests__/main.spec.js is still the only thing that catches it.
+ *
  * The stylesheet imports below are ordered for the cascade for the same reason:
  * styles.scss overrides the Material Design Icons sheet.
  */
@@ -45,6 +49,10 @@ library.add(faAnglesLeft);
 // Leaflet resolves its default marker images relative to its own CSS, which
 // does not survive bundling; point them at the imported asset URLs instead.
 // Framework-independent -- carried over verbatim from the Vue 2 entry point.
+//
+// `_getIconUrl` is a Leaflet internal that @types/leaflet does not declare, so
+// src/types/leaflet.d.ts augments Icon.Default with it (as optional, which is
+// what makes `delete` legal) rather than suppressing the error.
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
