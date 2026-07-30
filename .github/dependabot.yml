@@ -33,6 +33,15 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+    ignore:
+      # Hold Node majors. CI pins node-version 24 and engines.node is ">=24",
+      # so taking a major here alone would build and ship production on a
+      # runtime nothing tests against. Node 26 does not become LTS until
+      # 2026-10-28. Lift this when moving the whole project to the next LTS --
+      # CI, engines.node, .nvmrc and this base image together, not piecemeal.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: gradle
     directory: /android
