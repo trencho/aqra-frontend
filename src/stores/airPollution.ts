@@ -377,8 +377,11 @@ export const useAirPollutionStore = defineStore('airPollution', {
             !this.showForAllSensorsInput.value
           ) {
             await this.getForecastBySensorId({
-              sensorId: this.sensorInput.value,
-              cityName: this.nameInput.value,
+              // Both selects are single-valued on the Map page, where this arm
+              // runs. SelectFilterInput.value is the union of what the Map and
+              // Statistics pages store -- only the latter is multi-valued.
+              sensorId: this.sensorInput.value as string,
+              cityName: this.nameInput.value as string,
             });
           }
           break;
@@ -552,7 +555,7 @@ export const useAirPollutionStore = defineStore('airPollution', {
 
       const { ok, data } = await this.request(() =>
         aqra.getDataForAllAvailablePollutantsBySensorId(
-          this.nameInput.value,
+          this.nameInput.value as string,
           sensorId
         )
       );
@@ -574,7 +577,10 @@ export const useAirPollutionStore = defineStore('airPollution', {
       }
 
       const { ok, data } = await this.request(() =>
-        aqra.getDataForHistoricalPollution(this.nameInput.value, sensorId)
+        aqra.getDataForHistoricalPollution(
+          this.nameInput.value as string,
+          sensorId
+        )
       );
       if (!ok) {
         return [];

@@ -104,7 +104,14 @@ export interface SelectOption {
 export interface SelectFilterInput {
   id: string;
   label: string;
-  value: string | null;
+  /**
+   * `string[]` because the pollutant select on the Statistics page carries
+   * `multiple` (StatisticFilters.vue), so its value is an array of pollutant
+   * keys, while the same pollutantInput on the Map page is single-valued. One
+   * piece of state, two arities, decided by which page built it -- which is why
+   * this is a union rather than two types.
+   */
+  value: string | readonly string[] | null;
   items: SelectOption[];
   hidden?: boolean;
 }
@@ -137,12 +144,29 @@ export type FilterInput = SelectFilterInput | ToggleFilterInput;
 export interface FilterInputLike {
   id: string;
   label?: string | undefined;
-  value: string | boolean | null;
+  value: FilterValue;
   items?: SelectOption[] | undefined;
   hidden?: boolean | undefined;
 }
 
+/**
+ * Every value a filter can hold: select, multi-select, or toggle.
+ *
+ * `readonly` on the array arm because that is what Vuetify's multi-select emits
+ * as `$event`.
+ */
+export type FilterValue = string | readonly string[] | boolean | null;
+
 export interface SetValueConfig {
   input: FilterInputLike;
-  value: string | boolean | null;
+  value: FilterValue;
+  /**
+   * Passed as `true` by the Statistics pollutant select and **read by nothing**.
+   * `setValue` switches on `input.id` and never looks at this flag.
+   *
+   * Declared rather than removed: deleting it from the one template that sets it
+   * is a change to a component, and the point of this step is typing. It is a
+   * dead payload field and is on the follow-up list.
+   */
+  isStatistics?: boolean | undefined;
 }

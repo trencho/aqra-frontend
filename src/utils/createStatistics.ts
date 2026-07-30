@@ -29,8 +29,17 @@ export function seriesColor(index: number): string {
   return SERIES_COLORS[index % SERIES_COLORS.length]!;
 }
 
-/** History keyed by sensor id, as the store stores it. */
-export type HistoryBySensorId = Record<string, { data: ForecastDatum[] }>;
+/**
+ * History keyed by sensor id, as the store stores it.
+ *
+ * The value admits null because Forecast.fromApi returns null for an empty
+ * payload and the store writes that straight into historyData. The `?.` chain
+ * below already handles it.
+ */
+export type HistoryBySensorId = Record<
+  string,
+  { data: ForecastDatum[] } | null
+>;
 
 export interface MapHistoryToSeriesOptions {
   sensorId: string | null | undefined;
@@ -45,7 +54,7 @@ export interface MapHistoryToSeriesOptions {
 
 export interface ChartSeries {
   label: string | undefined;
-  fill: false;
+  fill: boolean;
   borderColor: string;
   data: Array<number | string | undefined> | undefined;
   time: Array<number | string | undefined> | undefined;

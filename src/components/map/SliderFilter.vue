@@ -14,7 +14,7 @@
       @update:model-value="sliderChange"
     >
       <template #thumb-label="{ modelValue }">
-        {{ selected && selected.selectedTime[modelValue] }}
+        {{ selected && selected.selectedTime![modelValue] }}
       </template>
       <template #prepend>
         <VIcon
@@ -48,18 +48,24 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { mapStores } from 'pinia';
+import type { PropType } from 'vue';
+import { defineComponent } from 'vue';
 
 import { useAirPollutionStore } from '@/stores/airPollution';
+import type { SelectedLayer } from '@/types/map';
 
-export default {
+export default defineComponent({
   name: 'SliderFilter',
 
   props: {
     drawer: Boolean,
+    // PropType rather than bare Object: the template reads
+    // `selected.selectedTime[modelValue]`, which an untyped Record<string, any>
+    // would not check at all.
     selected: {
-      type: Object,
+      type: Object as PropType<SelectedLayer | null>,
       default: null,
     },
   },
@@ -69,7 +75,15 @@ export default {
   data() {
     return {
       slider: 0,
-      interval: null,
+      // Annotated because `null` alone infers the type `null`, and playSlider
+      // assigns a timer handle to it.
+      //
+      // `number` rather than ReturnType<typeof setInterval>: both the DOM and
+      // Node type definitions are in scope, and Node's `Timeout` is a class, so
+      // Vue's reactive typing rebuilds it structurally and it stops matching
+      // clearInterval's parameter. The browser handle is a number, which survives
+      // that intact.
+      interval: null as number | null,
       isPlaying: false,
     };
   },
@@ -89,7 +103,10 @@ export default {
   // playback running and switching tabs unmounted the component while the
   // timer kept firing against a dead instance, forever.
   beforeUnmount() {
-    clearInterval(this.interval);
+    // Cast, not a guard: clearInterval's signature takes a handle or undefined,
+    // never null, but calling it with null is a harmless no-op and is what this
+    // has always done. A guard would add a branch no test reaches.
+    clearInterval(this.interval as number);
   },
 
   methods: {
@@ -104,18 +121,21 @@ export default {
 
       this.sliderChange(this.slider++);
     },
-    sliderChange(time) {
+    sliderChange(time: number) {
       this.$emit('sliderChange', time);
     },
     playSlider() {
       this.isPlaying = !this.isPlaying;
 
       if (this.isPlaying) {
-        this.interval = setInterval(this.increment, 500);
+        this.interval = setInterval(this.increment, 500) as unknown as number;
       } else {
-        clearInterval(this.interval);
+        // Cast, not a guard: clearInterval's signature takes a handle or
+      // undefined, never null, but calling it with null is a harmless no-op and
+      // is what this code has always done. A guard would add an untested branch.
+      clearInterval(this.interval as number);
       }
     },
   },
-};
+});
 </script>

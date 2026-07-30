@@ -23,11 +23,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import type { PropType } from 'vue';
+import { defineComponent } from 'vue';
+
+import type { SelectedLayer } from '@/types/map';
+
 import InputFilters from './InputFilters.vue';
 import SliderFilter from './SliderFilter.vue';
 
-export default {
+export default defineComponent({
   name: 'Filters',
 
   components: {
@@ -36,8 +41,11 @@ export default {
   },
 
   props: {
+    // PropType rather than bare Object, which infers Record<string, any> --
+    // and an object type is not assignable to an index-signature type, so
+    // Map.vue could not pass its typed `selected` down at all.
     selected: {
-      type: Object,
+      type: Object as PropType<SelectedLayer | null>,
       default: null,
     },
   },
@@ -54,5 +62,5 @@ export default {
     'sliderChange',
   ],
 
-};
+});
 </script>

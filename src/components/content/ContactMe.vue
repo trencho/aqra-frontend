@@ -53,10 +53,15 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'ContactMe',
 
+  // The `!` on each method call is Vue's Options API typing, not a real
+  // nullability question: inside data() the `this` context types methods as
+  // possibly undefined, because data is evaluated while the instance type is
+  // still being built. The arrows only run on click, long after methods exist.
   data() {
     return {
       contacts: [
@@ -64,19 +69,19 @@ export default {
           icon: 'fa-brands fa-linkedin',
           title: 'common.linkedIn',
           text: 'common.clickHere',
-          action: () => this.openLinkedIn(),
+          action: () => this.openLinkedIn!(),
         },
         {
           icon: 'fa-brands fa-github',
           title: 'common.gitHub',
           text: 'common.clickHere',
-          action: () => this.openGithub(),
+          action: () => this.openGithub!(),
         },
         {
           icon: 'fa-solid fa-envelope',
           title: 'common.mail',
           text: 'common.email',
-          action: () => this.openMail(),
+          action: () => this.openMail!(),
         },
       ],
     };
@@ -95,5 +100,5 @@ export default {
       window.location.href = 'mailto:trenche@feit.ukim.edu.mk';
     },
   },
-};
+});
 </script>

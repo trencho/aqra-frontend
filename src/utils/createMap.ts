@@ -41,7 +41,7 @@ interface WithForecast {
   forecast?: ForecastSource | null | undefined;
 }
 
-interface HeatLayerResult {
+export interface HeatLayerResult {
   heatLayer: HeatLayer;
   time: string[];
 }
@@ -127,11 +127,24 @@ export function createCityBoundaries(
   return polygons;
 }
 
+/**
+ * `readonly unknown[]` rather than `Layer[]`, for two reasons that point the
+ * same way.
+ *
+ * The caller is Map.vue, which holds its layers in `data()`. Vue's reactive
+ * typing rebuilds a class instance structurally and drops private members, so a
+ * Marker[] or HeatLayer[] read back off the component no longer satisfies
+ * `Layer[]` despite being exactly that at runtime. Widening here fixes six call
+ * sites at once instead of asserting at each.
+ *
+ * And it is honest about what this function does: it forwards each element to
+ * Leaflet and looks at nothing itself. removeLayer.spec passes `[{id: 1}]`.
+ */
 export function removeLayer(
   map: LeafletMap,
-  layers: Layer[] | null | undefined
+  layers: readonly unknown[] | null | undefined
 ): null {
-  (layers || []).forEach((l) => map.removeLayer(l));
+  (layers || []).forEach((l) => map.removeLayer(l as Layer));
   return null;
 }
 

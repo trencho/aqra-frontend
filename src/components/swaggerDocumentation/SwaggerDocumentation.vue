@@ -13,10 +13,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
+
 import { belowAppBar } from '@/constants/layout';
 
-export default {
+export default defineComponent({
   name: 'SwaggerDocumentation',
 
   computed: {
@@ -28,5 +30,5 @@ export default {
       };
     },
   },
-};
+});
 </script>

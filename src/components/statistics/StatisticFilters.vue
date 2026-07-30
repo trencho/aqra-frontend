@@ -29,7 +29,7 @@
       "
     />
     <VSelect
-      :model-value="store.pollutantInput.value"
+      :model-value="(store.pollutantInput.value as string[])"
       :items="store.pollutantInput.items"
       :hint="$t('common.pollutantStatisticHelp')"
       :label="$t(store.pollutantInput.label)"
@@ -57,12 +57,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { mapStores } from 'pinia';
+import { defineComponent } from 'vue';
 
 import { useAirPollutionStore } from '@/stores/airPollution';
 
-export default {
+export default defineComponent({
   name: 'StatisticsFilter',
 
   emits: ['show'],
@@ -82,5 +83,5 @@ export default {
       return this.airPollutionStore;
     },
   },
-};
+});
 </script>
