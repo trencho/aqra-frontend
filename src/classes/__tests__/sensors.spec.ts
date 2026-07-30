@@ -1,8 +1,11 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { present } from '@/__tests__/support/expect';
+import type { ApiSensor } from '@/types/api';
 
 import { Sensor } from '../sensors';
 
-const apiSensor = {
+const apiSensor: ApiSensor = {
   type: 'pulse.eco',
   status: 'ACTIVE',
   cityName: 'skopje',
@@ -19,7 +22,7 @@ describe('Sensor.fromApi', () => {
   });
 
   it('carries the scalar fields through unchanged', () => {
-    const sensor = Sensor.fromApi(apiSensor);
+    const sensor = present(Sensor.fromApi(apiSensor));
 
     expect(sensor).toBeInstanceOf(Sensor);
     expect(sensor.type).toBe('pulse.eco');
@@ -31,19 +34,22 @@ describe('Sensor.fromApi', () => {
   });
 
   it('splits the comma-separated position into a coordinate pair', () => {
-    expect(Sensor.fromApi(apiSensor).position).toEqual(['41.9981', '21.4254']);
+    expect(present(Sensor.fromApi(apiSensor)).position).toEqual([
+      '41.9981',
+      '21.4254',
+    ]);
   });
 
   // Regression guard: this used to throw. formatPosition() called .split() on
   // null one guard away from the `if (!sensor) return null` above, so a sensor
   // with no position took out the whole view -- and with no try/catch anywhere
-  // in src/, it surfaced as an unhandled rejection. Now matches city.js.
+  // in src/, it surfaced as an unhandled rejection. Now matches city.ts.
   it('returns an empty position when it is missing, rather than throwing', () => {
-    expect(Sensor.fromApi({ ...apiSensor, position: null }).position).toEqual(
-      []
-    );
     expect(
-      Sensor.fromApi({ ...apiSensor, position: undefined }).position
+      present(Sensor.fromApi({ ...apiSensor, position: null })).position
+    ).toEqual([]);
+    expect(
+      present(Sensor.fromApi({ ...apiSensor, position: undefined })).position
     ).toEqual([]);
   });
 });

@@ -8,6 +8,13 @@
  * exists because a real payload arrived without the field and threw. Declaring
  * them required would type away the reason the guards are there.
  *
+ * Every field is also explicitly `| undefined` on top of the `?`. Under
+ * exactOptionalPropertyTypes those mean different things -- `?` alone is
+ * "absent, or a value, but never explicitly undefined" -- and callers routinely
+ * build these with a spread plus an override (`{ ...payload, latitude: undefined }`,
+ * which the specs do to exercise the guards). "Absent or explicitly undefined"
+ * is the truthful description of data arriving from an external API.
+ *
  * Coordinates arrive as *strings* here, and stay strings all the way through
  * the domain layer -- see the Position note in ./domain.ts.
  */
@@ -21,32 +28,32 @@
  * look wrong and the wrong code type-check.
  */
 export interface ApiCoordinates {
-  latitude?: string;
+  latitude?: string | undefined;
   /** sic -- upstream misspelling, load-bearing. */
-  longitute?: string;
+  longitute?: string | undefined;
 }
 
 export interface ApiCity {
-  siteUrl?: string;
-  cityName?: string;
-  siteName?: string;
-  siteTitle?: string;
-  countryCode?: string;
-  countryName?: string;
-  initialZoomLevel?: number;
-  cityLocation?: ApiCoordinates | null;
-  cityBorderPoints?: ApiCoordinates[] | null;
+  siteUrl?: string | undefined;
+  cityName?: string | undefined;
+  siteName?: string | undefined;
+  siteTitle?: string | undefined;
+  countryCode?: string | undefined;
+  countryName?: string | undefined;
+  initialZoomLevel?: number | undefined;
+  cityLocation?: ApiCoordinates | null | undefined;
+  cityBorderPoints?: ApiCoordinates[] | null | undefined;
 }
 
 export interface ApiSensor {
-  type?: string;
-  status?: string;
-  cityName?: string;
-  sensorId?: string;
+  type?: string | undefined;
+  status?: string | undefined;
+  cityName?: string | undefined;
+  sensorId?: string | undefined;
   /** A single comma-separated pair, e.g. "41.9981,21.4254". */
-  position?: string | null;
-  comments?: string;
-  description?: string;
+  position?: string | null | undefined;
+  comments?: string | undefined;
+  description?: string | undefined;
 }
 
 /**
@@ -69,12 +76,18 @@ export interface ApiForecastDatum {
  * two are reconciled onto one representation.
  */
 export interface ApiForecast {
-  latitude?: number | null;
-  longitude?: number | null;
-  data?: ApiForecastDatum[] | null;
+  latitude?: number | null | undefined;
+  longitude?: number | null | undefined;
+  data?: ApiForecastDatum[] | null | undefined;
 }
 
 export interface ApiPollutant {
-  name?: string;
-  value?: string;
+  name?: string | undefined;
+  /**
+   * `number` as well as `string`: pollutant.spec passes numeric readings and has
+   * a test asserting a zero value survives ("0 is a legitimate reading"). The
+   * select-option path treats this as an identifier, the reading path as a
+   * measurement, and the payload carries both shapes.
+   */
+  value?: string | number | undefined;
 }

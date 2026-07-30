@@ -91,7 +91,7 @@ export interface ForecastDatum {
  */
 export interface SelectOption {
   label: string | undefined;
-  value: string | null | undefined;
+  value: string | number | null | undefined;
 }
 
 /**

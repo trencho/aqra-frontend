@@ -2,12 +2,12 @@ import type { ApiPollutant } from '@/types/api';
 
 export interface PollutantConfig {
   name: string | undefined;
-  value: string | undefined;
+  value: string | number | undefined;
 }
 
 export class Pollutant {
   name: string | undefined;
-  value: string | undefined;
+  value: string | number | undefined;
 
   constructor(config: PollutantConfig) {
     this.name = config.name;
