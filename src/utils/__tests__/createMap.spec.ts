@@ -1,36 +1,46 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import type { Map as LeafletMap } from 'leaflet';
+import type { Mock } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { at } from '@/__tests__/support/expect';
+import type { Position } from '@/types/domain';
 
 // Leaflet needs real DOM layout, so the whole module is mocked and these tests
 // assert on the calls made to it rather than on rendered output.
+//
+// One shared `layer()` factory now backs all four constructors, where the .js
+// version repeated the object literal per constructor and also exported an
+// unused `__marker`. Same behaviour -- a fresh object per call, with `addTo`
+// returning itself so the chained call yields the layer -- with the dead export
+// dropped.
 vi.mock('leaflet', () => {
-  const marker = () => ({ bindPopup: vi.fn(), addTo: vi.fn().mockReturnThis() });
-  const L = {
-    marker: vi.fn(() => {
-      const m = { bindPopup: vi.fn() };
-      m.addTo = vi.fn(() => m);
-      return m;
-    }),
-    polygon: vi.fn(() => {
-      const p = {};
-      p.addTo = vi.fn(() => p);
-      return p;
-    }),
-    tileLayer: vi.fn(() => {
-      const t = {};
-      t.addTo = vi.fn(() => t);
-      return t;
-    }),
-    heatLayer: vi.fn(() => {
-      const h = {};
-      h.addTo = vi.fn(() => h);
-      return h;
-    }),
-    __marker: marker,
+  const layer = () => {
+    const l: Record<string, unknown> = {};
+    l.addTo = vi.fn(() => l);
+    l.bindPopup = vi.fn(() => l);
+    return l;
   };
-  return { default: L };
+
+  return {
+    default: {
+      marker: vi.fn(layer),
+      polygon: vi.fn(layer),
+      tileLayer: vi.fn(layer),
+      heatLayer: vi.fn(layer),
+    },
+  };
 });
 
-const L = (await import('leaflet')).default;
+/** The four Leaflet constructors this module uses, as the mocks they are. */
+interface LeafletDouble {
+  marker: Mock;
+  polygon: Mock;
+  tileLayer: Mock;
+  heatLayer: Mock;
+}
+
+const L = (await import('leaflet')).default as unknown as LeafletDouble;
+
 const {
   mapCities,
   mapSensorsInCities,
@@ -43,10 +53,28 @@ const {
 } = await import('../createMap');
 const { PollutantRatio } = await import('@/constants/pollutants');
 
-const map = () => ({ removeLayer: vi.fn(), fitBounds: vi.fn() });
+/**
+ * The two Map methods createMap actually calls.
+ *
+ * A named double rather than an inline cast at each call site: it states what
+ * this module needs from Leaflet's Map, which is a far smaller surface than the
+ * ~90 members the real type carries.
+ */
+interface MapDouble {
+  removeLayer: Mock;
+  fitBounds: Mock;
+}
 
-const forecast = (value) => ({
-  position: ['41.99', '21.42'],
+const map = (): MapDouble => ({ removeLayer: vi.fn(), fitBounds: vi.fn() });
+
+/** Hand the double to code typed against Leaflet's own Map. */
+const asMap = (double: MapDouble) => double as unknown as LeafletMap;
+
+/** Read the mock methods off a layer the mocked Leaflet returned. */
+const layerOf = (value: unknown) => value as unknown as { bindPopup: Mock };
+
+const forecast = (value: number) => ({
+  position: ['41.99', '21.42'] as Position,
   data: [{ time: '15/01/2024 10:30', pm10: value }],
 });
 
@@ -58,7 +86,7 @@ describe('mapCities', () => {
   it('adds one marker per city, labelled with its site name', () => {
     const m = map();
 
-    const markers = mapCities(m, [
+    const markers = mapCities(asMap(m), [
       { position: ['41.99', '21.42'], siteName: 'Skopje' },
       { position: ['41.03', '21.33'], siteName: 'Bitola' },
     ]);
@@ -66,18 +94,18 @@ describe('mapCities', () => {
     expect(markers).toHaveLength(2);
     expect(L.marker).toHaveBeenCalledTimes(2);
     expect(L.marker).toHaveBeenCalledWith(['41.99', '21.42']);
-    expect(markers[0].bindPopup).toHaveBeenCalledWith('Skopje');
+    expect(layerOf(at(markers, 0)).bindPopup).toHaveBeenCalledWith('Skopje');
   });
 
   it('tolerates a null city list', () => {
-    expect(mapCities(map(), null)).toEqual([]);
+    expect(mapCities(asMap(map()), null)).toEqual([]);
     expect(L.marker).not.toHaveBeenCalled();
   });
 });
 
 describe('mapSensorsInCities', () => {
   it('adds a marker per sensor across every city', () => {
-    const markers = mapSensorsInCities(map(), [
+    const markers = mapSensorsInCities(asMap(map()), [
       {
         sensors: {
           a: { position: ['1', '2'], description: 'Centar' },
@@ -87,21 +115,29 @@ describe('mapSensorsInCities', () => {
     ]);
 
     expect(markers).toHaveLength(2);
-    expect(markers[0].bindPopup).toHaveBeenCalledWith('Centar');
+    expect(layerOf(at(markers, 0)).bindPopup).toHaveBeenCalledWith('Centar');
   });
 
   // CHARACTERIZATION -- mapCities guards its argument with `(cities || [])`;
   // this function does not guard `c.sensors`, so a city whose sensors have not
   // been loaded yet throws. Enabling the sensor-markers toggle before sensors
   // resolve hits exactly this.
+  //
+  // The cast is part of the characterization now: the parameter type requires
+  // `sensors`, so `{}` is deliberately not a valid argument, and this test
+  // asserts what the code does when handed one regardless.
   it('currently THROWS for a city with no sensors loaded (known gap)', () => {
-    expect(() => mapSensorsInCities(map(), [{}])).toThrow(TypeError);
+    expect(() =>
+      mapSensorsInCities(asMap(map()), [
+        {} as { sensors: Record<string, { position: Position }> },
+      ])
+    ).toThrow(TypeError);
   });
 });
 
 describe('createCityBoundaries', () => {
   it('draws one red polygon per city', () => {
-    const polygons = createCityBoundaries(map(), [
+    const polygons = createCityBoundaries(asMap(map()), [
       { borders: [['1', '2']] },
       { borders: [['3', '4']] },
     ]);
@@ -111,7 +147,7 @@ describe('createCityBoundaries', () => {
   });
 
   it('tolerates a null city list', () => {
-    expect(createCityBoundaries(map(), null)).toEqual([]);
+    expect(createCityBoundaries(asMap(map()), null)).toEqual([]);
   });
 });
 
@@ -120,23 +156,23 @@ describe('removeLayer', () => {
     const m = map();
     const layers = [{ id: 1 }, { id: 2 }];
 
-    expect(removeLayer(m, layers)).toBeNull();
+    expect(removeLayer(asMap(m), layers)).toBeNull();
     expect(m.removeLayer).toHaveBeenCalledTimes(2);
   });
 
   it('tolerates a null layer list — this is the idle state', () => {
     const m = map();
 
-    expect(removeLayer(m, null)).toBeNull();
+    expect(removeLayer(asMap(m), null)).toBeNull();
     expect(m.removeLayer).not.toHaveBeenCalled();
   });
 });
 
 describe('createBaseLayer', () => {
   it('adds the OpenStreetMap tile layer with the configured zoom bounds', () => {
-    createBaseLayer(map());
+    createBaseLayer(asMap(map()));
 
-    const [url, opts] = L.tileLayer.mock.calls[0];
+    const [url, opts] = at(L.tileLayer.mock.calls, 0);
     expect(url).toBe('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
     expect(opts.attribution).toContain('OpenStreetMap');
     expect(opts.minZoom).toBeLessThan(opts.maxZoom);
@@ -144,24 +180,24 @@ describe('createBaseLayer', () => {
 });
 
 describe('createHeatLayer (single sensor)', () => {
-  const city = { sensors: { 's1': { forecast: forecast(60) } } };
+  const city = { sensors: { s1: { forecast: forecast(60) } } };
 
   it('normalises the reading by the pollutant ratio', () => {
-    createHeatLayer(map(), {
+    createHeatLayer(asMap(map()), {
       city,
       sensorId: 's1',
       pollutant: 'pm10',
       time: 0,
     });
 
-    const [points] = L.heatLayer.mock.calls[0];
+    const [points] = at(L.heatLayer.mock.calls, 0);
     expect(points).toEqual([['41.99', '21.42', 60 / PollutantRatio.pm10]]);
   });
 
   it('fits the map to the sensor position and returns the time axis', () => {
     const m = map();
 
-    const result = createHeatLayer(m, {
+    const result = createHeatLayer(asMap(m), {
       city,
       sensorId: 's1',
       pollutant: 'pm10',
@@ -174,7 +210,7 @@ describe('createHeatLayer (single sensor)', () => {
 
 describe('createHeatLayers (all cities)', () => {
   it('includes only cities that have a reading for the pollutant', () => {
-    createHeatLayers(map(), {
+    createHeatLayers(asMap(map()), {
       cities: [
         { forecast: forecast(60) },
         { forecast: { position: ['1', '2'], data: [{ time: 't' }] } },
@@ -182,7 +218,7 @@ describe('createHeatLayers (all cities)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = L.heatLayer.mock.calls[0];
+    const [points] = at(L.heatLayer.mock.calls, 0);
     expect(points).toHaveLength(1);
   });
 
@@ -191,20 +227,24 @@ describe('createHeatLayers (all cities)', () => {
   // depending on which toggle is active, so the single-sensor and all-cities
   // views are not on the same scale.
   it('currently does NOT normalise by the pollutant ratio (inconsistent)', () => {
-    createHeatLayers(map(), {
+    createHeatLayers(asMap(map()), {
       cities: [{ forecast: forecast(60) }],
       pollutant: 'pm10',
     });
 
-    const [points] = L.heatLayer.mock.calls[0];
-    expect(points[0][2]).toBe(60);
-    expect(points[0][2]).not.toBe(60 / PollutantRatio.pm10);
+    // Named, because this test is specifically about the third element: a heat
+    // point is [lat, lng, intensity], and the claim is about the intensity.
+    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [, , intensity] = at(points as Array<[string, string, number]>, 0);
+
+    expect(intensity).toBe(60);
+    expect(intensity).not.toBe(60 / PollutantRatio.pm10);
   });
 });
 
 describe('createSensorHeatLayers (all sensors)', () => {
   it('flattens readings across every sensor of every city', () => {
-    createSensorHeatLayers(map(), {
+    createSensorHeatLayers(asMap(map()), {
       cities: [
         {
           sensors: {
@@ -216,12 +256,12 @@ describe('createSensorHeatLayers (all sensors)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = L.heatLayer.mock.calls[0];
+    const [points] = at(L.heatLayer.mock.calls, 0);
     expect(points).toHaveLength(2);
   });
 
   it('drops sensors with no reading for the pollutant', () => {
-    createSensorHeatLayers(map(), {
+    createSensorHeatLayers(asMap(map()), {
       cities: [
         {
           sensors: {
@@ -233,7 +273,7 @@ describe('createSensorHeatLayers (all sensors)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = L.heatLayer.mock.calls[0];
+    const [points] = at(L.heatLayer.mock.calls, 0);
     expect(points).toHaveLength(1);
   });
 });
