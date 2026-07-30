@@ -37,6 +37,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
+        'src/main.js',
         'src/classes/**',
         'src/components/**',
         'src/services/**',
