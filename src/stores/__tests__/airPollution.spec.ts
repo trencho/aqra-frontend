@@ -12,27 +12,44 @@ vi.mock('@/services/api', () => ({
   },
 }));
 
+import type { AxiosResponse } from 'axios';
+
+import { axiosResponse, present } from '@/__tests__/support/expect';
+import type { Forecast } from '@/classes/forecast';
+import type { Sensor } from '@/classes/sensors';
+import type { ApiCity, ApiSensor } from '@/types/api';
+import type { SelectFilterInput } from '@/types/domain';
+
 const { aqra } = await import('@/services/api');
 const { useAirPollutionStore } = await import('../airPollution');
 const { TabIds } = await import('@/constants/navigationTabs');
 const { DEFAULT_CONCURRENCY } = await import('@/utils/concurrency');
 
-const ok = (data) => Promise.resolve({ status: 200, data });
-const notOk = (status) => Promise.resolve({ status, data: null });
+// Generic, so each endpoint mock resolves with the payload type that endpoint
+// actually declares -- `ok([API_CITY])` against getDataForAllCities is checked
+// as ApiCity[]. A non-generic helper would have satisfied the compiler while
+// letting any fixture through.
+const ok = <T,>(data: unknown) => Promise.resolve(axiosResponse<T>(data, 200));
+const notOk = <T,>(status: number) =>
+  Promise.resolve(axiosResponse<T>(null, status));
 
-const API_CITY = {
+const API_CITY: ApiCity = {
   cityName: 'skopje',
   siteName: 'Skopje',
   cityLocation: { latitude: '41.99', longitute: '21.42' },
   cityBorderPoints: [],
 };
-const API_SENSOR = {
+const API_SENSOR: ApiSensor = {
   sensorId: 'sensor-1',
   description: 'Centar',
   position: '41.99,21.42',
 };
 
-let store;
+// One annotation, and 142 of this file's 190 conversion errors go away --
+// every `store.x` in the suite was an unchecked `any`. This is precisely what
+// makes the difference between converting the specs and merely renaming them:
+// `let store: any` would have compiled just as well and checked nothing.
+let store: ReturnType<typeof useAirPollutionStore>;
 
 beforeEach(() => {
   setActivePinia(createPinia());
@@ -77,17 +94,17 @@ describe('ui actions', () => {
 
 describe('getCities', () => {
   it('maps the response into a city map keyed by cityName', async () => {
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
 
     const cities = await store.getCities();
 
     expect(cities).toHaveLength(1);
-    expect(store.cities.skopje.siteName).toBe('Skopje');
-    expect(store.cities.skopje.position).toEqual(['41.99', '21.42']);
+    expect(present(store.cities.skopje).siteName).toBe('Skopje');
+    expect(present(store.cities.skopje).position).toEqual(['41.99', '21.42']);
   });
 
   it('returns an empty array and stores nothing on a non-200', async () => {
-    aqra.getDataForAllCities.mockReturnValue(notOk(500));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(notOk(500));
 
     expect(await store.getCities()).toEqual([]);
     expect(store.cities).toEqual({});
@@ -98,7 +115,7 @@ describe('getCities', () => {
   // action entirely -- there was no try/catch anywhere in src/, so the UI was
   // left stuck with no feedback.
   it('surfaces a rejected request as store error state, not a rejection', async () => {
-    aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('Network Error'));
 
     await expect(store.getCities()).resolves.toEqual([]);
     expect(store.error).toBe('Network Error');
@@ -106,7 +123,7 @@ describe('getCities', () => {
   });
 
   it('records an error for a non-200 too', async () => {
-    aqra.getDataForAllCities.mockReturnValue(notOk(503));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(notOk(503));
 
     await store.getCities();
 
@@ -114,11 +131,11 @@ describe('getCities', () => {
   });
 
   it('clears a previous error once a request succeeds', async () => {
-    aqra.getDataForAllCities.mockRejectedValue(new Error('Network Error'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('Network Error'));
     await store.getCities();
     expect(store.hasError).toBe(true);
 
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
     await store.getCities();
 
     expect(store.error).toBeNull();
@@ -126,7 +143,7 @@ describe('getCities', () => {
   });
 
   it('clearError resets the error state', async () => {
-    aqra.getDataForAllCities.mockRejectedValue(new Error('boom'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('boom'));
     await store.getCities();
 
     store.clearError();
@@ -137,8 +154,8 @@ describe('getCities', () => {
 
 describe('loading state', () => {
   it('reports loading while a request is in flight and not after', async () => {
-    let resolve;
-    aqra.getDataForAllCities.mockReturnValue(
+    let resolve!: (response: AxiosResponse<ApiCity[]>) => void;
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(
       new Promise((r) => {
         resolve = r;
       })
@@ -147,14 +164,14 @@ describe('loading state', () => {
     const inFlight = store.getCities();
     expect(store.isLoading).toBe(true);
 
-    resolve({ status: 200, data: [] });
+    resolve(axiosResponse([], 200));
     await inFlight;
 
     expect(store.isLoading).toBe(false);
   });
 
   it('stops reporting loading even when the request fails', async () => {
-    aqra.getDataForAllCities.mockRejectedValue(new Error('boom'));
+    vi.mocked(aqra.getDataForAllCities).mockRejectedValue(new Error('boom'));
 
     await store.getCities();
 
@@ -180,19 +197,19 @@ describe('resilience of the mutation helpers', () => {
       store.setForecastForSensor({
         sensorId: null,
         cityName: null,
-        forecast: {},
+        forecast: {} as Forecast,
       })
     ).not.toThrow();
   });
 
   it('setForecastForCity ignores an unknown city', () => {
     expect(() =>
-      store.setForecastForCity({ cityName: 'atlantis', forecast: {} })
+      store.setForecastForCity({ cityName: 'atlantis', forecast: {} as Forecast })
     ).not.toThrow();
   });
 
   it('getSensorsByCityName resolves to [] for an unknown city', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
 
     await expect(store.getSensorsByCityName('atlantis')).resolves.toEqual([
       API_SENSOR,
@@ -200,7 +217,7 @@ describe('resilience of the mutation helpers', () => {
   });
 
   it('getForecastBySensorId resolves rather than throwing with no city', async () => {
-    aqra.getForecastForSpecificSensor.mockReturnValue(
+    vi.mocked(aqra.getForecastForSpecificSensor).mockReturnValue(
       ok({ latitude: 1, longitude: 2, data: [] })
     );
 
@@ -212,21 +229,21 @@ describe('resilience of the mutation helpers', () => {
 
 describe('getSensorsByCityName', () => {
   beforeEach(async () => {
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
     await store.getCities();
   });
 
   it('maps sensors and files them under the city', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
 
     const sensors = await store.getSensorsByCityName('skopje');
 
     expect(sensors).toHaveLength(1);
-    expect(store.cities.skopje.sensors['sensor-1'].description).toBe('Centar');
+    expect(present(present(present(store.cities.skopje).sensors)['sensor-1']).description).toBe('Centar');
   });
 
   it('serves a cached result without refetching', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
     await store.getSensorsByCityName('skopje');
 
     await store.getSensorsByCityName('skopje');
@@ -235,7 +252,7 @@ describe('getSensorsByCityName', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(notOk(404));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(notOk(404));
 
     expect(await store.getSensorsByCityName('skopje')).toEqual([]);
   });
@@ -243,20 +260,20 @@ describe('getSensorsByCityName', () => {
 
 describe('getPollutantsBySensorId', () => {
   it('maps pollutants and caches them by sensor id', async () => {
-    store.nameInput = { value: 'skopje' };
-    aqra.getDataForAllAvailablePollutantsBySensorId.mockReturnValue(
+    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
 
     const pollutants = await store.getPollutantsBySensorId('sensor-1');
 
-    expect(pollutants[0].name).toBe('pm10');
+    expect(present(pollutants[0]).name).toBe('pm10');
     expect(store.pollutantsBySensorId['sensor-1']).toHaveLength(1);
   });
 
   it('serves a cached result without refetching', async () => {
-    store.nameInput = { value: 'skopje' };
-    aqra.getDataForAllAvailablePollutantsBySensorId.mockReturnValue(
+    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
     await store.getPollutantsBySensorId('sensor-1');
@@ -269,8 +286,8 @@ describe('getPollutantsBySensorId', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    store.nameInput = { value: 'skopje' };
-    aqra.getDataForAllAvailablePollutantsBySensorId.mockReturnValue(notOk(500));
+    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(notOk(500));
 
     expect(await store.getPollutantsBySensorId('sensor-1')).toEqual([]);
   });
@@ -278,19 +295,22 @@ describe('getPollutantsBySensorId', () => {
 
 describe('getHistoryDataBySensorId', () => {
   it('maps history through Forecast and caches it', async () => {
-    store.nameInput = { value: 'skopje' };
-    aqra.getDataForHistoricalPollution.mockReturnValue(
+    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
 
     await store.getHistoryDataBySensorId('sensor-1');
 
-    expect(store.historyData['sensor-1'].position).toEqual(['41.99', '21.42']);
+    expect(present(store.historyData['sensor-1']).position).toEqual([
+      '41.99',
+      '21.42',
+    ]);
   });
 
   it('returns an empty array on a non-200', async () => {
-    store.nameInput = { value: 'skopje' };
-    aqra.getDataForHistoricalPollution.mockReturnValue(notOk(503));
+    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(notOk(503));
 
     expect(await store.getHistoryDataBySensorId('sensor-1')).toEqual([]);
   });
@@ -298,14 +318,14 @@ describe('getHistoryDataBySensorId', () => {
 
 describe('getForecastBySensorId', () => {
   beforeEach(async () => {
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
     await store.getCities();
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
     await store.getSensorsByCityName('skopje');
   });
 
   it('attaches the forecast to the sensor', async () => {
-    aqra.getForecastForSpecificSensor.mockReturnValue(
+    vi.mocked(aqra.getForecastForSpecificSensor).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
 
@@ -315,12 +335,15 @@ describe('getForecastBySensorId', () => {
     });
 
     expect(
-      store.cities.skopje.sensors['sensor-1'].forecast.position
+      present(
+        present(present(present(store.cities.skopje).sensors)['sensor-1'])
+          .forecast
+      ).position
     ).toEqual(['41.99', '21.42']);
   });
 
   it('serves a cached forecast without refetching', async () => {
-    aqra.getForecastForSpecificSensor.mockReturnValue(
+    vi.mocked(aqra.getForecastForSpecificSensor).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
     const args = { sensorId: 'sensor-1', cityName: 'skopje' };
@@ -332,7 +355,7 @@ describe('getForecastBySensorId', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    aqra.getForecastForSpecificSensor.mockReturnValue(notOk(502));
+    vi.mocked(aqra.getForecastForSpecificSensor).mockReturnValue(notOk(502));
 
     expect(
       await store.getForecastBySensorId({
@@ -345,12 +368,12 @@ describe('getForecastBySensorId', () => {
 
 describe('getForecastByCoordinatesForCity', () => {
   beforeEach(async () => {
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
     await store.getCities();
   });
 
   it('attaches the forecast to the city', async () => {
-    aqra.getForecastBySpecificCoordinates.mockReturnValue(
+    vi.mocked(aqra.getForecastBySpecificCoordinates).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
 
@@ -359,7 +382,10 @@ describe('getForecastByCoordinatesForCity', () => {
       cityName: 'skopje',
     });
 
-    expect(store.cities.skopje.forecast.position).toEqual(['41.99', '21.42']);
+    expect(present(present(store.cities.skopje).forecast).position).toEqual([
+      '41.99',
+      '21.42',
+    ]);
     expect(aqra.getForecastBySpecificCoordinates).toHaveBeenCalledWith(
       '41.99',
       '21.42'
@@ -367,7 +393,7 @@ describe('getForecastByCoordinatesForCity', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    aqra.getForecastBySpecificCoordinates.mockReturnValue(notOk(500));
+    vi.mocked(aqra.getForecastBySpecificCoordinates).mockReturnValue(notOk(500));
 
     expect(
       await store.getForecastByCoordinatesForCity({
@@ -380,14 +406,14 @@ describe('getForecastByCoordinatesForCity', () => {
 
 describe('bulk fan-out actions', () => {
   beforeEach(async () => {
-    aqra.getDataForAllCities.mockReturnValue(
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(
       ok([API_CITY, { ...API_CITY, cityName: 'bitola', siteName: 'Bitola' }])
     );
     await store.getCities();
   });
 
   it('getSensorsForAllCities fetches once per city', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
 
     await store.getSensorsForAllCities();
 
@@ -395,7 +421,7 @@ describe('bulk fan-out actions', () => {
   });
 
   it('getForecastForAllCities fetches once per city', async () => {
-    aqra.getForecastBySpecificCoordinates.mockReturnValue(
+    vi.mocked(aqra.getForecastBySpecificCoordinates).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
 
@@ -405,8 +431,8 @@ describe('bulk fan-out actions', () => {
   });
 
   it('getForecastForAllSensors fans out over every city x sensor', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
-    aqra.getForecastForSpecificSensor.mockReturnValue(
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getForecastForSpecificSensor).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
 
@@ -429,15 +455,15 @@ describe('bulk fan-out actions', () => {
         { ...API_CITY, cityName: `city-${i}`, position: [`${i}`, `${i}`] },
       ])
     );
-    store.cities = cities;
+    store.cities = cities as unknown as typeof store.cities;
 
     let inFlight = 0;
     let peak = 0;
-    aqra.getForecastBySpecificCoordinates.mockImplementation(async () => {
+    vi.mocked(aqra.getForecastBySpecificCoordinates).mockImplementation(async () => {
       peak = Math.max(peak, ++inFlight);
       await new Promise((r) => setTimeout(r, 0));
       inFlight--;
-      return { status: 200, data: { latitude: 1, longitude: 2, data: [] } };
+      return axiosResponse({ latitude: 1, longitude: 2, data: [] }, 200);
     });
 
     await store.getForecastForAllCities();
@@ -450,7 +476,7 @@ describe('bulk fan-out actions', () => {
 
 describe('page initialisation', () => {
   beforeEach(async () => {
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
     await store.getCities();
   });
 
@@ -476,7 +502,7 @@ describe('page initialisation', () => {
   });
 
   it('initHomePage loads the cities', async () => {
-    aqra.getDataForAllCities.mockClear();
+    vi.mocked(aqra.getDataForAllCities).mockClear();
     store.cities = {};
 
     await store.initHomePage();
@@ -495,7 +521,7 @@ describe('option setters', () => {
     store.pollutantInput.value = 'stale';
 
     store.setSensorInputOptions([
-      { description: 'Centar', sensorId: 'sensor-1' },
+      { description: 'Centar', sensorId: 'sensor-1' } as Sensor,
     ]);
 
     expect(store.sensorInput.items).toEqual([
@@ -506,7 +532,7 @@ describe('option setters', () => {
   });
 
   it('setSensorInputOptions tolerates a null option list', () => {
-    store.setSensorInputOptions(null);
+    store.setSensorInputOptions(null as unknown as Sensor[]);
 
     expect(store.sensorInput.items).toEqual([]);
   });
@@ -550,13 +576,13 @@ describe('option setters', () => {
 
 describe('setValue', () => {
   beforeEach(async () => {
-    aqra.getDataForAllCities.mockReturnValue(ok([API_CITY]));
+    vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
     await store.getCities();
     store.initMapPage();
   });
 
   it('writes the value onto the input it was given', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
 
     await store.setValue({ input: store.nameInput, value: 'skopje' });
 
@@ -564,7 +590,7 @@ describe('setValue', () => {
   });
 
   it('selecting a city loads that city’s sensors into the sensor select', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
 
     await store.setValue({ input: store.nameInput, value: 'skopje' });
 
@@ -576,10 +602,10 @@ describe('setValue', () => {
 
   it('selecting a sensor loads its pollutants and history', async () => {
     store.nameInput.value = 'skopje';
-    aqra.getDataForAllAvailablePollutantsBySensorId.mockReturnValue(
+    vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
-    aqra.getDataForHistoricalPollution.mockReturnValue(
+    vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(
       ok({ latitude: 1, longitude: 2, data: [] })
     );
 
@@ -594,10 +620,10 @@ describe('setValue', () => {
   it('selecting a pollutant fetches the forecast for the selected sensor', async () => {
     store.nameInput.value = 'skopje';
     store.sensorInput.value = 'sensor-1';
-    aqra.getForecastForSpecificSensor.mockReturnValue(
+    vi.mocked(aqra.getForecastForSpecificSensor).mockReturnValue(
       ok({ latitude: 1, longitude: 2, data: [] })
     );
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
     await store.getSensorsByCityName('skopje');
 
     await store.setValue({ input: store.pollutantInput, value: 'pm10' });
@@ -617,7 +643,7 @@ describe('setValue', () => {
   });
 
   it('toggling showSensorMarkers loads sensors for every city', async () => {
-    aqra.getAvailableSensorsForCity.mockReturnValue(ok([API_SENSOR]));
+    vi.mocked(aqra.getAvailableSensorsForCity).mockReturnValue(ok([API_SENSOR]));
 
     await store.setValue({
       input: store.showSensorMarkersInput,
@@ -629,7 +655,10 @@ describe('setValue', () => {
 
   it('ignores an input id with no branch, without throwing', async () => {
     await expect(
-      store.setValue({ input: { id: 'showCityBoundaries' }, value: true })
+      store.setValue({
+        input: { id: 'showCityBoundaries', value: null },
+        value: true,
+      })
     ).resolves.toBeUndefined();
   });
 });
