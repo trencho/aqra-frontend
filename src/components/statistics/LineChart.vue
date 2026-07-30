@@ -6,8 +6,8 @@
 </template>
 
 <script>
-import { Line } from 'vue-chartjs';
 import { Chart, registerables } from 'chart.js';
+import { Line } from 'vue-chartjs';
 
 // Chart.js 3+ is tree-shakeable: without registering the controllers, scales
 // and elements, every chart throws "line is not a registered controller" at

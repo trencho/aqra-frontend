@@ -23,8 +23,9 @@
 
 <script>
 import { mapStores } from 'pinia';
-import { useAirPollutionStore } from '@/stores/airPollution';
+
 import { TabIds } from '@/constants/navigationTabs';
+import { useAirPollutionStore } from '@/stores/airPollution';
 
 export default {
   name: 'MenuDrawer',

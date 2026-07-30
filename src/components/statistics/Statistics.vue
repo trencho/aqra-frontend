@@ -14,12 +14,12 @@
 <script>
 import { mapStores } from 'pinia';
 
-import LineChart from './LineChart.vue';
-import StatisticsFilters from './StatisticFilters.vue';
-
+import { belowAppBar } from '@/constants/layout';
 import { useAirPollutionStore } from '@/stores/airPollution';
 import { chartConfig, mapHistoryToSeries } from '@/utils/createStatistics';
-import { belowAppBar } from '@/constants/layout';
+
+import LineChart from './LineChart.vue';
+import StatisticsFilters from './StatisticFilters.vue';
 
 export default {
   name: 'Statistics',
