@@ -16,6 +16,7 @@
  * top of the file reorders exactly that pair.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 import { present } from '@/__tests__/support/expect';
 import { stubBrowserApis } from '@/components/__tests__/helpers';
@@ -43,10 +44,34 @@ beforeEach(() => {
 });
 
 describe('main.js', () => {
-  it('evaluates and mounts the app into #app', async () => {
+  /**
+   * Every DOM assertion in this file has to live in this one test.
+   *
+   * ES modules evaluate once per file, so the `import('@/main.ts')` in a later
+   * test returns the cached module and mounts nothing -- while the beforeEach
+   * above has already replaced document.body with a fresh, empty #app. The
+   * tests below get away with a bare `await import` because they assert on
+   * Leaflet's globals, which survive; anything reading the DOM would see an
+   * empty div and fail for a reason that has nothing to do with what it checks.
+   */
+  it('evaluates, mounts into #app, and renders the routed view', async () => {
+    const { router } = await import('@/router');
     await expect(import('@/main.ts')).resolves.toBeDefined();
 
+    // The initial navigation is asynchronous, so <RouterView /> renders empty
+    // on the tick the module finishes. isReady() is what waits for it --
+    // flushPromises is not enough, which is worth knowing before writing any
+    // other DOM assertion against a freshly mounted app.
+    await router.isReady();
+    await nextTick();
+
     expect(present(document.querySelector('#app')).innerHTML).not.toBe('');
+
+    // A missing `.use(router)` would still render the chrome -- app bar,
+    // footer -- so the check above would not notice. #welcome-page exists only
+    // inside the Home route's component, so finding it proves the router was
+    // installed AND resolved the default location.
+    expect(document.querySelector('#welcome-page')).not.toBeNull();
   });
 
   it('loads leaflet.heat after Leaflet, so L.heatLayer is registered', async () => {

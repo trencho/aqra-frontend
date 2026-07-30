@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { mount } from '@vue/test-utils';
+import {mount } from '@vue/test-utils';
 import { beforeEach,describe, expect, it } from 'vitest';
 
 import { at } from '@/__tests__/support/expect';
@@ -46,13 +46,30 @@ describe('MenuDrawer', () => {
     wrapper.unmount();
   });
 
-  it('changes tab when a link is clicked', async () => {
+  // Each entry is a real link now (`:to`), so the click starts a navigation and
+  // the store is updated by the router's afterEach.
+  //
+  // Awaiting the router's own completion rather than flushing promises: a click
+  // handler has no promise to return, and the guard chain can outlive a single
+  // macrotask, so a flush-based wait is a latent flake.
+  it('navigates and changes tab when a link is clicked', async () => {
     const wrapper = mountIt();
     const store = useAirPollutionStore();
+    const router = wrapper.vm.$router;
+    await router.isReady();
+
+    const navigated = new Promise<void>((resolve) => {
+      const stop = router.afterEach(() => {
+        stop();
+        resolve();
+      });
+    });
 
     await at(wrapper.findAllComponents({ name: 'VListItem' }), 2).trigger('click');
+    await navigated;
 
     expect(store.tabId).toBe(TabIds.PollutionMap);
+    expect(router.currentRoute.value.path).toBe('/map');
     wrapper.unmount();
   });
 
