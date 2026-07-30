@@ -3,13 +3,27 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unusedImports from 'eslint-plugin-unused-imports';
 import pluginVue from 'eslint-plugin-vue';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   ...pluginVue.configs['flat/essential'],
   pluginJs.configs.recommended,
+
+  // Scoped to **/*.ts on purpose. typescript-eslint's shared configs set
+  // `languageOptions.parser` with no `files` restriction, so spreading them at
+  // the top level would replace vue-eslint-parser for .vue files too and break
+  // SFC parsing outright. tseslint.config() pins them to TypeScript files.
+  ...tseslint.config({
+    files: ['**/*.ts'],
+    extends: [tseslint.configs.recommended],
+  }),
+
   {
-    files: ['**/*.{js,mjs,cjs,vue}'],
+    // `ts` added for the migration. Without it the migrated files get no
+    // import-order and no unused-import enforcement, and `yarn lint` keeps
+    // reporting success over code it is no longer looking at.
+    files: ['**/*.{js,mjs,cjs,ts,vue}'],
     plugins: {
       'simple-import-sort': simpleImportSort,
       'unused-imports': unusedImports,
@@ -17,7 +31,7 @@ export default [
     languageOptions: {
       // node globals as well as browser: the config files here (vite.config.mjs,
       // this file) run under Node. Application code reads env vars from
-      // import.meta.env, not process.env -- see src/services/axios.js.
+      // import.meta.env, not process.env -- see src/services/axios.ts.
       globals: { ...globals.browser, ...globals.node },
       parserOptions: {
         ecmaVersion: 'latest',
@@ -46,6 +60,33 @@ export default [
       ],
     },
   },
+
+  {
+    // typescript-eslint's recommended set turns this on for .ts files, where it
+    // would duplicate unused-imports/no-unused-vars above -- two rules
+    // reporting the same finding, only one of which can autofix it.
+    files: ['**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+
+  {
+    // vue-eslint-parser stays the parser for SFCs (set by flat/essential
+    // above); this only tells it which parser to hand each <script> block to,
+    // keyed by the block's `lang`. Both keys are needed mid-migration, while
+    // some components are still <script> and others are <script lang="ts">.
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: {
+          js: 'espree',
+          ts: tseslint.parser,
+        },
+      },
+    },
+  },
+
   {
     ignores: [
       'dist/',

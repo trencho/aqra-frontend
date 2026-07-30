@@ -25,7 +25,11 @@ export default defineConfig({
     // Pure-logic tests need no DOM; component tests opt into jsdom per-file
     // via the `// @vitest-environment jsdom` docblock.
     environment: 'node',
-    include: ['src/**/__tests__/**/*.spec.js'],
+    // Both extensions, for the duration of the TypeScript migration and after.
+    // A `.js`-only glob silently stops collecting a spec the moment it is
+    // renamed to `.ts` -- `yarn test` still exits 0, just with fewer tests. The
+    // suite size (270 across 21 files) is the check that catches that.
+    include: ['src/**/__tests__/**/*.spec.{js,ts}'],
     server: {
       deps: {
         // Vuetify ships per-component `.css` imports. Without inlining it,
@@ -37,7 +41,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: [
-        'src/main.js',
+        // Extension-globbed for the same reason as `include` above: spelled
+        // 'src/main.js', this entry silently stops matching when the entry
+        // point becomes main.ts, dropping the only test that catches the
+        // leaflet.heat import-order hazard out of the coverage report.
+        // The directory entries below are already extension-agnostic.
+        'src/main.{js,ts}',
         'src/classes/**',
         'src/components/**',
         'src/services/**',
