@@ -3,13 +3,20 @@
 // module, which is required for `declare module` to augment instead of replace.
 import 'leaflet';
 
+// Everything below is `export`ed on purpose. Inside a module augmentation the
+// block follows module scoping rules, so an un-exported declaration stays local
+// to this file and `import type { HeatMapOptions } from 'leaflet'` would fail to
+// resolve it. Named type imports are the only option here: @types/leaflet
+// declares `export as namespace L` with no default export, so the `L` from
+// `import L from 'leaflet'` is a synthetic default -- usable as a value, but not
+// as a type namespace (`L.Map` does not resolve as a type through it).
 declare module 'leaflet' {
   /**
    * A heat point: [lat, lng] with an optional third element carrying the
    * intensity. leaflet.heat reads intensity from `latlng.alt` or `latlng[2]`
    * and defaults it to 1 -- see HeatLayer.js `_redraw`.
    */
-  type HeatLatLngTuple = [number, number, number];
+  export type HeatLatLngTuple = [number, number, number];
 
   /**
    * Options leaflet.heat actually reads.
@@ -23,7 +30,7 @@ declare module 'leaflet' {
    * it completely. Widening this interface to accept it would document a
    * setting that has never had any effect.
    */
-  interface HeatMapOptions {
+  export interface HeatMapOptions {
     /** Point radius in pixels. Falls back to simpleheat's default (25). */
     radius?: number;
     /** Blur radius in pixels. Defaults to the radius. */
@@ -38,7 +45,7 @@ declare module 'leaflet' {
     maxZoom?: number;
   }
 
-  class HeatLayer extends Layer {
+  export class HeatLayer extends Layer {
     constructor(
       latlngs: Array<LatLngExpression | HeatLatLngTuple>,
       options?: HeatMapOptions
@@ -49,12 +56,12 @@ declare module 'leaflet' {
     redraw(): this;
   }
 
-  function heatLayer(
+  export function heatLayer(
     latlngs: Array<LatLngExpression | HeatLatLngTuple>,
     options?: HeatMapOptions
   ): HeatLayer;
 
-  namespace Icon {
+  export namespace Icon {
     /**
      * Merges into the `Icon.Default` class declaration.
      *

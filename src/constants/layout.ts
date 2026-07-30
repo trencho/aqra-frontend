@@ -10,4 +10,4 @@
 export const APP_BAR_HEIGHT = 60;
 
 /** `calc()` expression for a full-viewport area sitting below the app bar. */
-export const belowAppBar = () => `calc(100vh - ${APP_BAR_HEIGHT}px)`;
+export const belowAppBar = (): string => `calc(100vh - ${APP_BAR_HEIGHT}px)`;

@@ -1,4 +1,23 @@
-export const translations = {
+import type { LocaleId } from './locales';
+
+/**
+ * One locale's messages. Flat under `common` -- there is only one namespace.
+ */
+interface Messages {
+  common: Record<string, string>;
+}
+
+/**
+ * Note the contact address is escaped as `{'@'}`, not a bare `@`.
+ *
+ * vue-i18n 9+ reads a bare `@` as linked-message syntax and throws
+ * `Invalid linked format` at runtime while the build stays green. Two tests in
+ * __tests__/translations.spec.js pin this; do not "tidy" it.
+ *
+ * The Record<LocaleId, ...> annotation means adding a locale to LocaleId
+ * without adding its messages here is a compile error.
+ */
+export const translations: Record<LocaleId, Messages> = {
   en: {
     common: {
       welcomeTo: 'Welcome to',
