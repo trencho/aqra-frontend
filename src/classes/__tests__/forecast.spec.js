@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import { Forecast } from '../forecast';
 
 // 2024-01-15T10:30:00Z

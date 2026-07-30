@@ -10,14 +10,14 @@
  * still using the `{ on, attrs }` contract, a store accessed the Vuex way, or
  * `$t` unavailable because i18n was registered in legacy mode.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount } from '@vue/test-utils';
 import { createTestingPinia } from '@pinia/testing';
+import { mount } from '@vue/test-utils';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App.vue';
+import { TabIds } from '@/constants/navigationTabs';
 import { i18n } from '@/services/i18n';
 import { vuetify } from '@/services/vuetify';
-import { TabIds } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
 
 // Leaflet needs real layout; the map component is exercised separately.

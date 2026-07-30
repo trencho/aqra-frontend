@@ -1,7 +1,7 @@
+import { createTestingPinia } from '@pinia/testing';
+import { mount } from '@vue/test-utils';
 import { vi } from 'vitest';
 import { h } from 'vue';
-import { mount } from '@vue/test-utils';
-import { createTestingPinia } from '@pinia/testing';
 import { VApp } from 'vuetify/components';
 
 import { i18n } from '@/services/i18n';

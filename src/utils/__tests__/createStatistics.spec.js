@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import {
-  mapHistoryToSeries,
-  chartConfig,
-  seriesColor,
-  SERIES_COLORS,
-} from '../createStatistics';
+import { describe, expect,it } from 'vitest';
+
 import { PollutantsLabels } from '@/constants/pollutants';
+
+import {
+  chartConfig,
+  mapHistoryToSeries,
+  SERIES_COLORS,
+  seriesColor,
+} from '../createStatistics';
 
 const historyData = {
   'sensor-1': {

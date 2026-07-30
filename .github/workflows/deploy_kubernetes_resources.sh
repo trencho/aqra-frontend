@@ -3,9 +3,13 @@ set -e  # Stop on error
 
 KUBERNETES_DIR="${GIT_REPO_PATH}/kubernetes"
 
-echo "Applying base resources..."
-kubectl apply -f "${KUBERNETES_DIR}/resources.yml"
+# Apply through kustomize rather than naming manifests one by one.
+# kustomization.yml is the single source of truth for which objects make up
+# this workload, and it deliberately excludes the old kompose dump that
+# declared a second, differently-named copy of the Service and Ingress.
+# Applying files individually is what let that dump back into the cluster.
+echo "Applying Kubernetes resources..."
+kubectl apply -k "${KUBERNETES_DIR}"
 
-echo "Deploying Vue application..."
-kubectl apply -f "${KUBERNETES_DIR}/vue-deployment.yml"
-kubectl rollout status deployment/vue -n aqra --watch=true
+echo "Waiting for the deployment to become ready..."
+kubectl rollout status deployment/aqra-frontend -n aqra --watch=true

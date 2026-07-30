@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Leaflet needs real layout, so both it and the map helpers are mocked; these
 // tests assert the component's orchestration, not Leaflet's rendering.

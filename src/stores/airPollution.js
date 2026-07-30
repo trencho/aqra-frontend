@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia';
 
 import { City } from '@/classes/city';
-import { Sensor } from '@/classes/sensors';
-import { Pollutant } from '@/classes/pollutant';
 import { Forecast } from '@/classes/forecast';
-import { aqra } from '@/services/api';
-import { mapWithConcurrency } from '@/utils/concurrency';
+import { Pollutant } from '@/classes/pollutant';
+import { Sensor } from '@/classes/sensors';
 import { TabIds } from '@/constants/navigationTabs';
 import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
+import { aqra } from '@/services/api';
+import { mapWithConcurrency } from '@/utils/concurrency';
 
 function mapList(list, entity) {
   const map = {};

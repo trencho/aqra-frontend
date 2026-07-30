@@ -9,8 +9,8 @@
  * there was no try/catch anywhere in src/ -- so a failed request left the UI
  * sitting in its loading state with the only evidence in the browser console.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { setActivePinia, createPinia } from 'pinia';
+import { createPinia,setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/services/api', () => ({
   aqra: {

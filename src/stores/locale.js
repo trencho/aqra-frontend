@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+
 import { LocaleId } from '@/constants/locales';
 import { setI18nLocale } from '@/services/i18n';
 

@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import {
+  PollutantRatio,
   Pollutants,
   PollutantsLabels,
-  PollutantRatio,
 } from '../pollutants';
 
 const POLLUTANT_KEYS = [

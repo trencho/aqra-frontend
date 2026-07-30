@@ -1,5 +1,5 @@
-import qs from 'qs';
 import Axios from 'axios';
+import qs from 'qs';
 
 const DEFAULT_API_URL = 'https://aqra.feit.ukim.edu.mk/api/v1';
 

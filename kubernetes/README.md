@@ -11,6 +11,40 @@
 > Separately, every key it holds is dead config: none is `VITE_`-prefixed, so
 > none of it reaches the browser bundle.
 
+## One-off cutover: `vue` → `aqra-frontend`
+
+The Deployment, Service and Ingress were renamed. The cluster still runs the
+old `vue`-named objects, and **nothing in the deploy pipeline removes them** —
+a Deployment's `selector` is immutable, so this is a delete-and-recreate, not a
+rolling update. Do this once, by hand, in a window where someone can watch.
+
+1. **Build the renamed image on the node first.** The Deployment sets
+   `imagePullPolicy: Never`, so if `aqra-frontend:latest` is not already in the
+   node's local Docker it will never start.
+
+   ```
+   docker compose -f docker/docker-compose.yml build
+   ```
+
+2. **Remove the old objects.** The old Service selects
+   `io.kompose.service: vue`, which the new pods do not carry, so leaving it in
+   place means an Ingress pointing at a Service with zero endpoints.
+
+   ```
+   kubectl delete deployment vue -n aqra
+   kubectl delete service vue -n aqra
+   kubectl delete ingress vue-ingress -n aqra
+   ```
+
+3. **Apply the new set.**
+
+   ```
+   kubectl apply -k kubernetes/
+   kubectl rollout status deployment/aqra-frontend -n aqra
+   ```
+
+The SealedSecret is *not* part of this rename — see the note above.
+
 ###### Apply sealed secrets controller and generate sealed secrets from existing secrets
 
 ```
@@ -22,18 +56,27 @@ kubeseal < kubernetes/vue-secret.yml -o yaml > kubernetes/vue-sealed-secret.yml
 kubectl apply -f kubernetes/vue-sealed-secret.yml
 ```
 
-###### Generate single yml files for applying all necessary kubernetes resources
-
-```
-kubectl kustomize kubernetes > kubernetes/resources.yml
-```
-
 ###### Apply all system resources
 
+`kustomization.yml` lists every object that makes up this workload, so one
+command applies the lot. This is also what `deploy_kubernetes_resources.sh`
+runs — there is no second, hand-maintained list to drift out of sync.
+
 ```
-kubectl apply -f kubernetes/resources.yml
-kubectl apply -f kubernetes/aqra-frontend-deployment.yml
+kubectl apply -k kubernetes/
 ```
+
+To see what that resolves to without touching the cluster:
+
+```
+kubectl kustomize kubernetes/
+```
+
+> A generated `resources.yml` used to be committed here and applied *alongside*
+> the individual manifests. It was a kompose dump that redeclared the Service
+> and Ingress under their old `vue` names, so applying it recreated objects
+> whose selectors no longer matched the pods. It has been deleted; do not
+> regenerate it.
 
 ###### Get deployed pods in namespace aqra
 
@@ -48,7 +91,7 @@ kubectl describe pod [pod-name] -n aqra
 ```
 
 ```
-kubectl get pods -n aqra | grep -E 'vue[a-z0-9\-]*' -iwo | tr -d '\n' | xargs kubectl describe pod -n aqra
+kubectl get pods -n aqra | grep -E 'aqra-frontend[a-z0-9\-]*' -iwo | tr -d '\n' | xargs kubectl describe pod -n aqra
 ```
 
 ###### Follow logs of deployed pod
@@ -58,7 +101,7 @@ kubectl logs -f [pod-name] -n aqra
 ```
 
 ```
-kubectl get pods -n aqra | grep -E 'vue[a-z0-9\-]*' -iwo | tr -d '\n' | xargs kubectl logs -f -n aqra
+kubectl get pods -n aqra | grep -E 'aqra-frontend[a-z0-9\-]*' -iwo | tr -d '\n' | xargs kubectl logs -f -n aqra
 ```
 
 ###### Enter bash of deployed pod

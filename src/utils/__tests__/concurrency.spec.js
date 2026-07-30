@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { mapWithConcurrency, DEFAULT_CONCURRENCY } from '../concurrency';
+import { describe, expect, it, vi } from 'vitest';
+
+import { DEFAULT_CONCURRENCY,mapWithConcurrency } from '../concurrency';
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
