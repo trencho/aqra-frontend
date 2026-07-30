@@ -108,17 +108,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      # OPENVPN_CONFIG holds a *path*, and it is a secret, so when the file is
+      # missing the VPN action reports `config file '***' not found` -- masked,
+      # and therefore impossible to act on. That is exactly what happened after
+      # commit 09a61db deleted .github/workflows/client.ovpn as "unreferenced":
+      # the only reference lived in the secret, so grep found nothing.
+      #
+      # Fail here instead, before the two-minute apt install, and say which file
+      # this repository actually ships.
+      - name: Verify the OpenVPN config file exists
+        env:
+          OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+        run: |
+          if [ ! -f "${OPENVPN_CONFIG}" ]; then
+            echo "::error::OPENVPN_CONFIG names a file that is not in the checkout."
+            echo "The secret must hold a path, relative to the repository root, to an"
+            echo "OpenVPN config. This repository ships one at:"
+            echo "    .github/workflows/client.ovpn"
+            echo "Present in .github/workflows right now:"
+            ls -A .github/workflows
+            exit 1
+          fi
+
       - name: Install OpenVPN
         run: |
           sudo apt update
           sudo apt install -y openvpn openvpn-systemd-resolved
 
+      # Written from secrets rather than committed, and referenced by absolute
+      # path from client.ovpn. Passed through `env:` rather than interpolated
+      # into the script body with ${{ }}: expression interpolation splices the
+      # value into the shell source before it runs, which is a script-injection
+      # surface and mangles anything the shell would treat as syntax.
       - name: Create necessary OpenVPN key files
+        env:
+          CA_CERT: ${{ secrets.CA_CERT }}
+          CLIENT_CERT: ${{ secrets.CLIENT_CERT }}
+          TLS_CRYPT_KEY: ${{ secrets.TLS_CRYPT_KEY }}
         run: |
           sudo mkdir -p /etc/openvpn
-          echo "${{ secrets.CA_CERT }}" | sudo tee /etc/openvpn/ca.crt > /dev/null
-          echo "${{ secrets.CLIENT_CERT }}" | sudo tee /etc/openvpn/client.crt > /dev/null
-          echo "${{ secrets.TLS_CRYPT_KEY }}" | sudo tee /etc/openvpn/tls-crypt.key > /dev/null
+          printf '%s\n' "${CA_CERT}" | sudo tee /etc/openvpn/ca.crt > /dev/null
+          printf '%s\n' "${CLIENT_CERT}" | sudo tee /etc/openvpn/client.crt > /dev/null
+          printf '%s\n' "${TLS_CRYPT_KEY}" | sudo tee /etc/openvpn/tls-crypt.key > /dev/null
 
       # Emits a Node 20 deprecation warning: the action declares
       # `using: node20` and GitHub now force-runs it on Node 24. v3.1.0 is the
