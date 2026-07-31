@@ -203,6 +203,69 @@ describe('createHeatLayer (single sensor)', () => {
     expect(m.fitBounds).toHaveBeenCalledWith([['41.99', '21.42']]);
     expect(result.time).toEqual(['15/01/2024 10:30']);
   });
+
+  /**
+   * These three cases are what production actually serves, and each of them used
+   * to throw here while the two sibling factories handled them quietly.
+   *
+   * The API answers 200 with an empty forecast for any sensor the scheduler has
+   * not processed yet. `forecast.data[time]![pollutant]` then raised
+   * "Cannot read properties of undefined (reading 'aqi')", the heat layer was
+   * never created, and SliderFilter's thumb-label crashed straight after because
+   * `selectedTime` had never been set. The user saw a map that simply did
+   * nothing. The local fixtures always supply a full 24 hours, which is why this
+   * survived both the unit suite and an acceptance pass against the mock API.
+   */
+  it('returns an empty layer when the sensor has no forecast yet', () => {
+    const result = createHeatLayer(asMap(map()), {
+      city: { sensors: { s1: {} } } as never,
+      sensorId: 's1',
+      pollutant: 'pm10',
+    });
+
+    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([]);
+    expect(result.time).toEqual([]);
+  });
+
+  it('returns an empty layer when the sensor is not in the city', () => {
+    const result = createHeatLayer(asMap(map()), {
+      city: { sensors: {} } as never,
+      sensorId: 'missing',
+      pollutant: 'pm10',
+    });
+
+    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([]);
+    expect(result.time).toEqual([]);
+  });
+
+  it('keeps the time axis when the selected hour has no reading', () => {
+    const m = map();
+
+    // A slider position past the end of a short forecast -- the exact shape that
+    // crashed in production.
+    const result = createHeatLayer(asMap(m), {
+      city,
+      sensorId: 's1',
+      pollutant: 'pm10',
+      time: 99,
+    });
+
+    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([]);
+    // Still fits the map and still reports the axis, so the slider stays usable.
+    expect(m.fitBounds).toHaveBeenCalledWith([['41.99', '21.42']]);
+    expect(result.time).toEqual(['15/01/2024 10:30']);
+  });
+
+  it('keeps a genuine reading of 0, which is data rather than absence', () => {
+    createHeatLayer(asMap(map()), {
+      city: { sensors: { s1: { forecast: forecast(0) } } },
+      sensorId: 's1',
+      pollutant: 'pm10',
+      time: 0,
+    });
+
+    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([['41.99', '21.42', 0]]);
+  });
 });
 
 describe('createHeatLayers (all cities)', () => {
