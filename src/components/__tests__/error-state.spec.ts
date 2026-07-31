@@ -43,7 +43,9 @@ const HomePage = (await import('../home/HomePage.vue')).default;
 const { useAirPollutionStore } = await import('@/stores/airPollution');
 const { i18n } = await import('@/services/i18n');
 const { vuetify } = await import('@/services/vuetify');
-const { stubBrowserApis, mountInApp } = await import('./helpers');
+const { stubBrowserApis, mountInApp, setViewportWidth } = await import(
+  './helpers'
+);
 
 // Typed rather than left as `any`: this spec drives the real store actions,
 // so `store.error`, `store.isLoading` and `store.pending` are exactly what it
@@ -148,6 +150,37 @@ describe('loading indication', () => {
     await wrapper.vm.$nextTick();
 
     expect(store.isLoading).toBe(false);
+    wrapper.unmount();
+  });
+});
+
+/**
+ * These two tests exist because the app-bar previously used Vuetify 2's
+ * `hidden-md-and-up` / `hidden-sm-and-down` classes, which Vuetify 3 removed.
+ * Nothing defined them any more, so the hamburger and the tab bar both rendered
+ * at every width -- and the suite stayed green, because no test had ever changed
+ * the viewport. Assert both branches, not just the one jsdom happens to report.
+ */
+describe('app-bar responsive layout', () => {
+  it('shows the tab bar and hides the hamburger on desktop', async () => {
+    const wrapper = mountHome();
+
+    setViewportWidth(1280);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.v-tabs').exists()).toBe(true);
+    expect(wrapper.find('.v-app-bar-nav-icon').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('shows the hamburger and hides the tab bar on mobile', async () => {
+    const wrapper = mountHome();
+
+    setViewportWidth(500);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.v-app-bar-nav-icon').exists()).toBe(true);
+    expect(wrapper.find('.v-tabs').exists()).toBe(false);
     wrapper.unmount();
   });
 });

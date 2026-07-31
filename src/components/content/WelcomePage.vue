@@ -2,6 +2,7 @@
   <div>
     <VRow no-gutters>
       <VImg
+        :alt="$t('common.backgroundImage')"
         :height="belowAppBar()"
         :src="background"
       >
@@ -19,12 +20,16 @@
                 tag="h1"
               >
                 <VImg
+                  :alt="$t('common.aqraLogo')"
                   :src="logo"
                   height="286"
                   width="253"
                 />
                 <span class="aqra">{{ $t('common.welcomeTo') }}</span>
+                <!-- The wordmark repeats the adjacent "Welcome to AQRA" text, so it
+                     is decorative: an empty alt keeps a screen reader from saying it twice. -->
                 <VImg
+                  alt=""
                   :src="name"
                   width="350"
                 />

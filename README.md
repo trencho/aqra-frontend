@@ -27,6 +27,8 @@ Other scripts:
 |---|---|
 | `yarn build` | Production build into `dist/` |
 | `yarn preview` | Serve the built `dist/` locally |
+| `yarn mock-api` | Fixture-backed stand-in for the AQRA API on `:8081` (no dependencies) |
+| `yarn dev:mock` | Dev server pointed at `yarn mock-api` instead of production |
 | `yarn test` | Run the test suite |
 | `yarn test:watch` | Run the tests in watch mode |
 | `yarn test:coverage` | Run with coverage; fails below the configured thresholds |
@@ -36,11 +38,30 @@ Other scripts:
 
 ## Configuration
 
-None is required. The app defaults to the public AQRA API at
+None is required to start. The app defaults to the public AQRA API at
 `https://aqra.feit.ukim.edu.mk/api/v1`.
 
 To point it elsewhere, copy `.env.example` to `.env.local` and set
 `VITE_AQRA_API_URL`. Only variables prefixed `VITE_` reach the browser bundle.
+
+### Working without the API
+
+**The public API currently returns 503**, so a plain `yarn dev` gives you a
+working map with an empty Map tab and an empty Statistics tab — the frontend is
+fine, there is simply no data behind it.
+
+For local work, run the fixture-backed stand-in instead. It has no dependencies
+and serves the six endpoints the app calls, with a deterministic 24 hours of
+readings:
+
+```bash
+yarn mock-api    # terminal 1 — API stub on http://localhost:8081
+yarn dev:mock    # terminal 2 — dev server pointed at it
+```
+
+`yarn dev:mock` runs Vite in `mock` mode, which loads `.env.mock`. That file is
+committed on purpose: it holds no secrets, and the alternative is every
+contributor reconstructing it by hand.
 
 ## Project layout
 
@@ -49,14 +70,22 @@ src/
   classes/      domain models, each with a fromApi mapper
   components/   17 single-file components across four feature areas
   constants/    pollutants, map defaults, navigation tabs, en/mk translations
+  router/       vue-router config, derived from the Tabs constant
   services/     api, axios instance, i18n, pinia, vuetify
   stores/       Pinia stores (airPollution, locale)
+  types/        ambient declarations and shared domain/API types
   utils/        Leaflet map construction, chart series, concurrency helper
 ```
 
+Routes (`/`, `/map`, `/statistics`, `/api-docs`) are derived from a single
+`Tabs` constant, so the tab bar, the drawer and the routing table cannot
+disagree. The route is the source of truth and the store mirrors it via
+`router.afterEach`, not the other way round.
+
 ## Stack
 
-Vue 3 · Vite · Vuetify 4 · Pinia · vue-i18n 11 · Leaflet · Chart.js · Vitest
+Vue 3 · Vite · Vuetify 4 · Pinia · vue-router · vue-i18n 11 · Leaflet ·
+Chart.js · Vitest
 
 ## Docker
 

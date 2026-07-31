@@ -2,6 +2,7 @@
   <div style="height: 100%">
     <VSlider
       v-model="slider"
+      :aria-label="$t('common.hourOfDay')"
       class="slider"
       :disabled="!sliderValid"
       :max="23"
@@ -17,17 +18,22 @@
         {{ selected && selected.selectedTime![modelValue] }}
       </template>
       <template #prepend>
-        <VIcon
-          color="white"
+        <!-- A bare VIcon with a click handler is neither focusable nor named.
+             VBtn gives it both, and axe's aria-command-name stops firing. -->
+        <VBtn
+          :aria-label="$t('common.previousHour')"
+          :disabled="!sliderValid"
+          icon="mdi-minus"
+          size="x-small"
+          variant="plain"
           @click="decrement"
-        >
-          mdi-minus
-        </VIcon>
+        />
       </template>
 
       <template #append>
         <div class="sliderButtons">
           <VBtn
+            :aria-label="isPlaying ? $t('common.pauseTimeline') : $t('common.playTimeline')"
             :disabled="!sliderValid"
             variant="flat"
             icon
@@ -36,12 +42,14 @@
           >
             <VIcon>{{ isPlaying ? 'mdi-pause' : 'mdi-play' }}</VIcon>
           </VBtn>
-          <VIcon
-            color="white"
+          <VBtn
+            :aria-label="$t('common.nextHour')"
+            :disabled="!sliderValid"
+            icon="mdi-plus"
+            size="x-small"
+            variant="plain"
             @click="increment"
-          >
-            mdi-plus
-          </VIcon>
+          />
         </div>
       </template>
     </VSlider>

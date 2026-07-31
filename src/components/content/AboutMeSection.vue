@@ -22,7 +22,10 @@
         class="elevation-12 marginBottom48"
         size="130"
       >
-        <VImg :src="avatar" />
+        <VImg
+          :alt="$t('common.portrait')"
+          :src="avatar"
+        />
       </VAvatar>
     </VContainer>
   </div>
