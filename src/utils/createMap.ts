@@ -165,35 +165,46 @@ interface CreateHeatLayerOptions {
 }
 
 /**
- * The non-null assertions below are deliberate and behaviour-preserving.
+ * Degrades on missing data instead of throwing, matching the two sibling
+ * factories below.
  *
- * The .js version dereferenced `city.sensors[sensorId].forecast.data[time]`
- * with no checks at all, so a missing sensor, forecast or time index threw.
- * noUncheckedIndexedAccess surfaces every one of those, but inserting guards
- * would change what happens on bad input, and this module's error behaviour is
- * pinned by characterization tests. Asserting keeps the emitted code identical.
+ * This used to dereference `city.sensors[sensorId]!.forecast!` and
+ * `forecast.data[time]![pollutant]`, carried over from the .js version and kept
+ * during the TypeScript migration as "behaviour-preserving". Production proved
+ * that behaviour wrong: the API answers 200 with an EMPTY forecast for any
+ * sensor the scheduler has not processed yet, so selecting one threw
+ * `Cannot read properties of undefined (reading 'aqi')`. The heat layer was
+ * then never created, and SliderFilter's thumb-label crashed straight after
+ * because `selectedTime` had never been set -- the user just sees a map that
+ * does nothing.
+ *
+ * The local fixtures always supply a full 24 hours, which is exactly why
+ * neither the acceptance pass against the mock API nor the unit suite caught it.
  */
 export function createHeatLayer(
   map: LeafletMap,
   { city, sensorId, pollutant, time = 0 }: CreateHeatLayerOptions
 ): HeatLayerResult {
-  const sensor = city.sensors[sensorId]!;
-  const forecast = sensor.forecast!;
-  // `as number` rather than Number(): the readings are numeric, and a cast
-  // emits nothing, where a conversion call would be a (semantically identical
-  // but real) runtime change.
-  const pollution = forecast.data[time]![pollutant] as number;
+  const forecast = city.sensors[sensorId]?.forecast;
+  if (!forecast) {
+    return { heatLayer: L.heatLayer([], mapOptions).addTo(map), time: [] };
+  }
+
   map.fitBounds([asLatLng(forecast.position)]);
 
-  const heat = asHeatPoint(
-    forecast.position,
-    pollution / PollutantRatio[pollutant]
-  );
+  // `!= null` rather than a truthiness test: a genuine reading of 0 is data, not
+  // absence, and would be dropped by `reading ? ... : ...`.
+  const reading = forecast.data[time]?.[pollutant];
+  const points =
+    reading != null
+      ? // `as number` rather than Number(): the readings are numeric, and a cast
+        // emits nothing where a conversion call would be a real runtime change.
+        [asHeatPoint(forecast.position, (reading as number) / PollutantRatio[pollutant])]
+      : [];
 
-  const heatLayer = L.heatLayer([heat], mapOptions).addTo(map);
   return {
     time: forecast.data.map((t) => t.time),
-    heatLayer,
+    heatLayer: L.heatLayer(points, mapOptions).addTo(map),
   };
 }
 
