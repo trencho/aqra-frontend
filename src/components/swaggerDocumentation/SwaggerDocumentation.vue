@@ -1,5 +1,6 @@
 <template>
   <div>
+    <h1 class="visuallyHidden">{{ $t('common.swaggerDocumentation') }}</h1>
     <!--
       Was <vue-iframe> from vue-iframes, a Vue-2-only package last published in
       2020 (v0.0.21) with no Vue 3 build. It wrapped a single iframe, so a

@@ -75,6 +75,33 @@ export function stubBrowserApis() {
   } as unknown as typeof IntersectionObserver;
 }
 
+/**
+ * Drive Vuetify's responsive breakpoints in jsdom.
+ *
+ * HomePage and Map each pick between a desktop and a mobile layout using
+ * `$vuetify.display.mdAndUp` / `.smAndDown`. jsdom reports a fixed 1024px
+ * viewport, so without this every test only ever exercises the desktop branch.
+ *
+ * That blind spot has already cost this project once: these components used to
+ * use Vuetify 2's `hidden-sm-and-down` / `hidden-md-and-up` classes, which
+ * Vuetify 3 removed. Both layouts therefore rendered at once -- two "Pollutants"
+ * selects, ten checkboxes, and the hamburger sitting next to the tab bar -- and
+ * the whole suite stayed green because no test ever changed the viewport.
+ *
+ * Call it AFTER mounting, then await a tick. Vuetify's display state is created
+ * once and only tracks `window.innerWidth` through a resize listener that lives
+ * inside a mounted app's effect scope -- resizing before mount updates nothing,
+ * because at that moment no listener is attached.
+ */
+export function setViewportWidth(width: number) {
+  Object.defineProperty(window, 'innerWidth', {
+    value: width,
+    writable: true,
+    configurable: true,
+  });
+  window.dispatchEvent(new Event('resize'));
+}
+
 export interface GlobalMountOptions {
   /** Seed store state, keyed by store id. */
   initialState?: StateTree | undefined;

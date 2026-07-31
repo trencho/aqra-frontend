@@ -1,13 +1,26 @@
 <template>
   <div :style="containerStyle">
+    <!-- Visually hidden: this route shows no page title, and every route was
+         failing axe's page-has-heading-one. -->
+    <h1 class="visuallyHidden">{{ $t('common.statistics') }}</h1>
     <StatisticsFilters @show="createStatistics" />
-    <LineChart
+    <!--
+      The chart needs a height-bounded WRAPPER, not a height on the canvas.
+      chartConfig sets maintainAspectRatio:false, so Chart.js sizes the canvas to its
+      parent; when the parent only had a min-height the canvas grew the parent, which
+      grew the canvas, and the chart rendered ~15,000px tall and unreadable. The old
+      `:height="500"` never helped -- LineChart does not bind it, so it fell through as
+      a raw canvas attribute that Chart.js overwrites on every resize.
+    -->
+    <div
       v-if="chartData.datasets.length"
       class="statisticBar"
-      :chart-data="chartData"
-      :options="chartOptions"
-      :height="500"
-    />
+    >
+      <LineChart
+        :chart-data="chartData"
+        :options="chartOptions"
+      />
+    </div>
   </div>
 </template>
 

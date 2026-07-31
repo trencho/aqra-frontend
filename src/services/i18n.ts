@@ -23,4 +23,11 @@ export const i18n = createI18n({
  */
 export function setI18nLocale(localeId: LocaleId): void {
   i18n.global.locale.value = localeId;
+
+  // Keep <html lang> in step with the active locale. index.html hardcodes
+  // lang="en", so without this a screen reader keeps applying English
+  // pronunciation to the whole page after a switch to Macedonian -- and no
+  // automated accessibility check catches it, because "en" is a perfectly
+  // valid value; it is simply the wrong one.
+  document.documentElement.lang = localeId;
 }

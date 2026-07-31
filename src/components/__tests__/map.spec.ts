@@ -66,7 +66,9 @@ const Map = (await import('../map/Map.vue')).default;
 const createMap = await import('@/utils/createMap');
 const { Layers } = await import('@/constants/layers');
 const { useAirPollutionStore } = await import('@/stores/airPollution');
-const { stubBrowserApis, globalMountOptions } = await import('./helpers');
+const { stubBrowserApis, globalMountOptions, setViewportWidth } = await import(
+  './helpers'
+);
 
 const CITY = {
   cityName: 'skopje',
@@ -330,6 +332,35 @@ describe('Map pollutant selection', () => {
 
     expect(createMap.removeLayer).toHaveBeenCalled();
     expect(wrapper.vm.heatLayers).toHaveLength(1);
+    wrapper.unmount();
+  });
+});
+
+/**
+ * Map renders <Filters> twice -- once for desktop, once for mobile -- and picks
+ * between them by viewport. It used to pick with Vuetify 2's `hidden-*` classes,
+ * which Vuetify 3 removed, so BOTH rendered at every width: two "Pollutants"
+ * selects and ten checkboxes stacked on top of each other. Exactly one must
+ * render at either end of the breakpoint.
+ */
+describe('responsive filter layout', () => {
+  it('renders exactly one Filters block on desktop', async () => {
+    const { wrapper } = mountIt();
+
+    setViewportWidth(1280);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('filters-stub')).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it('renders exactly one Filters block on mobile', async () => {
+    const { wrapper } = mountIt();
+
+    setViewportWidth(500);
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('filters-stub')).toHaveLength(1);
     wrapper.unmount();
   });
 });

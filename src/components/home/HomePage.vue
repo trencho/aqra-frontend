@@ -9,20 +9,33 @@
       <VContainer class="noMargin homePage">
         <VRow class="flex">
           <div class="flex">
-            <VImg
-              :src="logo"
-              height="48"
-              width="48"
-              max-width="48"
+            <!--
+              A real button, not a click handler on the image. As a bare VImg
+              this was unreachable by keyboard and announced as nothing, so
+              "scroll to top" simply did not exist for anyone not using a mouse.
+            -->
+            <VBtn
+              :aria-label="$t('common.scrollToTop')"
+              variant="plain"
+              class="logoButton"
               @click="scrollToTop"
-            />
+            >
+              <VImg
+                :alt="$t('common.aqraLogo')"
+                :src="logo"
+                height="48"
+                width="48"
+                max-width="48"
+              />
+            </VBtn>
             <VAppBarNavIcon
+              v-if="$vuetify.display.smAndDown"
               color="white"
-              class="hidden-md-and-up"
               @click="store.setDrawer(!store.drawer)"
             />
 
             <VTabs
+              v-if="$vuetify.display.mdAndUp"
               v-model="activeTab"
               bg-color="transparent"
               grow
@@ -31,7 +44,6 @@
                 v-for="tab in tabs"
                 :key="tab.id"
                 :value="tab.id"
-                class="hidden-sm-and-down"
                 size="small"
               >
                 {{ $t(tab.title) }}

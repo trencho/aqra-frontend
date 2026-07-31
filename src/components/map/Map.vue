@@ -1,10 +1,19 @@
 <template>
   <div>
+    <!--
+      The map is this route's primary content but is built entirely by Leaflet,
+      so without an explicit role and name it is announced as nothing at all.
+      The heading is visually hidden: the page has no visible title, and axe
+      flags every route here for having no level-one heading.
+    -->
+    <h1 class="visuallyHidden">{{ $t('common.pollutionMap') }}</h1>
     <div
       id="map"
+      role="application"
+      :aria-label="$t('common.mapLabel')"
       :style="mapStyle"
     />
-    <div class="hidden-sm-and-down">
+    <div v-if="$vuetify.display.mdAndUp">
       <Filters
         class="filterLarge"
         :selected="selected"
@@ -19,7 +28,7 @@
         @sliderChange="sliderChange"
       />
     </div>
-    <div class="hidden-md-and-up">
+    <div v-if="$vuetify.display.smAndDown">
       <VBtn
         icon
         class="scrollButton"

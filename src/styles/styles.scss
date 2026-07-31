@@ -148,7 +148,12 @@
   border-bottom: 1px solid #e6e5e6;
 }
 
+// Chart.js sizes the canvas to this element (chartConfig sets maintainAspectRatio:false),
+// so the bounded height is load-bearing, not cosmetic. Without it the canvas and this
+// container grow each other without limit.
 .statisticBar {
+  box-sizing: border-box;
+  height: 500px;
   padding: 24px;
 }
 
@@ -230,4 +235,20 @@
 
 .v-input__slot {
   height: 100%;
+}
+
+// Available to screen readers, invisible on screen. Used for the per-route <h1>s:
+// the app shows no visible page titles, but a page with no level-one heading gives
+// screen-reader users nothing to orient by and no way to skip to the content.
+.visuallyHidden {
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
 }
