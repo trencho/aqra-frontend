@@ -8,7 +8,7 @@ on:
   schedule:
     # Weekly, so a newly published advisory against an unchanged lockfile is
     # still found. A push-only scan goes quiet exactly when a project is stable.
-    - cron: '0 6 * * 1'
+    - cron: "09 7 * * 1" # weekly, Monday 07:09 UTC - fleet slot (minutes staggered per repo)
 
 permissions:
   contents: read
