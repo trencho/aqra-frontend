@@ -69,10 +69,16 @@ export default defineConfig({
       // Components are included in the denominator now that they are tested,
       // so this is the honest whole-app figure rather than a flattering subset.
       //
-      // What is still uncovered is deliberate: Map.vue's dead
-      // decrement/increment/playSlider (Phase 8 deletes them), services/
-      // store.js (a one-line createPinia call), and the branches of
-      // TranslationButton's menu that only open on real pointer interaction.
+      // What is still uncovered is deliberate: services/store.ts (a one-line
+      // createPinia call) and the branches of TranslationButton's menu that
+      // only open on real pointer interaction.
+      //
+      // This sentence used to also claim "Map.vue's dead decrement/increment/
+      // playSlider (Phase 8 deletes them)". Both halves were wrong, and the
+      // sentence invited someone to act on it: those three live in
+      // SliderFilter.vue, not Map.vue, and they are not dead -- each is bound
+      // to @click in that component's template (lines 29, 41, 51). Deleting
+      // them would remove working slider controls.
       // Raised with the router work, which moved the real figures to
       // 94.18/93.72/89.81/93.96. Roughly a point of headroom each, matching
       // what these carried before -- enough that an unrelated refactor does not
