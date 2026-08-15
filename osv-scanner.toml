@@ -10,7 +10,11 @@
 [[IgnoredVulns]]
 id = "GHSA-w5hq-g745-h8pq"
 ignoreUntil = 2026-11-15
-# uuid 7.0.3, CVSS 7.5. Accepted, not ignored — the reasoning, so the next reviewer can re-derive it:
+# `reason` is a real field, not decoration: OSV-Scanner prints it in the scan output next to the
+# filtered advisory. Without it the log reads "filtered out because: (no reason given)", which is
+# exactly the audit trail this file exists to provide. Keep it populated.
+reason = "uuid 7.0.3 (7.5) reaches this repo only via @capacitor/cli (devDependency) -> xcode@3.0.1 -> uuid@^7.0.3. That is iOS build tooling: not imported by src/, not bundled by Vite, absent from the container image, and never invoked in CI. The fix is uuid 11.1.1, four majors outside xcode's ^7.0.3 range, so no lockfile bump reaches it and a resolutions override would need a real iOS build to validate. Waiting on @capacitor/cli to update xcode. Re-review 2026-11-15."
+# The long form, so the next reviewer can re-derive the decision rather than trust it:
 #
 # REACHABILITY. uuid is not a dependency of this app. The only path to it is
 #     @capacitor/cli (devDependency)  ->  xcode@3.0.1  ->  uuid@^7.0.3
