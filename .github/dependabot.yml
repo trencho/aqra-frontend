@@ -9,6 +9,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Skopje
     open-pull-requests-limit: 10
     # The project pins every dependency exactly (no ^ or ~), so Dependabot
     # must rewrite the manifest rather than rely on a range.
@@ -32,11 +35,15 @@ updates:
       # crowd-tune-frontend and trencho.github.io hold the same major.
       - dependency-name: typescript
         update-types: ['version-update:semver-major']
+        # lift-when: npm-peer typescript-eslint allows typescript >=7
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Skopje
 
   # docker/Dockerfile pins node:24-alpine3.24 and nginx:stable-alpine3.24 to an
   # explicit Alpine release. Nothing else updates them, so base-image CVEs would
@@ -45,6 +52,9 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Skopje
     ignore:
       # Hold Node majors. CI pins node-version 24 and engines.node is ">=24",
       # so taking a major here alone would build and ship production on a
@@ -54,8 +64,24 @@ updates:
       - dependency-name: node
         update-types:
           - version-update:semver-major
+        # lift-when: manual the project moves to the next Node LTS (26, LTS from 2026-10-28) -
+        # CI, engines.node, .nvmrc and this base image together, never this pin alone
 
   - package-ecosystem: gradle
     directory: /android
     schedule:
       interval: monthly
+
+  # Compose files -- a SEPARATE ecosystem from `docker`, which does NOT cover them. Before this
+  # block existed the image tags in /docker were updated by nothing at all, because
+  # `docker` was configured and containers read as handled.
+  - package-ecosystem: docker-compose
+    directory: /docker
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Skopje
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: chore

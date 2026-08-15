@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   auto-merge:
-    name: Auto-merge patch and minor updates
+    name: Auto-merge Dependabot updates
     runs-on: ubuntu-latest
     # Gate on the PR's author, not on github.actor. github.actor is whoever
     # triggered the run, so it flips to a human's name the moment anyone
@@ -26,39 +26,66 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Majors are deliberately excluded: they need a human to read the
-      # changelog. This project has already been bitten by that -- ESLint 9 ->
-      # 10 broke the lint run outright via an incompatible parser scope
-      # manager, and Vuetify 2 -> 4 rewrote most of the component API.
+      # Pre-release guard: the one thing that does NOT auto-merge, and the only
+      # update-type distinction left. Registries expose a release channel, but
+      # the docker/docker-compose ecosystems match image TAGS, which carry none
+      # -- so `python:3.14.6-slim` -> `python:3.15.0rc1-slim` scores an ordinary
+      # MINOR and lands in a production image (it did, on a sibling repo, on
+      # 2026-08-15). It cannot be expressed in dependabot.yml, because
+      # ignore.versions takes version RANGES and not globs
+      # (dependabot-core#15154), so the guard lives here.
       #
-      # `gh pr merge --auto` queues the merge; it lands only once every
-      # required check passes. That gate is real only because master carries a
-      # ruleset requiring CI's "Lint, test and build" job -- without required
-      # checks, --auto merges immediately and gates nothing. The security scan
-      # is deliberately NOT required: a newly published advisory against an
+      # `new-version` is empty on a GROUPED PR, so the raw metadata JSON is
+      # checked too: if any updated dependency looks like a pre-release, the
+      # whole PR is held. Failing toward "hold" is deliberate -- a missed merge
+      # is a nuisance, a shipped release candidate is an incident.
+      - name: Check for a pre-release target
+        id: prerelease
+        env:
+          NEW_VERSION: ${{ steps.metadata.outputs.new-version }}
+          UPDATED_JSON: ${{ steps.metadata.outputs.updated-dependencies-json }}
+        run: |
+          set -euo pipefail
+          pattern='[-._]?(rc|alpha|beta|dev|pre|preview|snapshot|nightly|canary|next|insiders)'
+          held=false
+          if printf '%s' "$NEW_VERSION" | grep -qiE "$pattern"; then held=true; fi
+          if printf '%s' "$UPDATED_JSON" | grep -qiE "\"[^\"]*$pattern[^\"]*\""; then held=true; fi
+          echo "held=$held" >> "$GITHUB_OUTPUT"
+          if [ "$held" = true ]; then
+            echo "pre-release target detected (new-version='$NEW_VERSION') - not auto-merging."
+          fi
+
+      # `gh pr merge --auto` queues the merge; it lands only once every required
+      # check passes. That gate is real only because master carries a ruleset
+      # requiring CI's "Lint, test and build" job -- without required checks,
+      # --auto merges immediately and gates nothing. The security scan is
+      # deliberately NOT required: a newly published advisory against an
       # unchanged lockfile would otherwise block every routine bump.
+      #
+      # Every update type now merges, majors included (workbench 0.1.18), so
+      # that required check IS the gate -- there is no human reading the
+      # changelog any more. This project has been bitten by a major before
+      # (ESLint 9 -> 10 broke the lint run; Vuetify 2 -> 4 rewrote the component
+      # API), which is why the ruleset must stay strict and CI must keep running
+      # the tests, not just the build. The majors that genuinely cannot land are
+      # held in dependabot.yml instead, each with a `# lift-when:` condition the
+      # monthly cleanup job re-tests.
       #
       # Auto-merge also needs `allow_auto_merge` on the repo, which is only
       # available on public or Pro repos. This workflow existed for a day
       # against a free private repo, where the step could not have worked.
       - name: Enable auto-merge
-        if: >-
-          steps.metadata.outputs.update-type ==
-            'version-update:semver-patch' ||
-          steps.metadata.outputs.update-type ==
-            'version-update:semver-minor'
+        if: steps.prerelease.outputs.held == 'false'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Leave a note on a major update
-        if: >-
-          steps.metadata.outputs.update-type ==
-          'version-update:semver-major'
+      - name: Explain a held pre-release
+        if: steps.prerelease.outputs.held == 'true'
         run: |
-          gh pr comment "$PR_URL" --body \
-            "Major version bump — not auto-merged. Needs a human to read the changelog."
+          gh pr comment "$PR_URL" --body "Held: this bump targets a **pre-release** version (\`$NEW_VERSION\`). Every other update type auto-merges; pre-releases need a human to confirm it is intended."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
+          NEW_VERSION: ${{ steps.metadata.outputs.new-version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
