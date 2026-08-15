@@ -1,0 +1,33 @@
+# OSV-Scanner configuration. Referenced explicitly by .github/workflows/security-scan.yml
+# (`--config=osv-scanner.toml`) rather than relying on per-directory discovery.
+#
+# Add [[IgnoredVulns]] entries ONLY for a deliberate, documented decision — a reason, and an
+# `ignoreUntil` re-review date so an exception cannot quietly become permanent. Never use this to
+# silence something that is actually fixable: every other advisory this repo has seen was fixed at
+# source instead (most recently brace-expansion, resolved by bumping the `resolutions` pin in
+# package.json rather than suppressing it here).
+
+[[IgnoredVulns]]
+id = "GHSA-w5hq-g745-h8pq"
+ignoreUntil = 2026-11-15
+# uuid 7.0.3, CVSS 7.5. Accepted, not ignored — the reasoning, so the next reviewer can re-derive it:
+#
+# REACHABILITY. uuid is not a dependency of this app. The only path to it is
+#     @capacitor/cli (devDependency)  ->  xcode@3.0.1  ->  uuid@^7.0.3
+# @capacitor/cli is iOS/Android build tooling: it manipulates Xcode project files when syncing the
+# native shells. It is not imported by src/, is not bundled by Vite, and does not reach the container
+# image (docker/Dockerfile builds `yarn build` output into nginx). So the vulnerable code never runs
+# in the deployed application, and never runs in CI either — no workflow invokes the Capacitor CLI.
+#
+# WHY IT CANNOT SIMPLY BE FIXED. The fix is uuid 11.1.1, four majors above xcode's `^7.0.3`
+# constraint, so no lockfile bump can reach it. Forcing it would need a `resolutions` override
+# pinning uuid 11 inside xcode, which changes an API boundary xcode was never tested against; the
+# only way to validate that is a real iOS build, which is not available in CI here.
+#
+# HOW THIS RESOLVES. Upstream: @capacitor/cli updates its `xcode` dependency (or xcode updates uuid).
+# Re-check on the ignoreUntil date, or sooner if a @capacitor/cli release lands:
+#     yarn why uuid          # confirm the chain still ends at xcode
+#     yarn npm audit         # or re-read the OSV scan output
+# When the chain resolves to a patched uuid, DELETE this entry rather than extending the date.
+#
+# Reviewed 2026-08-15.

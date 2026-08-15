@@ -26,10 +26,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      # --config is passed explicitly rather than relying on per-directory discovery, so the
+      # accepted-advisory list is unambiguously in effect. osv-scanner.toml documents each entry
+      # with a reason and an ignoreUntil re-review date; it is never used to silence a fixable
+      # advisory.
       - name: Scan the lockfile
         uses: google/osv-scanner-action/osv-scanner-action@v2.5.0
         with:
           scan-args: |-
+            --config=osv-scanner.toml
             --lockfile=./yarn.lock
 
   audit:
