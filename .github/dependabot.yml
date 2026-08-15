@@ -20,6 +20,18 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # TypeScript 7 is the native-compiler rewrite, and it is blocked upstream rather than deferred
+      # by preference: typescript-eslint peers `typescript >=4.8.4 <6.1.0`, so no released version
+      # supports TS 7, and Yarn's builtin typescript compat patch is incompatible with the native
+      # compiler. PR #20 sat open and red on exactly this for ten days (CI failed with
+      # ERR_INTERNAL_ASSERTION), and a permanently-red PR is noise that hides a real failure.
+      #
+      # Lift this when typescript-eslint ships TS 7 support -- and move the toolchain together
+      # (typescript, typescript-eslint, vue-tsc), not this pin alone. Matches how
+      # crowd-tune-frontend and trencho.github.io hold the same major.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
