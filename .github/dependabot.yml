@@ -64,8 +64,7 @@ updates:
       - dependency-name: node
         update-types:
           - version-update:semver-major
-        # lift-when: manual the project moves to the next Node LTS (26, LTS from 2026-10-28) -
-        # CI, engines.node, .nvmrc and this base image together, never this pin alone
+        # lift-when: eol-lts nodejs 26
 
   - package-ecosystem: gradle
     directory: /android
