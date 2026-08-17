@@ -24,6 +24,14 @@ updates:
           - minor
           - patch
     ignore:
+      # @types/node tracks the RUNTIME major, always -- typings for a Node the project does
+      # not run describe APIs that are not there. It had reached 26.2.0 while every runtime
+      # pin here says 24. The image hold below lives in the `docker` ecosystem and cannot
+      # reach an npm package, so without this one the types walk to the next major alone.
+      # Same release condition as the image, so the two lift together.
+      # lift-when: eol-lts nodejs 26
+      - dependency-name: "@types/node"
+        versions: [">=25"]
       # TypeScript 7 is the native-compiler rewrite, and it is blocked upstream rather than deferred
       # by preference: typescript-eslint peers `typescript >=4.8.4 <6.1.0`, so no released version
       # supports TS 7, and Yarn's builtin typescript compat patch is incompatible with the native
