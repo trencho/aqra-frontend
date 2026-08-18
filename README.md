@@ -123,7 +123,7 @@ npx cap open android   # or: npx cap open ios
 
 ## Continuous integration
 
-- **CI** — lint, test with coverage, and build on every push and pull request.
+- **CI** — lint, typecheck, test with coverage, and build on every push and pull request.
 - **Security scan** — OSV scan of the lockfile plus `yarn npm audit`, on every
   change and weekly, so a newly published advisory is caught even against an
   unchanged lockfile.
