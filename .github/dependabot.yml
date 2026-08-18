@@ -77,10 +77,13 @@ updates:
   - package-ecosystem: gradle
     directory: /android
     schedule:
-      # Day/time/timezone pinned like every other block: without them Dependabot picks a
-      # random slot, which is what makes a fleet's update timing incomparable across repos.
+      # Time/timezone pinned like every other block: without them Dependabot picks a random slot,
+      # which is what makes a fleet's update timing incomparable across repos.
+      #
+      # `day:` is NOT set here, unlike the weekly blocks, because it applies to `interval: weekly`
+      # only -- on a monthly interval Dependabot runs on the FIRST of the month and ignores it. It
+      # was set to `monday` and did nothing, so the comment claimed a pin the config did not make.
       interval: monthly
-      day: monday
       time: "06:00"
       timezone: Europe/Skopje
 
