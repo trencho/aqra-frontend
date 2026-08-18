@@ -77,7 +77,12 @@ updates:
   - package-ecosystem: gradle
     directory: /android
     schedule:
+      # Day/time/timezone pinned like every other block: without them Dependabot picks a
+      # random slot, which is what makes a fleet's update timing incomparable across repos.
       interval: monthly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Skopje
 
   # Compose files -- a SEPARATE ecosystem from `docker`, which does NOT cover them. Before this
   # block existed the image tags in /docker were updated by nothing at all, because
