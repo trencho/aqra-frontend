@@ -1,5 +1,12 @@
 <template>
-  <div>
+  <!--
+    `mapPage` exists to establish a positioning context. The overlay controls below
+    (`.filterLarge`, `.scrollButton`) are `position: absolute`, and with no positioned
+    ancestor here they resolved against Vuetify's `.v-application__wrap` instead -- so
+    `top: 5px` measured from the top of the APP, putting the panel behind the fixed
+    60px app bar and pushing its lower half off the map.
+  -->
+  <div class="mapPage">
     <!--
       The map is this route's primary content but is built entirely by Leaflet,
       so without an explicit role and name it is announced as nothing at all.
