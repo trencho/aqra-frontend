@@ -97,14 +97,27 @@
   padding-top: 2px !important;
 }
 
+// The panel floats over the map, so it is bounded BY the map rather than given a fixed height.
+// At 650px it overflowed the bottom of the map on any viewport shorter than ~710px, and the
+// controls below the fold became unreachable. `max-height` plus scrolling keeps every control
+// available at every height.
 .filters {
-  height: 650px;
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.87);
+  // Was 0.87. Map labels showed through the panel and tangled with the control text; the panel
+  // still reads as an overlay at 0.95 without competing with what is behind it.
+  background: rgba(0, 0, 0, 0.95);
   display: flex;
   width: auto;
   color: white;
   align-items: flex-start;
+}
+
+// Establishes the containing block for the map's absolutely-positioned overlay controls.
+// Without it they anchored to `.v-application__wrap` and were laid out against the whole app.
+.mapPage {
+  position: relative;
 }
 
 .filterInputs {
@@ -140,11 +153,16 @@
   flex-direction: column;
 }
 
+// Left-aligned, not `flex-end`. Right-aligning a four-control toolbar across a full-width bar
+// left most of the row empty and read as an unfinished layout; a filter bar is scanned from the
+// start of the line like the content it filters.
 .statisticFilters {
   display: flex;
   flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
   padding: 12px 24px;
-  justify-content: flex-end;
+  justify-content: flex-start;
   border-bottom: 1px solid #e6e5e6;
 }
 
