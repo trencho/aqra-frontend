@@ -46,9 +46,9 @@ To point it elsewhere, copy `.env.example` to `.env.local` and set
 
 ### Working without the API
 
-**The public API currently returns 503**, so a plain `yarn dev` gives you a
-working map with an empty Map tab and an empty Statistics tab — the frontend is
-fine, there is simply no data behind it.
+**The public API is failing** (`5xx` on every data route; it answered 503 in July
+and 500 when last checked on 2026-08-18), so a plain `yarn dev` gives you a
+working app shell with empty Map and Statistics tabs: the API returns no data.
 
 For local work, run the fixture-backed stand-in instead. It has no dependencies
 and serves the six endpoints the app calls, with a deterministic 24 hours of
