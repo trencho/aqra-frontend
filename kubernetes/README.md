@@ -78,7 +78,7 @@ on the node with `docker compose build` is invisible to the cluster —
 `docker images` lists it while the pod sits in `ErrImageNeverPull`. Every
 workload in this namespace was stranded that way for months.
 
-Pulling from a registry removes the failure mode entirely: there is no
+Pulling from a registry removes the failure mode: there is no
 node-local store to go stale, and neither a prune, an image GC, nor another
 runtime switch can strand the deployment again. Do not reintroduce
 `imagePullPolicy: Never`.
