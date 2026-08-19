@@ -163,11 +163,26 @@ jobs:
       # so changing what is installed invalidates it. Deliberately NO restore-keys: a prefix
       # near-miss would restore a set built for another image, which is the failure this key
       # exists to prevent.
+      # ImageOS/ImageVersion live in the runner's PROCESS environment, NOT in the `env`
+      # expression context - so `${{ env.ImageOS }}` expands to an EMPTY STRING and the key
+      # collapses to a constant that hits forever, serving .debs built for a retired image.
+      # That is not hypothetical: the first run of this change saved `apt-openvpn-Linux--`.
+      # Resolve them in a step, where they do exist, and fail loudly if they ever stop.
+      - name: Resolve the runner image for the cache key
+        id: runner_image
+        run: |
+          set -u
+          if [ -z "${ImageOS:-}" ] || [ -z "${ImageVersion:-}" ]; then
+            echo "::error::ImageOS/ImageVersion are unset - the cache key would be constant"
+            exit 1
+          fi
+          echo "id=${ImageOS}-${ImageVersion}" >> "$GITHUB_OUTPUT"
+
       - name: Restore the OpenVPN packages
         uses: actions/cache@v6
         with:
           path: .aptcache
-          key: apt-openvpn-${{ runner.os }}-${{ env.ImageOS }}-${{ env.ImageVersion }}
+          key: apt-openvpn-${{ runner.os }}-${{ steps.runner_image.outputs.id }}
 
       - name: Install OpenVPN
         # Required, not incidental: the connect action below installs nothing -- it writes

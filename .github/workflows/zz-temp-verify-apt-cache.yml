@@ -23,20 +23,21 @@ jobs:
       # The cache key is built from these. If either is unset the key silently degrades to a
       # constant, which would hit forever and serve .debs from a retired image - the exact
       # staleness the key exists to prevent. Fail loudly rather than cache on a guess.
-      - name: The cache key's components must actually be set
+      - name: Resolve the runner image for the cache key
+        id: runner_image
         run: |
           set -u
-          echo "ImageOS=${ImageOS:-<UNSET>}  ImageVersion=${ImageVersion:-<UNSET>}"
           if [ -z "${ImageOS:-}" ] || [ -z "${ImageVersion:-}" ]; then
-            echo "::error::ImageOS/ImageVersion are not set - the cache key would be constant"
+            echo "::error::ImageOS/ImageVersion are unset - the cache key would be constant"
             exit 1
           fi
+          echo "id=${ImageOS}-${ImageVersion}" >> "$GITHUB_OUTPUT"
 
       - name: Restore the OpenVPN packages
         uses: actions/cache@v6
         with:
           path: .aptcache
-          key: apt-openvpn-${{ runner.os }}-${{ env.ImageOS }}-${{ env.ImageVersion }}
+          key: apt-openvpn-${{ runner.os }}-${{ steps.runner_image.outputs.id }}
 
       - name: Install OpenVPN
         timeout-minutes: 10
