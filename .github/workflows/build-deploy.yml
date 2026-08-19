@@ -88,6 +88,19 @@ jobs:
     # Nothing is deployed unless an image was actually published.
     needs: build-and-push
 
+    # A backstop against a hung runner, not a second deadline competing with the rollout.
+    # Successful deploys here take 1-2.5 minutes; the bound that matters is the failure
+    # case. Neither deploy_kubernetes_resources.sh nor reload_pods.sh passes --timeout to
+    # `kubectl rollout status`, so each waits until Kubernetes itself gives up -- the
+    # default progressDeadlineSeconds of 10 minutes, and this deployment does not override
+    # it. Two such waits plus the VPN and SSH setup is the honest worst case, so 30 leaves
+    # room without ever truncating a deploy that would have succeeded.
+    #
+    # Without this the default is 6 hours, and because this job holds the deploy-production
+    # concurrency group, a stuck step queues every later deploy behind it for that whole
+    # time. Sibling change: air-quality-rest-api#56.
+    timeout-minutes: 30
+
     # Scoped to this job, not the workflow.
     #
     # These 14 are the production deploy credentials -- an SSH private key, the full OpenVPN
