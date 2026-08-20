@@ -202,23 +202,29 @@ describe('SliderFilter', () => {
     wrapper.unmount();
   });
 
-  it('increment advances the hour and emits', () => {
+  // This used to assert `emitted === 0` while `slider === 1` -- it pinned the off-by-one
+  // as though it were the contract. The emitted hour must equal the hour the slider is on,
+  // or the map and the thumb label disagree. See slider-filter.spec.ts.
+  it('increment advances the hour and emits the hour it moved to', () => {
     const wrapper = mountIt();
 
     wrapper.vm.increment();
 
-    expect(emittedPayload<SetValueConfig>(wrapper, 'sliderChange')).toBe(0);
     expect(wrapper.vm.slider).toBe(1);
+    expect(emittedPayload<SetValueConfig>(wrapper, 'sliderChange')).toBe(1);
     wrapper.unmount();
   });
 
-  it('increment wraps from 23 back to 0', () => {
+  it('increment wraps from 23 back to 0, and emits the wrap', () => {
     const wrapper = mountIt();
     wrapper.vm.slider = 23;
 
     wrapper.vm.increment();
 
     expect(wrapper.vm.slider).toBe(0);
+    // The wrap used to `return` before emitting, so autoplay dropped one map update
+    // per lap while the label kept moving.
+    expect(emittedPayload<SetValueConfig>(wrapper, 'sliderChange')).toBe(0);
     wrapper.unmount();
   });
 

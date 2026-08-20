@@ -118,16 +118,21 @@ export default defineComponent({
   },
 
   methods: {
+    // Mutate, THEN emit. These used to read `this.sliderChange(this.slider--)`, and
+    // postfix returns the value from BEFORE the mutation -- so stepping up from 12 emitted
+    // 12 and then set slider to 13. The thumb label read 13 while the map showed hour 12,
+    // in both directions. `playSlider` drives increment on a 500ms interval, so autoplay
+    // ran permanently one hour out of step with its own label.
+    //
+    // The 23 -> 0 wrap also returned WITHOUT emitting, so autoplay dropped one update per
+    // lap. Both directions now wrap, and both emit.
     decrement() {
-      this.sliderChange(this.slider--);
+      this.slider = this.slider === 0 ? 23 : this.slider - 1;
+      this.sliderChange(this.slider);
     },
     increment() {
-      if (this.slider === 23) {
-        this.slider = 0;
-        return;
-      }
-
-      this.sliderChange(this.slider++);
+      this.slider = this.slider === 23 ? 0 : this.slider + 1;
+      this.sliderChange(this.slider);
     },
     sliderChange(time: number) {
       this.$emit('sliderChange', time);
