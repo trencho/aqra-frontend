@@ -1,7 +1,7 @@
 /**
  * Height of the application bar, in pixels.
  *
- * Must stay in sync with the `height` prop on the VAppBar in HomePage.vue.
+ * The single source: HomePage.vue's VAppBar BINDS this rather than repeating the number.
  * Vuetify 2 reported this at runtime via `$vuetify.application.top`; Vuetify 3
  * removed that in favour of the `useLayout()` composable, which cannot be
  * called from an Options API component -- so the value is shared here instead
