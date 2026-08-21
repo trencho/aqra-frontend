@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { present } from '@/__tests__/support/expect';
 import type { City } from '@/classes/city';
+import { Forecast } from '@/classes/forecast';
+import { aqra } from '@/services/api';
 
 // Leaflet needs real layout, so both it and the map helpers are mocked; these
 // tests assert the component's orchestration, not Leaflet's rendering.
@@ -310,10 +312,30 @@ describe('Map pollutant selection', () => {
   // only skips the single-sensor fetch when an "all" toggle is on.
   it('handles a pollutant picked with no city selected', async () => {
     const { wrapper, store } = mountIt();
+    const cityKeysBefore = Object.keys(store.cities ?? {});
 
-    await expect(
-      store.getForecastBySensorId({ sensorId: null, cityName: null })
-    ).resolves.toBeDefined();
+    // A real payload, so the assertion below is about Forecast.fromApi rather
+    // than about the default mock returning null.
+    vi.mocked(aqra.getForecastForSpecificSensor).mockResolvedValueOnce({
+      status: 200,
+      data: { latitude: 41.99, longitude: 21.43, data: [] },
+    } as never);
+
+    const forecast = await store.getForecastBySensorId({
+      sensorId: null,
+      cityName: null,
+    });
+
+    // Not merely "it resolved": the nulls reach the request, a Forecast comes
+    // back, and setForecastForSensor writes nothing because it has no sensor
+    // to write to -- which is the dereference that used to throw. The previous
+    // assertion here was `resolves.toBeDefined()`, which null satisfies, so it
+    // could not tell a forecast from no forecast at all.
+    expect(aqra.getForecastForSpecificSensor).toHaveBeenCalledWith(null, null);
+    expect(forecast).toBeInstanceOf(Forecast);
+    // mapPosition stringifies, which is what Leaflet is handed.
+    expect((forecast as Forecast).position).toEqual(['41.99', '21.43']);
+    expect(Object.keys(store.cities ?? {})).toEqual(cityKeysBefore);
     wrapper.unmount();
   });
 
