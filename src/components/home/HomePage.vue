@@ -3,7 +3,7 @@
     <VAppBar
       flat
       color="#292929"
-      height="60"
+      :height="appBarHeight"
       class="appBar"
     >
       <VContainer class="noMargin homePage">
@@ -105,6 +105,7 @@ import { mapStores } from 'pinia';
 import { defineComponent } from 'vue';
 
 import logo from '@/assets/logo.svg';
+import { APP_BAR_HEIGHT } from '@/constants/layout';
 import type { TabId } from '@/constants/navigationTabs';
 import { tabById,Tabs } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
@@ -124,6 +125,9 @@ export default defineComponent({
 
   data() {
     return {
+      // Bound rather than repeated as a literal: belowAppBar() sizes the map from the same
+      // constant, so a hand-edited height here would silently misalign the viewport below it.
+      appBarHeight: APP_BAR_HEIGHT,
       logo,
       tabs: Tabs,
     };

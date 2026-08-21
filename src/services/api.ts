@@ -3,7 +3,6 @@ import type { AxiosResponse } from 'axios';
 import type {
   ApiCity,
   ApiForecast,
-  ApiForecastDatum,
   ApiPollutant,
   ApiSensor,
 } from '@/types/api';
@@ -25,23 +24,7 @@ async function getDataForAllCities(): Promise<AxiosResponse<ApiCity[]>> {
   return axios.get('/cities/');
 }
 
-async function getDataForCity(
-  city: PathParam
-): Promise<AxiosResponse<ApiCity>> {
-  return axios.get(`/cities/${city}/`);
-}
-
 //countries
-async function getDataForAllCountries(): Promise<AxiosResponse<unknown>> {
-  return axios.get('/countries/');
-}
-
-async function getDataForCountry(
-  country: PathParam
-): Promise<AxiosResponse<unknown>> {
-  return axios.get(`/countries/${country}/`);
-}
-
 //forecast
 async function getForecastBySpecificCoordinates(
   latitude: PathParam,
@@ -64,13 +47,6 @@ async function getAvailableSensorsForCity(
   return axios.get(`/cities/${cityName}/sensors/`);
 }
 
-async function getDataForSpecificSensorByCityName(
-  cityName: PathParam,
-  sensorId: PathParam
-): Promise<AxiosResponse<ApiSensor>> {
-  return axios.get(`/cities/${cityName}/sensors/${sensorId}/`);
-}
-
 //history
 async function getDataForHistoricalPollution(
   cityName: PathParam,
@@ -82,16 +58,6 @@ async function getDataForHistoricalPollution(
   );
 }
 
-async function getDataForSpecificSensorByCoordinates(
-  latitude: PathParam,
-  longitude: PathParam,
-  dataType = 'pollution'
-): Promise<AxiosResponse<ApiForecastDatum[]>> {
-  return axios.get(
-    `/coordinates/${latitude},${longitude}/history/${dataType}/`
-  );
-}
-
 //pollutants
 async function getDataForAllAvailablePollutantsBySensorId(
   cityName: PathParam,
@@ -100,24 +66,11 @@ async function getDataForAllAvailablePollutantsBySensorId(
   return axios.get(`/cities/${cityName}/sensors/${sensorId}/pollutants/`);
 }
 
-async function getDataForAllAvailablePollutantsByCoordinates(
-  latitude: PathParam,
-  longitude: PathParam
-): Promise<AxiosResponse<ApiPollutant[]>> {
-  return axios.get(`/coordinates/${latitude},${longitude}/pollutants/`);
-}
-
 export const aqra = {
   getDataForAllCities,
-  getDataForCity,
-  getDataForAllCountries,
-  getDataForCountry,
   getForecastBySpecificCoordinates,
   getForecastForSpecificSensor,
   getAvailableSensorsForCity,
-  getDataForSpecificSensorByCityName,
   getDataForHistoricalPollution,
-  getDataForSpecificSensorByCoordinates,
   getDataForAllAvailablePollutantsBySensorId,
-  getDataForAllAvailablePollutantsByCoordinates,
 };
