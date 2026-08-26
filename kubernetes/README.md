@@ -1,15 +1,26 @@
 # Single node kubernetes cluster
 
-> **Why the secret is still called `vue-secret`.** The Deployment, Service and
-> Ingress were renamed `vue` → `aqra-frontend`, but the SealedSecret was not.
-> It carries no scope annotation, so it uses bitnami's default *strict* scope
-> and is encrypted against its `namespace/name` pair (`aqra/vue-secret`).
-> Renaming it makes it undecryptable and the pod never starts. Renaming it
-> properly means re-sealing from the plaintext with the cluster's public key —
-> see "Retrieve sealed secrets from the cluster" below.
+> **The `vue-secret` SealedSecret was retired.** It held five keys — `APP_ENV`,
+> `APP_NAME`, `AQRA_API_URL`, `KUBERNETES_ENV`, `OPEN_STREET_MAP_CREDENTIALS` —
+> and none of them did anything. This is a Vite build, so only `VITE_`-prefixed
+> variables are inlined into the bundle, and that happens at image-build time.
+> The runtime image is `nginx` with `ENTRYPOINT ["nginx"]`: no entrypoint
+> script, no `envsubst`, and no `${VAR}` templating in `nginx.conf`. Anything
+> `envFrom` injected therefore landed in nginx's environment and was read by
+> nothing.
 >
-> Separately, every key it holds is dead config: none is `VITE_`-prefixed, so
-> none of it reaches the browser bundle.
+> It also carried the awkwardness that made it hard to tidy: no scope
+> annotation, so bitnami's default *strict* scope encrypted it against its
+> `namespace/name` pair (`aqra/vue-secret`), which is why it kept the old `vue`
+> name long after the Deployment, Service and Ingress became `aqra-frontend`.
+> Renaming would have made it undecryptable and stopped the pod from starting.
+>
+> **Order matters if this is ever repeated.** The manifest change dropping the
+> `envFrom` reference must be deployed *before* the object is deleted from the
+> cluster: a `secretRef` naming a secret that no longer exists is not ignored,
+> the pod fails to start with `CreateContainerConfigError`. And `kubectl apply
+> -k` does not prune — removing a resource from `kustomization.yml` leaves the
+> live object in place, so the delete is a separate, deliberate step.
 
 ## One-off cutover: `vue` → `aqra-frontend`
 
@@ -88,10 +99,13 @@ runtime switch can strand the deployment again. Do not reintroduce
 ```
 kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml
 
-kubeseal < kubernetes/vue-secret.yml -o yaml > kubernetes/vue-sealed-secret.yml
+# No sealed secret ships with this workload any more -- vue-secret was retired.
+# Kept as the recipe for adding one. Give a new SealedSecret a scope annotation
+# so it can be renamed later without re-sealing from plaintext.
+kubeseal < kubernetes/<name>-secret.yml -o yaml > kubernetes/<name>-sealed-secret.yml
 ```
 ```
-kubectl apply -f kubernetes/vue-sealed-secret.yml
+kubectl apply -f kubernetes/<name>-sealed-secret.yml
 ```
 
 ###### Apply all system resources
@@ -165,8 +179,8 @@ kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-ke
 ```
 
 ```
-kubeseal --recovery-unseal < kubernetes/vue-sealed-secret.yml --recovery-private-key kubernetes/master.key -o yaml > \
-kubernetes/vue-secret.yml
+kubeseal --recovery-unseal < kubernetes/<name>-sealed-secret.yml --recovery-private-key kubernetes/master.key -o yaml > \
+kubernetes/<name>-secret.yml
 ```
 
 ###### Cleanup resources by deleting persistent volumes and used namespaces

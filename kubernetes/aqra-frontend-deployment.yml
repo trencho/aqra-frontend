@@ -22,19 +22,7 @@ spec:
         io.kompose.service: aqra-frontend
     spec:
       containers:
-        - envFrom:
-            # Deliberately NOT renamed alongside the workload. This
-            # SealedSecret carries no scope annotation, so it uses bitnami's
-            # default strict scope and is encrypted against namespace/name
-            # (aqra/vue-secret). Renaming it makes it undecryptable and the
-            # pod never starts; that would need re-sealing from the plaintext
-            # with the cluster's public key.
-            #
-            # Separately, every key it holds is dead config: none is
-            # VITE_-prefixed, so none reaches the browser bundle.
-            - secretRef:
-                name: vue-secret
-          image: ghcr.io/trencho/aqra-frontend:latest
+        - image: ghcr.io/trencho/aqra-frontend:latest
           # Pulled from GHCR, built by the build-and-push job in
           # .github/workflows/build-deploy.yml.
           #
