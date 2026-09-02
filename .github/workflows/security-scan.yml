@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
 
       # --config is passed explicitly rather than relying on per-directory discovery, so the
       # accepted-advisory list is unambiguously in effect. osv-scanner.toml documents each entry
@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
 
       # Must precede setup-node: its `cache: yarn` runs `yarn cache dir`, and
       # the runner's global yarn 1.x refuses to run against a packageManager
@@ -52,7 +52,7 @@ jobs:
         run: corepack enable
 
       - name: Set up Node
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: yarn
