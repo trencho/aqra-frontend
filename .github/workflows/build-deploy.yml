@@ -56,13 +56,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v4.3.0
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4.6.0
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -71,7 +71,7 @@ jobs:
       # Two tags: :latest for the Deployment to track, and the commit SHA so a
       # specific build can be identified and rolled back to.
       - name: Build and push
-        uses: docker/build-push-action@v7.3.0
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile
@@ -129,7 +129,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
 
       # OPENVPN_CONFIG holds a *path*, and it is a secret, so when the file is
       # missing the VPN action reports `config file '***' not found` -- masked,
@@ -272,7 +272,7 @@ jobs:
           key: apt-openvpn-${{ runner.os }}-${{ steps.runner_image.outputs.id }}
 
       - name: Connect to VPN
-        uses: kota65535/github-openvpn-connect-action@v3.1.0
+        uses: kota65535/github-openvpn-connect-action@v3
         with:
           config_file: ${{ env.OPENVPN_CONFIG }}
           echo_config: false
@@ -284,7 +284,7 @@ jobs:
         id: remote_deploy
         # Failure is handled by the retry step below rather than failing the job here.
         continue-on-error: true
-        uses: appleboy/ssh-action@v1.2.5
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.SERVER_HOST }}
           username: ${{ env.SSH_USERNAME }}
@@ -316,7 +316,7 @@ jobs:
       # the job if it fails too.
       - name: SSH commands for checkout/update git repo, build and deploy (retry)
         if: steps.remote_deploy.outcome == 'failure'
-        uses: appleboy/ssh-action@v1.2.5
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.SERVER_HOST }}
           username: ${{ env.SSH_USERNAME }}

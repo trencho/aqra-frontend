@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
 
       # Must come BEFORE setup-node. setup-node's `cache: yarn` shells out to
       # `yarn cache dir` while it runs, and the runner's preinstalled global
@@ -33,7 +33,7 @@ jobs:
         run: corepack enable
 
       - name: Set up Node
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@v7
         with:
           # Current LTS. Deliberately not 26, which does not become LTS until
           # 2026-10-28.
