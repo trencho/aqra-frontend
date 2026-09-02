@@ -24,7 +24,6 @@ async function getDataForAllCities(): Promise<AxiosResponse<ApiCity[]>> {
   return axios.get('/cities/');
 }
 
-//countries
 //forecast
 async function getForecastBySpecificCoordinates(
   latitude: PathParam,
