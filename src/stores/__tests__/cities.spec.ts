@@ -18,6 +18,7 @@ import type { ApiCity } from '@/types/api';
 const { aqra } = await import('@/services/api');
 const { useCitiesStore } = await import('../cities');
 const { useAirPollutionStore } = await import('../airPollution');
+const { useFiltersStore } = await import('../filters');
 
 const ok = <T,>(data: unknown) => Promise.resolve(axiosResponse<T>(data, 200));
 
@@ -29,11 +30,13 @@ const API_CITY: ApiCity = {
 };
 
 let cities: ReturnType<typeof useCitiesStore>;
+let filters: ReturnType<typeof useFiltersStore>;
 let facade: ReturnType<typeof useAirPollutionStore>;
 
 beforeEach(() => {
   setActivePinia(createPinia());
   cities = useCitiesStore();
+  filters = useFiltersStore();
   facade = useAirPollutionStore();
   vi.clearAllMocks();
 });
@@ -57,8 +60,8 @@ describe('separation from the filter store', () => {
     ]);
   });
 
-  it('leaves every filter input on the air-pollution store', () => {
-    expect(Object.keys(facade.$state).sort()).toEqual([
+  it('leaves every filter input on the filters store', () => {
+    expect(Object.keys(filters.$state).sort()).toEqual([
       'nameInput',
       'pollutantInput',
       'sensorInput',
@@ -70,9 +73,16 @@ describe('separation from the filter store', () => {
     ]);
   });
 
+  // The facade owns no state at all -- every field on it is a getter onto
+  // cities, filters or ui. Asserted, because a field quietly added back here
+  // would be a fourth copy of something that already has an owner.
+  it('leaves the facade holding no state of its own', () => {
+    expect(Object.keys(facade.$state)).toEqual([]);
+  });
+
   // The city name used to be read off nameInput.value inside these two
   // fetchers, which was the single line coupling the entity cache to the
-  // filter selects. It is a parameter now, and the facade supplies it.
+  // filter selects. It is a parameter now, and the caller supplies it.
   it('takes the city name as a parameter rather than reading a select', async () => {
     vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(
       ok({ latitude: 1, longitude: 2, data: [] })

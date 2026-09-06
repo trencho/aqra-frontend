@@ -39,7 +39,7 @@ import Statistics from '../statistics/Statistics.vue';
 import { globalMountOptions,stubBrowserApis } from './helpers';
 
 const filterState = {
-  airPollution: {
+  filters: {
     nameInput: {
       id: 'name',
       label: 'common.cityName',
@@ -112,10 +112,10 @@ describe('StatisticFilters', () => {
     const wrapper = mount(StatisticFilters, {
       global: globalMountOptions({
         initialState: {
-          airPollution: {
-            ...filterState.airPollution,
+          filters: {
+            ...filterState.filters,
             pollutantInput: {
-              ...filterState.airPollution.pollutantInput,
+              ...filterState.filters.pollutantInput,
               value: null,
             },
           },
@@ -308,7 +308,7 @@ describe('Statistics', () => {
     // mapHistoryToSeries reads, where the store field is typed as full
     // Forecast instances.
     const citiesStore = useCitiesStore();
-    citiesStore.historyData = filterState.airPollution
+    citiesStore.historyData = filterState.filters
       .historyData as unknown as typeof citiesStore.historyData;
 
     return wrapper;

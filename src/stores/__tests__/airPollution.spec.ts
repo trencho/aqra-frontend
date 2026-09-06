@@ -23,6 +23,7 @@ import type { SelectFilterInput } from '@/types/domain';
 const { aqra } = await import('@/services/api');
 const { useAirPollutionStore } = await import('../airPollution');
 const { useCitiesStore } = await import('../cities');
+const { useFiltersStore } = await import('../filters');
 const { DEFAULT_CONCURRENCY } = await import('@/utils/concurrency');
 
 // Generic, so each endpoint mock resolves with the payload type that endpoint
@@ -255,7 +256,7 @@ describe('getSensorsByCityName', () => {
 
 describe('getPollutantsBySensorId', () => {
   it('maps pollutants and caches them by sensor id', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
@@ -267,7 +268,7 @@ describe('getPollutantsBySensorId', () => {
   });
 
   it('serves a cached result without refetching', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
@@ -281,7 +282,7 @@ describe('getPollutantsBySensorId', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(notOk(500));
 
     expect(await store.getPollutantsBySensorId('sensor-1')).toEqual([]);
@@ -290,7 +291,7 @@ describe('getPollutantsBySensorId', () => {
 
 describe('getHistoryDataBySensorId', () => {
   it('maps history through Forecast and caches it', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
@@ -304,7 +305,7 @@ describe('getHistoryDataBySensorId', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(notOk(503));
 
     expect(await store.getHistoryDataBySensorId('sensor-1')).toEqual([]);
