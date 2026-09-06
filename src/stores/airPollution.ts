@@ -5,6 +5,13 @@ import { City } from '@/classes/city';
 import { Forecast } from '@/classes/forecast';
 import { Pollutant } from '@/classes/pollutant';
 import { Sensor } from '@/classes/sensors';
+import type { RequestResult, RequestState } from '@/composables/useRequest';
+import {
+  createRequestState,
+  hasError,
+  isLoading,
+  useRequest,
+} from '@/composables/useRequest';
 import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
 import { aqra } from '@/services/api';
 import type {
@@ -15,9 +22,8 @@ import type {
   ToggleFilterInput,
 } from '@/types/domain';
 import { mapWithConcurrency } from '@/utils/concurrency';
-import { errorMessage } from '@/utils/errors';
 
-export interface AirPollutionState {
+export interface AirPollutionState extends RequestState {
   cities: Record<string, City>;
   nameInput: SelectFilterInput;
   sensorInput: SelectFilterInput;
@@ -30,19 +36,7 @@ export interface AirPollutionState {
   showSensorMarkersInput: ToggleFilterInput;
   showForAllSensorsInput: ToggleFilterInput;
   showCityBoundariesInput: ToggleFilterInput;
-
-  /** Last request failure, for display. Null when the last attempt succeeded. */
-  error: string | null;
-  /** Number of requests currently in flight. */
-  pending: number;
 }
-
-/**
- * A discriminated union so `if (!ok) return []` narrows `data` to non-null in
- * the branch that follows. A plain `{ ok: boolean; data: T | null }` would leave
- * every caller asserting.
- */
-type RequestResult<T> = { ok: true; data: T } | { ok: false; data: null };
 
 /**
  * Index a list by one of its fields.
@@ -125,54 +119,30 @@ export const useAirPollutionStore = defineStore('airPollution', {
     showForAllSensorsInput: {} as ToggleFilterInput,
     showCityBoundariesInput: {} as ToggleFilterInput,
 
-    error: null,
-    pending: 0,
+    ...createRequestState(),
   }),
 
   getters: {
-    isLoading: (state) => state.pending > 0,
-    hasError: (state) => state.error !== null,
+    isLoading: (state) => isLoading(state),
+    hasError: (state) => hasError(state),
   },
 
   actions: {
     // --- request plumbing ---------------------------------------------------
+    //
+    // Both delegate to the useRequest composable, which owns the behaviour
+    // while this store keeps owning the state. The two names stay on the store
+    // because HomePage.vue binds `store.clearError()` and both specs drive
+    // `store.request(...)` directly.
 
-    /**
-     * Run an API call, converting every failure into store state instead of an
-     * unhandled rejection.
-     *
-     * Every action used to test `result.status === 200` and do nothing
-     * otherwise -- but axios rejects on 4xx/5xx rather than resolving, so that
-     * check never saw a failure and the rejection escaped the action entirely.
-     * There was no try/catch anywhere in src/, so a single failed request left
-     * the UI stuck with no feedback.
-     */
     async request<T>(
       call: () => Promise<AxiosResponse<T>>
     ): Promise<RequestResult<T>> {
-      this.pending += 1;
-      try {
-        const result = await call();
-
-        if (result?.status === 200) {
-          this.error = null;
-          return { ok: true, data: result.data };
-        }
-
-        this.error = `Request failed with status ${result?.status ?? 'unknown'}`;
-        return { ok: false, data: null };
-      } catch (cause) {
-        // `cause` is typed unknown under strict (useUnknownInCatchVariables),
-        // so the narrowing lives in one shared helper rather than here.
-        this.error = errorMessage(cause, 'Request failed');
-        return { ok: false, data: null };
-      } finally {
-        this.pending -= 1;
-      }
+      return useRequest(this).run(call);
     },
 
     clearError() {
-      this.error = null;
+      useRequest(this).clearError();
     },
 
     // --- formerly mutations -------------------------------------------------
