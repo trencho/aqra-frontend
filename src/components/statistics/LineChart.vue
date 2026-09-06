@@ -7,7 +7,16 @@
 
 <script lang="ts">
 import type { ChartData, ChartOptions } from 'chart.js';
-import { Chart, registerables } from 'chart.js';
+import {
+  CategoryScale,
+  Chart,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from 'chart.js';
 import type { PropType } from 'vue';
 import { defineComponent } from 'vue';
 import { Line } from 'vue-chartjs';
@@ -21,7 +30,41 @@ import { Line } from 'vue-chartjs';
 // (`extends: Line` plus `this.renderChart(...)`) against vue-chartjs 5, where
 // Line is a component taking `data`/`options` props and renderChart no longer
 // exists.
-Chart.register(...registerables);
+//
+// Seven named pieces, not `...registerables`. The app draws exactly one chart:
+// a line chart with a category x-axis, a linear y-axis, the default legend and
+// the default hover tooltip.
+//
+// `registerables` is a value import holding a reference to every controller,
+// scale, element and plugin Chart.js ships, so spreading it defeats
+// tree-shaking wholesale -- the bundler cannot drop what a live array points
+// at. That, not the registry, is why this mattered: naming the seven took
+// 41,123 bytes out of the production chunk.
+//
+// Four are deliberately absent because they were measured to be inert here,
+// not because they looked unimportant:
+//
+//   Filler      every series sets `fill: false` (utils/createStatistics.ts).
+//   Colors      it self-skips when any dataset defines borderColor, which
+//               every series does via seriesColor(index).
+//   Title       `plugins.title.display` defaults to false and nothing sets it.
+//   SubTitle    same, and Decimation defaults to disabled.
+//
+// statistics.spec.ts asserts each of those four is unregistered, so setting
+// `fill: true` or asking for a chart title fails a test rather than silently
+// doing nothing.
+//
+// Adding a second chart type means adding its controller here; the failure is
+// loud ("<kind> is not a registered controller") rather than a blank canvas.
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Legend,
+  Tooltip
+);
 
 export default defineComponent({
   name: 'LineChart',
