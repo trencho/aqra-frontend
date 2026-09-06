@@ -22,7 +22,8 @@ import type { SelectFilterInput } from '@/types/domain';
 
 const { aqra } = await import('@/services/api');
 const { useAirPollutionStore } = await import('../airPollution');
-const { TabIds } = await import('@/constants/navigationTabs');
+const { useCitiesStore } = await import('../cities');
+const { useFiltersStore } = await import('../filters');
 const { DEFAULT_CONCURRENCY } = await import('@/utils/concurrency');
 
 // Generic, so each endpoint mock resolves with the payload type that endpoint
@@ -57,41 +58,8 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('initial state', () => {
-  it('starts on the Home tab with the drawer closed', () => {
-    expect(store.tabId).toBe(TabIds.Home);
-    expect(store.drawer).toBe(false);
-  });
-});
-
-describe('ui actions', () => {
-  it('setDrawer toggles the drawer', () => {
-    store.setDrawer(true);
-    expect(store.drawer).toBe(true);
-
-    store.setDrawer(false);
-    expect(store.drawer).toBe(false);
-  });
-
-  it('changeTab closes the drawer when moving to a different tab', () => {
-    store.setDrawer(true);
-
-    store.changeTab(TabIds.Statistics);
-
-    expect(store.tabId).toBe(TabIds.Statistics);
-    expect(store.drawer).toBe(false);
-  });
-
-  it('changeTab leaves the drawer alone when re-selecting the current tab', () => {
-    store.changeTab(TabIds.Statistics);
-    store.setDrawer(true);
-
-    store.changeTab(TabIds.Statistics);
-
-    expect(store.drawer).toBe(true);
-  });
-});
-
+// drawer, tabId, setDrawer and changeTab moved to stores/ui.ts; their tests
+// moved with them, unchanged, to stores/__tests__/ui.spec.ts.
 describe('getCities', () => {
   it('maps the response into a city map keyed by cityName', async () => {
     vi.mocked(aqra.getDataForAllCities).mockReturnValue(ok([API_CITY]));
@@ -288,7 +256,7 @@ describe('getSensorsByCityName', () => {
 
 describe('getPollutantsBySensorId', () => {
   it('maps pollutants and caches them by sensor id', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
@@ -300,7 +268,7 @@ describe('getPollutantsBySensorId', () => {
   });
 
   it('serves a cached result without refetching', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(
       ok([{ name: 'pm10', value: 42 }])
     );
@@ -314,7 +282,7 @@ describe('getPollutantsBySensorId', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForAllAvailablePollutantsBySensorId).mockReturnValue(notOk(500));
 
     expect(await store.getPollutantsBySensorId('sensor-1')).toEqual([]);
@@ -323,7 +291,7 @@ describe('getPollutantsBySensorId', () => {
 
 describe('getHistoryDataBySensorId', () => {
   it('maps history through Forecast and caches it', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(
       ok({ latitude: 41.99, longitude: 21.42, data: [] })
     );
@@ -337,7 +305,7 @@ describe('getHistoryDataBySensorId', () => {
   });
 
   it('returns an empty array on a non-200', async () => {
-    store.nameInput = { value: 'skopje' } as SelectFilterInput;
+    useFiltersStore().nameInput = { value: 'skopje' } as SelectFilterInput;
     vi.mocked(aqra.getDataForHistoricalPollution).mockReturnValue(notOk(503));
 
     expect(await store.getHistoryDataBySensorId('sensor-1')).toEqual([]);
@@ -483,7 +451,11 @@ describe('bulk fan-out actions', () => {
         { ...API_CITY, cityName: `city-${i}`, position: [`${i}`, `${i}`] },
       ])
     );
-    store.cities = cities as unknown as typeof store.cities;
+    // The entity graph lives in the cities store; the air-pollution store
+    // exposes it as a read-only getter, so seeding goes to the owner.
+    useCitiesStore().cities = cities as unknown as ReturnType<
+      typeof useCitiesStore
+    >['cities'];
 
     let inFlight = 0;
     let peak = 0;
@@ -531,7 +503,7 @@ describe('page initialisation', () => {
 
   it('initHomePage loads the cities', async () => {
     vi.mocked(aqra.getDataForAllCities).mockClear();
-    store.cities = {};
+    useCitiesStore().cities = {};
 
     await store.initHomePage();
 

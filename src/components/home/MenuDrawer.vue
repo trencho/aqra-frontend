@@ -33,7 +33,7 @@ import { defineComponent } from 'vue';
 
 import type { TabId } from '@/constants/navigationTabs';
 import { TabIds, Tabs } from '@/constants/navigationTabs';
-import { useAirPollutionStore } from '@/stores/airPollution';
+import { useUiStore } from '@/stores/ui';
 
 /**
  * The drawer's own icons, merged onto the shared Tabs definition rather than
@@ -58,10 +58,10 @@ export default defineComponent({
   },
 
   computed: {
-    ...mapStores(useAirPollutionStore),
+    ...mapStores(useUiStore),
 
     store() {
-      return this.airPollutionStore;
+      return this.uiStore;
     },
 
     drawer: {

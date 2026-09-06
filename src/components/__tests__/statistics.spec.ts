@@ -31,6 +31,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 import { useAirPollutionStore } from '@/stores/airPollution';
+import { useCitiesStore } from '@/stores/cities';
 
 import LineChart from '../statistics/LineChart.vue';
 import StatisticFilters from '../statistics/StatisticFilters.vue';
@@ -38,7 +39,7 @@ import Statistics from '../statistics/Statistics.vue';
 import { globalMountOptions,stubBrowserApis } from './helpers';
 
 const filterState = {
-  airPollution: {
+  filters: {
     nameInput: {
       id: 'name',
       label: 'common.cityName',
@@ -111,10 +112,10 @@ describe('StatisticFilters', () => {
     const wrapper = mount(StatisticFilters, {
       global: globalMountOptions({
         initialState: {
-          airPollution: {
-            ...filterState.airPollution,
+          filters: {
+            ...filterState.filters,
             pollutantInput: {
-              ...filterState.airPollution.pollutantInput,
+              ...filterState.filters.pollutantInput,
               value: null,
             },
           },
@@ -167,9 +168,9 @@ describe('LineChart', () => {
   // provide a canvas 2D context, so Chart.js bails early with "can't acquire
   // context" and a render-only test would pass even with nothing registered.
   //
-  // Chart.js 3+ is tree-shakeable -- without Chart.register(...registerables)
-  // a real browser throws "line is not a registered controller". That, plus
-  // the old vue-chartjs v2 API, is why the Statistics tab never drew.
+  // Chart.js 3+ is tree-shakeable -- with nothing registered a real browser
+  // throws "line is not a registered controller". That, plus the old
+  // vue-chartjs v2 API, is why the Statistics tab never drew.
   it('registers the Chart.js line controller, scales and elements', async () => {
     // Importing the component is what runs Chart.register(...).
     await import('../statistics/LineChart.vue');
@@ -179,6 +180,64 @@ describe('LineChart', () => {
     expect(Chart.registry.getScale('linear')).toBeTruthy();
     expect(Chart.registry.getScale('category')).toBeTruthy();
     expect(Chart.registry.getElement('point')).toBeTruthy();
+    expect(Chart.registry.getElement('line')).toBeTruthy();
+  });
+
+  // The registration is a named list rather than `...registerables`, and the
+  // assertions above cannot tell the two apart -- registerables is a superset,
+  // so it satisfies every one of them. These do the discriminating: each names
+  // a piece registerables pulls in and the named list does not. A registry miss
+  // throws rather than returning undefined, hence toThrow.
+  //
+  // Not asserted here: the controllers. `import { Line } from 'vue-chartjs'`
+  // loads that package's barrel, which calls createTypedChart for all eight of
+  // its chart types at module scope, and each call runs Chart.register on its
+  // controller. So bar, doughnut, pie, polarArea, radar, bubble and scatter are
+  // all in the registry under Vitest no matter what this component does, and an
+  // assertion on them would be measuring vue-chartjs. Verified by probe rather
+  // than assumed -- the first draft of this test asserted getController('bar')
+  // throws, and it does not.
+  //
+  // Those eight calls are /* #__PURE__ */ annotated, so the production build
+  // does drop the seven unused ones. The registry just cannot see that, because
+  // Vitest does not tree-shake. Bundle size is the instrument for that half.
+  it('registers nothing for chart types the app does not draw', async () => {
+    await import('../statistics/LineChart.vue');
+    const { Chart } = await import('chart.js');
+
+    expect(() => Chart.registry.getScale('logarithmic')).toThrow();
+    expect(() => Chart.registry.getScale('radialLinear')).toThrow();
+    expect(() => Chart.registry.getScale('time')).toThrow();
+    expect(() => Chart.registry.getScale('timeseries')).toThrow();
+    expect(() => Chart.registry.getElement('arc')).toThrow();
+    expect(() => Chart.registry.getElement('bar')).toThrow();
+  });
+
+  // Split from the scales and elements above because these four are absent for
+  // a different reason. They are not about unreachable chart types -- each is a
+  // plugin registerables installs that would run on this very chart, and each
+  // was measured to be a no-op given how the datasets are built. Filler is inert
+  // because every series sets `fill: false`; Colors self-skips when a dataset
+  // defines borderColor, which seriesColor(index) always does; Title and
+  // SubTitle default to display: false.
+  //
+  // So if a later change sets `fill: true`, drops borderColor, or asks for a
+  // chart title, this test is what says the plugin has to be registered rather
+  // than leaving the feature silently doing nothing.
+  it('omits the plugins that are inert for how this chart is built', async () => {
+    await import('../statistics/LineChart.vue');
+    const { Chart } = await import('chart.js');
+
+    expect(() => Chart.registry.getPlugin('filler')).toThrow();
+    expect(() => Chart.registry.getPlugin('colors')).toThrow();
+    expect(() => Chart.registry.getPlugin('title')).toThrow();
+    expect(() => Chart.registry.getPlugin('subtitle')).toThrow();
+
+    // The two that are not inert, and are therefore registered: the legend and
+    // the hover tooltip both display by default and the chart options set
+    // neither, so dropping them would be a visible behaviour change.
+    expect(Chart.registry.getPlugin('legend')).toBeTruthy();
+    expect(Chart.registry.getPlugin('tooltip')).toBeTruthy();
   });
 
   it('renders a canvas', () => {
@@ -248,8 +307,9 @@ describe('Statistics', () => {
     // Cast at the seam: the fixture carries only `data`, which is all
     // mapHistoryToSeries reads, where the store field is typed as full
     // Forecast instances.
-    store.historyData =
-      filterState.airPollution.historyData as unknown as typeof store.historyData;
+    const citiesStore = useCitiesStore();
+    citiesStore.historyData = filterState.filters
+      .historyData as unknown as typeof citiesStore.historyData;
 
     return wrapper;
   };

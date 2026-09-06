@@ -8,7 +8,7 @@ import Statistics from '@/components/statistics/Statistics.vue';
 import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation.vue';
 import type { TabId } from '@/constants/navigationTabs';
 import { tabByName,TabIds, Tabs } from '@/constants/navigationTabs';
-import { useAirPollutionStore } from '@/stores/airPollution';
+import { useUiStore } from '@/stores/ui';
 
 /**
  * Annotated `Record<TabId, Component>` rather than inferred, so adding a tab to
@@ -53,6 +53,10 @@ export function createAppRouter(
    * it. Done here rather than by importing the router into the store, which
    * would make the store depend on the component tree it is consumed by.
    *
+   * The ui store, not the air-pollution one. Mirroring a tab id was the only
+   * reason routing ever reached for a store holding city caches and in-flight
+   * request counts.
+   *
    * afterEach rather than a watcher in HomePage: it fires for the initial
    * navigation too, so a deep link to /statistics arrives with the store
    * already agreeing, instead of briefly reporting Home.
@@ -63,7 +67,7 @@ export function createAppRouter(
   router.afterEach((to) => {
     const tab = tabByName(to.name as string | undefined);
     if (tab) {
-      useAirPollutionStore().changeTab(tab.id);
+      useUiStore().changeTab(tab.id);
     }
   });
 

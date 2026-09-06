@@ -19,7 +19,7 @@ import SliderFilter from '../map/SliderFilter.vue';
 import { globalMountOptions,stubBrowserApis } from './helpers';
 
 const inputState = {
-  airPollution: {
+  filters: {
     cities: {},
     nameInput: {
       id: 'name',
@@ -116,11 +116,11 @@ describe('InputFilters', () => {
     const wrapper = mount(InputFilters, {
       global: globalMountOptions({
         initialState: {
-          airPollution: {
-            ...inputState.airPollution,
-            nameInput: { ...inputState.airPollution.nameInput, hidden: true },
+          filters: {
+            ...inputState.filters,
+            nameInput: { ...inputState.filters.nameInput, hidden: true },
             sensorInput: {
-              ...inputState.airPollution.sensorInput,
+              ...inputState.filters.sensorInput,
               hidden: true,
             },
           },
@@ -161,7 +161,7 @@ describe('SliderFilter', () => {
       },
       global: globalMountOptions({
         initialState: {
-          airPollution: { pollutantInput: { value: pollutantValue } },
+          filters: { pollutantInput: { value: pollutantValue } },
         },
       }),
     });

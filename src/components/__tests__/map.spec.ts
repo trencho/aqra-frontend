@@ -68,6 +68,7 @@ const Map = (await import('../map/Map.vue')).default;
 const createMap = await import('@/utils/createMap');
 const { Layers } = await import('@/constants/layers');
 const { useAirPollutionStore } = await import('@/stores/airPollution');
+const { useCitiesStore } = await import('@/stores/cities');
 const { stubBrowserApis, globalMountOptions, setViewportWidth } = await import(
   './helpers'
 );
@@ -108,7 +109,9 @@ const mountIt = () => {
   });
 
   const store = useAirPollutionStore();
-  store.cities = cities;
+  // Seeded on the owning store: airPollution exposes `cities` as a read-only
+  // getter onto this one.
+  useCitiesStore().cities = cities;
   return { wrapper, store };
 };
 

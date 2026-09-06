@@ -13,7 +13,7 @@ import { createMemoryHistory } from 'vue-router';
 
 import { TabIds, Tabs } from '@/constants/navigationTabs';
 import { createAppRouter, routes } from '@/router';
-import { useAirPollutionStore } from '@/stores/airPollution';
+import { useUiStore } from '@/stores/ui';
 
 const router = () => createAppRouter(createMemoryHistory());
 
@@ -75,7 +75,7 @@ describe('navigation', () => {
 describe('store synchronisation', () => {
   it('mirrors the resolved route onto the store tabId', async () => {
     const r = router();
-    const store = useAirPollutionStore();
+    const store = useUiStore();
 
     await r.push('/statistics');
 
@@ -87,7 +87,7 @@ describe('store synchronisation', () => {
   // the store already agreeing, not briefly reporting Home and correcting.
   it('syncs on the initial navigation, so a deep link never shows Home first', async () => {
     const r = createAppRouter(createMemoryHistory('/'));
-    const store = useAirPollutionStore();
+    const store = useUiStore();
     r.push('/api-docs');
     await r.isReady();
 
@@ -105,7 +105,7 @@ describe('store synchronisation', () => {
       name: 'not-a-tab',
       component: { template: '<div />' },
     });
-    const store = useAirPollutionStore();
+    const store = useUiStore();
     await r.push('/statistics');
 
     await r.push('/not-a-tab');
@@ -115,7 +115,7 @@ describe('store synchronisation', () => {
 
   it('closes the drawer when navigation changes the tab', async () => {
     const r = router();
-    const store = useAirPollutionStore();
+    const store = useUiStore();
     store.setDrawer(true);
 
     await r.push('/map');

@@ -6,8 +6,8 @@ import { beforeEach,describe, expect, it } from 'vitest';
 import { at } from '@/__tests__/support/expect';
 import { LocaleId } from '@/constants/locales';
 import { TabIds } from '@/constants/navigationTabs';
-import { useAirPollutionStore } from '@/stores/airPollution';
 import { useLocaleStore } from '@/stores/locale';
+import { useUiStore } from '@/stores/ui';
 
 import Footer from '../home/Footer.vue';
 import MenuDrawer from '../home/MenuDrawer.vue';
@@ -23,7 +23,7 @@ describe('MenuDrawer', () => {
   const mountIt = (drawer = true) =>
     mountInApp(MenuDrawer, {
       global: globalMountOptions({
-        initialState: { airPollution: { drawer } },
+        initialState: { ui: { drawer } },
         stubActions: false,
       }),
     });
@@ -54,7 +54,7 @@ describe('MenuDrawer', () => {
   // macrotask, so a flush-based wait is a latent flake.
   it('navigates and changes tab when a link is clicked', async () => {
     const wrapper = mountIt();
-    const store = useAirPollutionStore();
+    const store = useUiStore();
     const router = wrapper.vm.$router;
     await router.isReady();
 
@@ -75,7 +75,7 @@ describe('MenuDrawer', () => {
 
   it('writes drawer closure back through the store', async () => {
     const wrapper = mountIt(true);
-    const store = useAirPollutionStore();
+    const store = useUiStore();
 
     wrapper.findComponent({ name: 'VNavigationDrawer' }).vm.$emit(
       'update:modelValue',

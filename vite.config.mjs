@@ -40,27 +40,28 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      include: [
-        // Extension-globbed for the same reason as `include` above: spelled
-        // 'src/main.js', this entry silently stops matching when the entry
-        // point becomes main.ts, dropping the only test that catches the
-        // leaflet.heat import-order hazard out of the coverage report.
-        // The directory entries below are already extension-agnostic.
-        'src/main.{js,ts}',
-        'src/classes/**',
-        'src/components/**',
-        'src/services/**',
-        'src/utils/**',
-        'src/constants/**',
-        'src/stores/**',
-        // A new top-level source directory is invisible to coverage until it is
-        // listed here -- it does not fail, it simply is not counted, and the
-        // totals go UP because the denominator never grew. Three variants of
-        // that trap have already been found in this file; adding a directory
-        // under src/ means adding it here in the same change.
-        'src/router/**',
+      // Everything under src/, minus what emits no runtime code. This used to
+      // be a hand-maintained allow-list of eight entries, and the list was
+      // wrong: `src/App.vue` was absent from all of them, so it was mounted by
+      // seven tests in src/__tests__/app-mount.spec.ts and counted in none.
+      //
+      // Four variants of that trap had already been found and commented in this
+      // file, and every comment warned about a new top-level *directory*. The
+      // live case was a *file* sitting directly under src/, which none of the
+      // warnings covered and no amount of care about them would have caught.
+      //
+      // An allow-list fails silently in the flattering direction: uncounted
+      // code does not fail the build, it just never joins the denominator, so
+      // the percentages go UP. A deny-list of things that emit nothing fails
+      // the other way -- add a directory and it lands in coverage uninvited,
+      // which is visible immediately.
+      include: ['src/**'],
+      exclude: [
+        'src/**/__tests__/**',
+        // Type-only: erased at compile time, emits nothing to instrument.
+        'src/types/**',
+        'src/**/*.d.ts',
       ],
-      exclude: ['src/**/__tests__/**'],
       reporter: ['text', 'lcov'],
       // Set to what is ACTUALLY achieved, not to an aspiration -- a threshold
       // above the real number fails from day one and gets switched off, while
@@ -79,10 +80,18 @@ export default defineConfig({
       // SliderFilter.vue, not Map.vue, and they are not dead -- each is bound
       // to @click in that component's template (lines 29, 41, 51). Deleting
       // them would remove working slider controls.
-      // Raised with the router work, which moved the real figures to
-      // 94.18/93.72/89.81/93.96. Roughly a point of headroom each, matching
-      // what these carried before -- enough that an unrelated refactor does not
-      // go red, tight enough that losing a covered path does.
+      //
+      // Re-measured after `include` became 'src/**'. App.vue joined the
+      // denominator (3 statements, all covered) and the figures moved to
+      // 94.36/93.49/90.03/94.16, from 94.29/93.49/89.92/94.08. Up, not down:
+      // the file it had been omitting was fully exercised, which is why an
+      // allow-list gap is so easy to miss -- it flatters the result.
+      //
+      // The pins below are unchanged, and that is the measurement rather than
+      // an oversight. The convention is roughly a point of headroom each, the
+      // movement was under a seventh of a point, and re-deriving from the new
+      // figures lands on the same four numbers. Enough that an unrelated
+      // refactor does not go red, tight enough that losing a covered path does.
       thresholds: {
         statements: 93,
         branches: 92,
