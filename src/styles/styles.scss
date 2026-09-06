@@ -271,16 +271,22 @@
   white-space: nowrap;
 }
 
-// The heatmap scale, rendered over the map next to the filter panel.
+// The heatmap scale, rendered over the map.
 //
 // Same overlay treatment as `.filters` above -- an opaque dark panel rather than
 // a translucent one, for the reason recorded there: map labels showing through
 // tangle with the text on top of them. Small numbers over a moving map is the
 // worst case for that.
+//
+// Bottom LEFT, and that is measured rather than chosen for looks. Bottom right
+// was the first attempt and it overlapped the filter panel by 180 of its 220px
+// in a 1920-wide window -- invisible to the suite, since jsdom lays nothing out.
+// The corner is otherwise free: Leaflet puts its zoom control top left and its
+// attribution bottom right.
 .heatLegend {
   position: absolute;
   z-index: 500;
-  right: 10px;
+  left: 10px;
   bottom: 24px;
   width: 220px;
   padding: 10px 12px;
