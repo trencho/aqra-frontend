@@ -22,6 +22,7 @@ import type { SelectFilterInput } from '@/types/domain';
 
 const { aqra } = await import('@/services/api');
 const { useAirPollutionStore } = await import('../airPollution');
+const { useCitiesStore } = await import('../cities');
 const { DEFAULT_CONCURRENCY } = await import('@/utils/concurrency');
 
 // Generic, so each endpoint mock resolves with the payload type that endpoint
@@ -449,7 +450,11 @@ describe('bulk fan-out actions', () => {
         { ...API_CITY, cityName: `city-${i}`, position: [`${i}`, `${i}`] },
       ])
     );
-    store.cities = cities as unknown as typeof store.cities;
+    // The entity graph lives in the cities store; the air-pollution store
+    // exposes it as a read-only getter, so seeding goes to the owner.
+    useCitiesStore().cities = cities as unknown as ReturnType<
+      typeof useCitiesStore
+    >['cities'];
 
     let inFlight = 0;
     let peak = 0;
@@ -497,7 +502,7 @@ describe('page initialisation', () => {
 
   it('initHomePage loads the cities', async () => {
     vi.mocked(aqra.getDataForAllCities).mockClear();
-    store.cities = {};
+    useCitiesStore().cities = {};
 
     await store.initHomePage();
 

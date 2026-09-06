@@ -31,6 +31,7 @@ vi.mock('@/services/api', () => ({
 }));
 
 import { useAirPollutionStore } from '@/stores/airPollution';
+import { useCitiesStore } from '@/stores/cities';
 
 import LineChart from '../statistics/LineChart.vue';
 import StatisticFilters from '../statistics/StatisticFilters.vue';
@@ -306,8 +307,9 @@ describe('Statistics', () => {
     // Cast at the seam: the fixture carries only `data`, which is all
     // mapHistoryToSeries reads, where the store field is typed as full
     // Forecast instances.
-    store.historyData =
-      filterState.airPollution.historyData as unknown as typeof store.historyData;
+    const citiesStore = useCitiesStore();
+    citiesStore.historyData = filterState.airPollution
+      .historyData as unknown as typeof citiesStore.historyData;
 
     return wrapper;
   };

@@ -1,19 +1,13 @@
 import type { AxiosResponse } from 'axios';
 import { defineStore } from 'pinia';
 
-import { City } from '@/classes/city';
-import { Forecast } from '@/classes/forecast';
-import { Pollutant } from '@/classes/pollutant';
-import { Sensor } from '@/classes/sensors';
-import type { RequestResult, RequestState } from '@/composables/useRequest';
-import {
-  createRequestState,
-  hasError,
-  isLoading,
-  useRequest,
-} from '@/composables/useRequest';
+import type { City } from '@/classes/city';
+import type { Forecast } from '@/classes/forecast';
+import type { Pollutant } from '@/classes/pollutant';
+import type { Sensor } from '@/classes/sensors';
+import type { RequestResult } from '@/composables/useRequest';
 import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
-import { aqra } from '@/services/api';
+import { useCitiesStore } from '@/stores/cities';
 import type {
   Position,
   SelectFilterInput,
@@ -21,37 +15,18 @@ import type {
   SetValueConfig,
   ToggleFilterInput,
 } from '@/types/domain';
-import { mapWithConcurrency } from '@/utils/concurrency';
 
-export interface AirPollutionState extends RequestState {
-  cities: Record<string, City>;
+type CitiesStore = ReturnType<typeof useCitiesStore>;
+
+export interface AirPollutionState {
   nameInput: SelectFilterInput;
   sensorInput: SelectFilterInput;
-  historyData: Record<string, Forecast | null>;
   pollutantInput: SelectFilterInput;
-  forecastBySensorId: Record<string, Forecast | null>;
-  pollutantsBySensorId: Record<string, Array<Pollutant | null>>;
   showCityMarkersInput: ToggleFilterInput;
   showForAllCitiesInput: ToggleFilterInput;
   showSensorMarkersInput: ToggleFilterInput;
   showForAllSensorsInput: ToggleFilterInput;
   showCityBoundariesInput: ToggleFilterInput;
-}
-
-/**
- * Index a list by one of its fields.
- *
- * The element type includes null because every fromApi mapper returns null for
- * a missing payload entry. A null entry throws here, exactly as it did before --
- * the API does not send them, and adding a guard would be a behaviour change.
- */
-function mapList<T extends object>(
-  list: Array<T | null>,
-  entity: keyof T
-): Record<string, T> {
-  const map: Record<string, T> = {};
-  list.forEach((i) => (map[i![entity] as string] = i!));
-  return map;
 }
 
 function mapPollutants(): SelectOption[] {
@@ -106,43 +81,49 @@ export const useAirPollutionStore = defineStore('airPollution', {
   // undefined-handling into every consumer for a state that is never actually
   // observed empty.
   state: (): AirPollutionState => ({
-    cities: {},
     nameInput: {} as SelectFilterInput,
     sensorInput: {} as SelectFilterInput,
-    historyData: {},
     pollutantInput: {} as SelectFilterInput,
-    forecastBySensorId: {},
-    pollutantsBySensorId: {},
     showCityMarkersInput: {} as ToggleFilterInput,
     showForAllCitiesInput: {} as ToggleFilterInput,
     showSensorMarkersInput: {} as ToggleFilterInput,
     showForAllSensorsInput: {} as ToggleFilterInput,
     showCityBoundariesInput: {} as ToggleFilterInput,
-
-    ...createRequestState(),
   }),
 
+  // Read-only passthroughs to the cities store. Getters rather than state, so
+  // there is exactly one copy of the entity graph and no synchronisation to get
+  // wrong. Map.vue reads `store.cities` and Statistics.vue reads
+  // `store.historyData` through these and needed no edit.
   getters: {
-    isLoading: (state) => isLoading(state),
-    hasError: (state) => hasError(state),
+    cities: (): Record<string, City> => useCitiesStore().cities,
+    historyData: (): Record<string, Forecast | null> =>
+      useCitiesStore().historyData,
+    forecastBySensorId: (): Record<string, Forecast | null> =>
+      useCitiesStore().forecastBySensorId,
+    pollutantsBySensorId: (): Record<string, Array<Pollutant | null>> =>
+      useCitiesStore().pollutantsBySensorId,
+
+    error: (): string | null => useCitiesStore().error,
+    pending: (): number => useCitiesStore().pending,
+    isLoading: (): boolean => useCitiesStore().isLoading,
+    hasError: (): boolean => useCitiesStore().hasError,
   },
 
   actions: {
-    // --- request plumbing ---------------------------------------------------
+    // --- facade: request plumbing -------------------------------------------
     //
-    // Both delegate to the useRequest composable, which owns the behaviour
-    // while this store keeps owning the state. The two names stay on the store
-    // because HomePage.vue binds `store.clearError()` and both specs drive
-    // `store.request(...)` directly.
+    // The state lives in the cities store now. These stay because HomePage.vue
+    // binds `store.clearError()` and both specs drive `store.request(...)`.
 
     async request<T>(
       call: () => Promise<AxiosResponse<T>>
     ): Promise<RequestResult<T>> {
-      return useRequest(this).run(call);
+      return useCitiesStore().request(call);
     },
 
     clearError() {
-      useRequest(this).clearError();
+      useCitiesStore().clearError();
     },
 
     // --- formerly mutations -------------------------------------------------
@@ -164,67 +145,6 @@ export const useAirPollutionStore = defineStore('airPollution', {
       }));
     },
 
-    setSensorsByCity({
-      cityName,
-      sensors,
-    }: {
-      cityName: string | null | undefined;
-      sensors: Array<Sensor | null>;
-    }) {
-      // Guards the city, not just the container. Clearing the city select
-      // sends null, and an unknown name reaches here too; both used to throw
-      // while assigning `.sensors` on undefined.
-      const city = this.cities?.[cityName as string];
-      if (!city) {
-        return;
-      }
-      city.sensors = mapList(sensors, 'sensorId');
-    },
-
-    setForecastForSensor({
-      sensorId,
-      forecast,
-      cityName,
-    }: {
-      sensorId: string | null | undefined;
-      forecast: Forecast | null;
-      cityName: string | null | undefined;
-    }) {
-      const sensor =
-        this.cities?.[cityName as string]?.sensors?.[sensorId as string];
-      if (!sensor) {
-        return;
-      }
-      sensor.forecast = forecast;
-    },
-
-    setForecastForCity({
-      forecast,
-      cityName,
-    }: {
-      forecast: Forecast | null;
-      cityName: string | null | undefined;
-    }) {
-      const city = this.cities?.[cityName as string];
-      if (!city) {
-        return;
-      }
-      city.forecast = forecast;
-    },
-
-    setPollutantsForSensor({
-      sensorId,
-      pollutants,
-    }: {
-      sensorId: string | null | undefined;
-      pollutants: Array<Pollutant | null>;
-    }) {
-      this.pollutantsBySensorId = {
-        ...this.pollutantsBySensorId,
-        [sensorId as string]: pollutants,
-      };
-    },
-
     setShowAllCities(value: boolean) {
       this.showForAllSensorsInput.value = false;
       this.nameInput.hidden = value;
@@ -243,19 +163,6 @@ export const useAirPollutionStore = defineStore('airPollution', {
       this.sensorInput.value = value ? null : this.sensorInput.value;
       this.pollutantInput.items = value ? mapPollutants() : [];
       this.pollutantInput.value = null;
-    },
-
-    setHistoryData({
-      sensorId,
-      historyData,
-    }: {
-      sensorId: string | null | undefined;
-      historyData: Forecast | null;
-    }) {
-      this.historyData = {
-        ...this.historyData,
-        [sensorId as string]: historyData,
-      };
     },
 
     // --- page initialisation ------------------------------------------------
@@ -351,197 +258,93 @@ export const useAirPollutionStore = defineStore('airPollution', {
       }
     },
 
-    // --- data fetching ------------------------------------------------------
+    // --- facade: entity writes and fetching ---------------------------------
+    //
+    // Every one of these moved to stores/cities.ts. They are re-exported here
+    // because ten components call mapStores(useAirPollutionStore) and the
+    // component specs drive them by these names. Delegating actions is safe in
+    // a way delegating state is not: an action forwards a call, where a state
+    // getter silently swallows anything a test seeds through initialState.
 
-    /**
-     * The cache check used to be `this.cities.length`. `cities` is a Record
-     * keyed by city name, so that is always `undefined` and the guard never
-     * fired: every call refetched every city. Typing the state is what exposed
-     * it, and it was left in place through the migration so the behaviour
-     * change would not be buried in a type change.
-     *
-     * Returns an array on both paths now. It used to return the Record when it
-     * (nominally) hit the cache and an array otherwise, so the declared type
-     * was a union no caller could act on without narrowing first.
-     */
-    async getCities(): Promise<City[]> {
-      if (Object.keys(this.cities).length) {
-        return Object.values(this.cities);
-      }
-
-      const { ok, data } = await this.request(() => aqra.getDataForAllCities());
-      if (!ok) {
-        return [];
-      }
-
-      this.cities = mapList(data.map(City.fromApi), 'cityName');
-
-      return Object.values(this.cities);
+    setSensorsByCity(payload: Parameters<CitiesStore['setSensorsByCity']>[0]) {
+      useCitiesStore().setSensorsByCity(payload);
     },
 
-    async getSensorsByCityName(
-      cityName: string | null | undefined
-    ): Promise<Record<string, Sensor> | Array<Sensor | null>> {
-      const cached = this.cities?.[cityName as string]?.sensors;
-      if (cached) {
-        return cached;
-      }
+    setForecastForSensor(
+      payload: Parameters<CitiesStore['setForecastForSensor']>[0]
+    ) {
+      useCitiesStore().setForecastForSensor(payload);
+    },
 
-      const { ok, data } = await this.request(() =>
-        aqra.getAvailableSensorsForCity(cityName)
-      );
-      if (!ok) {
-        return [];
-      }
+    setForecastForCity(
+      payload: Parameters<CitiesStore['setForecastForCity']>[0]
+    ) {
+      useCitiesStore().setForecastForCity(payload);
+    },
 
-      const sensors = data.map(Sensor.fromApi);
-      this.setSensorsByCity({ sensors, cityName });
-      return sensors;
+    setPollutantsForSensor(
+      payload: Parameters<CitiesStore['setPollutantsForSensor']>[0]
+    ) {
+      useCitiesStore().setPollutantsForSensor(payload);
+    },
+
+    setHistoryData(payload: Parameters<CitiesStore['setHistoryData']>[0]) {
+      useCitiesStore().setHistoryData(payload);
+    },
+
+    async getCities() {
+      return useCitiesStore().getCities();
+    },
+
+    async getSensorsByCityName(cityName: string | null | undefined) {
+      return useCitiesStore().getSensorsByCityName(cityName);
     },
 
     async getSensorsForAllCities() {
-      if (!this.cities) {
-        return;
-      }
-
-      await mapWithConcurrency(Object.values(this.cities), (c) =>
-        this.getSensorsByCityName(c.cityName)
-      );
+      return useCitiesStore().getSensorsForAllCities();
     },
 
     async getForecastForAllSensors() {
-      if (!this.cities) {
-        return;
-      }
-
-      await this.getSensorsForAllCities();
-
-      const pairs = Object.values(this.cities)
-        .map((c) =>
-          Object.values(c.sensors || {}).map((s) => ({
-            sensorId: s.sensorId,
-            cityName: c.cityName,
-          }))
-        )
-        .flat();
-
-      await mapWithConcurrency(pairs, (pair) =>
-        this.getForecastBySensorId(pair)
-      );
+      return useCitiesStore().getForecastForAllSensors();
     },
 
     async getForecastForAllCities() {
-      if (!this.cities) {
-        return;
-      }
-
-      await mapWithConcurrency(Object.values(this.cities), (c) =>
-        this.getForecastByCoordinatesForCity({
-          position: c.position,
-          cityName: c.cityName,
-        })
-      );
+      return useCitiesStore().getForecastForAllCities();
     },
 
-    async getForecastByCoordinatesForCity({
-      position,
-      cityName,
-    }: {
+    async getForecastByCoordinatesForCity(payload: {
       position: Position;
       cityName: string | null | undefined;
-    }): Promise<Forecast | null | never[]> {
-      // Identity comparison, not a value comparison: two cities with equal
-      // coordinates in different array instances both miss. Test fixtures that
-      // share one position array collapse into cache hits for the same reason.
-      const cached = Object.values(this.cities).find(
-        (c) => c.position === position
-      )?.forecast;
-      if (cached) {
-        return cached;
-      }
-
-      const { ok, data } = await this.request(() =>
-        aqra.getForecastBySpecificCoordinates(position?.[0], position?.[1])
-      );
-      if (!ok) {
-        return [];
-      }
-
-      const forecast = Forecast.fromApi(data);
-      this.setForecastForCity({ forecast, cityName });
-      return forecast;
+    }) {
+      return useCitiesStore().getForecastByCoordinatesForCity(payload);
     },
 
-    async getForecastBySensorId({
-      sensorId,
-      cityName,
-    }: {
+    async getForecastBySensorId(payload: {
       sensorId: string | null | undefined;
       cityName: string | null | undefined;
-    }): Promise<Forecast | null | never[]> {
-      const cached =
-        this.cities?.[cityName as string]?.sensors?.[sensorId as string]
-          ?.forecast;
-      if (cached) {
-        return cached;
-      }
-
-      const { ok, data } = await this.request(() =>
-        aqra.getForecastForSpecificSensor(cityName, sensorId)
-      );
-      if (!ok) {
-        return [];
-      }
-
-      const forecast = Forecast.fromApi(data);
-      this.setForecastForSensor({ sensorId, forecast, cityName });
-      return forecast;
+    }) {
+      return useCitiesStore().getForecastBySensorId(payload);
     },
 
-    async getPollutantsBySensorId(
-      sensorId: string | null | undefined
-    ): Promise<Array<Pollutant | null>> {
-      const cached = this.pollutantsBySensorId?.[sensorId as string];
-      if (cached) {
-        return cached;
-      }
-
-      const { ok, data } = await this.request(() =>
-        aqra.getDataForAllAvailablePollutantsBySensorId(
-          this.nameInput.value as string,
-          sensorId
-        )
+    /**
+     * The city comes off `nameInput.value` here rather than inside the cities
+     * store. That read is the one coupling between the filters and the entity
+     * cache, and this facade is the right place for it: the cities store takes
+     * the name as a parameter and knows nothing about a select.
+     */
+    async getPollutantsBySensorId(sensorId: string | null | undefined) {
+      return useCitiesStore().getPollutantsBySensorId(
+        this.nameInput.value as string,
+        sensorId
       );
-      if (!ok) {
-        return [];
-      }
-
-      const pollutants = data.map(Pollutant.fromApi);
-      this.setPollutantsForSensor({ sensorId, pollutants });
-      return pollutants;
     },
 
-    async getHistoryDataBySensorId(
-      sensorId: string | null | undefined
-    ): Promise<Forecast | null | never[]> {
-      const cached = this.historyData?.[sensorId as string];
-      if (cached) {
-        return cached;
-      }
-
-      const { ok, data } = await this.request(() =>
-        aqra.getDataForHistoricalPollution(
-          this.nameInput.value as string,
-          sensorId
-        )
+    /** Same as above. */
+    async getHistoryDataBySensorId(sensorId: string | null | undefined) {
+      return useCitiesStore().getHistoryDataBySensorId(
+        this.nameInput.value as string,
+        sensorId
       );
-      if (!ok) {
-        return [];
-      }
-
-      const historyData = Forecast.fromApi(data);
-      this.setHistoryData({ sensorId, historyData });
-      return historyData;
     },
   },
 });
