@@ -19,7 +19,7 @@ import { testRouter } from '@/components/__tests__/helpers';
 import { TabIds } from '@/constants/navigationTabs';
 import { i18n } from '@/services/i18n';
 import { vuetify } from '@/services/vuetify';
-import { useAirPollutionStore } from '@/stores/airPollution';
+import { useUiStore } from '@/stores/ui';
 
 // Leaflet needs real layout; the map component is exercised separately.
 vi.mock('@/utils/createMap', () => ({
@@ -106,7 +106,7 @@ describe('App mounts under Vue 3', () => {
 
   it('starts on the Home tab and reads state from the Pinia store', () => {
     const wrapper = mountApp();
-    const store = useAirPollutionStore();
+    const store = useUiStore();
 
     expect(store.tabId).toBe(TabIds.Home);
     wrapper.unmount();
@@ -119,7 +119,7 @@ describe('App mounts under Vue 3', () => {
   // agrees afterwards.
   it('switches tabs by navigating, and syncs the store to the route', async () => {
     const wrapper = mountApp();
-    const store = useAirPollutionStore();
+    const store = useUiStore();
 
     await wrapper.vm.$router.push('/api-docs');
     await wrapper.vm.$nextTick();
@@ -162,7 +162,7 @@ describe('App mounts under Vue 3', () => {
 
   it('closes the drawer when the tab changes', () => {
     const wrapper = mountApp();
-    const store = useAirPollutionStore();
+    const store = useUiStore();
 
     store.setDrawer(true);
     expect(store.drawer).toBe(true);

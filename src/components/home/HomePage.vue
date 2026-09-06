@@ -31,7 +31,7 @@
             <VAppBarNavIcon
               v-if="$vuetify.display.smAndDown"
               color="white"
-              @click="store.setDrawer(!store.drawer)"
+              @click="uiStore.setDrawer(!uiStore.drawer)"
             />
 
             <VTabs
@@ -109,6 +109,7 @@ import { APP_BAR_HEIGHT } from '@/constants/layout';
 import type { TabId } from '@/constants/navigationTabs';
 import { tabById,Tabs } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
+import { useUiStore } from '@/stores/ui';
 
 import Footer from './Footer.vue';
 import MenuDrawer from './MenuDrawer.vue';
@@ -134,8 +135,8 @@ export default defineComponent({
   },
 
   computed: {
-    // mapStores exposes the store as `airPollutionStore`; alias it for brevity.
-    ...mapStores(useAirPollutionStore),
+    // mapStores exposes each store as `<name>Store`; alias for brevity.
+    ...mapStores(useAirPollutionStore, useUiStore),
 
     store() {
       return this.airPollutionStore;
@@ -149,7 +150,7 @@ export default defineComponent({
     // and the URL disagree whenever navigation is cancelled or redirected.
     activeTab: {
       get() {
-        return this.store.tabId;
+        return this.uiStore.tabId;
       },
       set(id: TabId) {
         void this.$router.push(tabById(id).path);

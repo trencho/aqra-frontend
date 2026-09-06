@@ -5,8 +5,6 @@ import { City } from '@/classes/city';
 import { Forecast } from '@/classes/forecast';
 import { Pollutant } from '@/classes/pollutant';
 import { Sensor } from '@/classes/sensors';
-import type { TabId } from '@/constants/navigationTabs';
-import { TabIds } from '@/constants/navigationTabs';
 import { Pollutants, PollutantsLabels } from '@/constants/pollutants';
 import { aqra } from '@/services/api';
 import type {
@@ -20,14 +18,11 @@ import { mapWithConcurrency } from '@/utils/concurrency';
 import { errorMessage } from '@/utils/errors';
 
 export interface AirPollutionState {
-  drawer: boolean;
-
   cities: Record<string, City>;
   nameInput: SelectFilterInput;
   sensorInput: SelectFilterInput;
   historyData: Record<string, Forecast | null>;
   pollutantInput: SelectFilterInput;
-  tabId: TabId;
   forecastBySensorId: Record<string, Forecast | null>;
   pollutantsBySensorId: Record<string, Array<Pollutant | null>>;
   showCityMarkersInput: ToggleFilterInput;
@@ -117,14 +112,11 @@ export const useAirPollutionStore = defineStore('airPollution', {
   // undefined-handling into every consumer for a state that is never actually
   // observed empty.
   state: (): AirPollutionState => ({
-    drawer: false,
-
     cities: {},
     nameInput: {} as SelectFilterInput,
     sensorInput: {} as SelectFilterInput,
     historyData: {},
     pollutantInput: {} as SelectFilterInput,
-    tabId: TabIds.Home,
     forecastBySensorId: {},
     pollutantsBySensorId: {},
     showCityMarkersInput: {} as ToggleFilterInput,
@@ -334,19 +326,6 @@ export const useAirPollutionStore = defineStore('airPollution', {
 
     async initHomePage() {
       await this.getCities();
-    },
-
-    // --- ui -----------------------------------------------------------------
-
-    setDrawer(drawer: boolean) {
-      this.drawer = drawer;
-    },
-
-    changeTab(id: TabId) {
-      if (id !== this.tabId) {
-        this.drawer = false;
-      }
-      this.tabId = id;
     },
 
     async setValue(config: SetValueConfig) {
