@@ -20,6 +20,16 @@
       :aria-label="$t('common.mapLabel')"
       :style="mapStyle"
     />
+    <!--
+      Rendered only once a pollutant is selected, which is exactly when a heat
+      layer exists. `selected` is what the layer factories were handed, so the
+      legend always describes the ramp currently on the map rather than the
+      select's value, which can change a tick before the layer is redrawn.
+    -->
+    <HeatLegend
+      v-if="selected"
+      :pollutant="selected.pollutant"
+    />
     <div v-if="$vuetify.display.mdAndUp">
       <Filters
         class="filterLarge"
@@ -91,6 +101,7 @@ import {
 } from '@/utils/createMap';
 
 import Filters from './Filters.vue';
+import HeatLegend from './HeatLegend.vue';
 
 type LayerFactory = (
   map: LeafletMap,
@@ -132,6 +143,7 @@ export default defineComponent({
 
   components: {
     Filters,
+    HeatLegend,
   },
 
   // Every field here was `null`, which TypeScript infers as the type `null` --

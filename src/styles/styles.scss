@@ -270,3 +270,49 @@
   border: 0;
   white-space: nowrap;
 }
+
+// The heatmap scale, rendered over the map next to the filter panel.
+//
+// Same overlay treatment as `.filters` above -- an opaque dark panel rather than
+// a translucent one, for the reason recorded there: map labels showing through
+// tangle with the text on top of them. Small numbers over a moving map is the
+// worst case for that.
+.heatLegend {
+  position: absolute;
+  z-index: 500;
+  right: 10px;
+  bottom: 24px;
+  width: 220px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.95);
+  color: white;
+  font-size: 12px;
+}
+
+.heatLegendTitle {
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+// The bar is the gradient itself; the inline style supplies the background.
+// A border keeps the low end (#2a962c on near-black) from bleeding into the
+// panel it sits on.
+.heatLegendBar {
+  height: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.heatLegendTicks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+// Tick labels sit under the stops they belong to rather than being centred on
+// them: the first and last would otherwise overhang the bar and clip against
+// the panel padding.
+.heatLegendTick {
+  font-variant-numeric: tabular-nums;
+}
