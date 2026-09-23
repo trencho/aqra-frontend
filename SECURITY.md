@@ -5,7 +5,7 @@
 Please **do not open a public issue** for a security problem.
 
 Use GitHub's [private vulnerability
-reporting](https://github.com/trencho/aqra-frontend/security/advisories/new) —
+reporting](https://github.com/trencho/aqra-frontend/security/advisories/new),
 it opens a draft advisory visible only to the maintainers. If you would rather
 use email, write to `trenche` at `feit.ukim.edu.mk`.
 
@@ -16,7 +16,7 @@ publicly.
 
 ## Scope
 
-This repository is the **frontend only** — a static single-page app served by
+This repository is the **frontend only**: a static single-page app served by
 nginx. It holds no user accounts, no database and no server-side logic of its
 own.
 
@@ -26,8 +26,8 @@ say clearly that they concern the API.
 
 The app ships no secrets. Only `VITE_`-prefixed variables reach the browser
 bundle, and the sole one is the public API base URL (see `.env.example`).
-`kubernetes/vue-sealed-secret.yml` is a bitnami SealedSecret — ciphertext that
-only the cluster's controller can decrypt — and is safe to read.
+`kubernetes/vue-sealed-secret.yml` is a bitnami SealedSecret: ciphertext that
+only the cluster's controller can decrypt, and is safe to read.
 
 ## Supported versions
 

@@ -1,7 +1,7 @@
 # Single node kubernetes cluster
 
-> **The `vue-secret` SealedSecret was retired.** It held five keys — `APP_ENV`,
-> `APP_NAME`, `AQRA_API_URL`, `KUBERNETES_ENV`, `OPEN_STREET_MAP_CREDENTIALS` —
+> **The `vue-secret` SealedSecret was retired.** It held five keys: `APP_ENV`,
+> `APP_NAME`, `AQRA_API_URL`, `KUBERNETES_ENV`, `OPEN_STREET_MAP_CREDENTIALS`:
 > and none of them did anything. This is a Vite build, so only `VITE_`-prefixed
 > variables are inlined into the bundle, and that happens at image-build time.
 > The runtime image is `nginx` with `ENTRYPOINT ["nginx"]`: no entrypoint
@@ -25,7 +25,7 @@
 ## One-off cutover: `vue` → `aqra-frontend`
 
 The Deployment, Service and Ingress were renamed. The cluster still runs the
-old `vue`-named objects, and **nothing in the deploy pipeline removes them** —
+old `vue`-named objects, and **nothing in the deploy pipeline removes them**:
 a Deployment's `selector` is immutable, so this is a delete-and-recreate, not a
 rolling update. Do this once, by hand, in a window where someone can watch.
 
@@ -34,7 +34,7 @@ rolling update. Do this once, by hand, in a window where someone can watch.
    `build-and-push` job in `.github/workflows/build-deploy.yml`. Nothing is
    built on the node any more.
 
-   Confirm the package exists and is **public** — a private GHCR package makes
+   Confirm the package exists and is **public**: a private GHCR package makes
    the node's pull fail with `401 Unauthorized`, and the pod never starts:
 
    ```
@@ -62,11 +62,11 @@ rolling update. Do this once, by hand, in a window where someone can watch.
    kubectl rollout status deployment/aqra-frontend -n aqra
    ```
 
-The SealedSecret is *not* part of this rename — see the note above.
+The SealedSecret is *not* part of this rename: see the note above.
 
 ### If the GHCR package must stay private
 
-Public is simpler and appropriate here — the image is a static Vue build plus
+Public is simpler and appropriate here: the image is a static Vue build plus
 nginx, and the repository is already public. If it is kept private, the node
 needs credentials:
 
@@ -85,7 +85,7 @@ a credential to rotate and a manifest change, which is why public is preferred.
 
 The node runs **containerd**, not Docker. `docker build` writes to Docker's
 image store; kubelet reads containerd's. They are separate, so an image built
-on the node with `docker compose build` is invisible to the cluster —
+on the node with `docker compose build` is invisible to the cluster:
 `docker images` lists it while the pod sits in `ErrImageNeverPull`. Every
 workload in this namespace was stranded that way for months.
 
@@ -112,7 +112,7 @@ kubectl apply -f kubernetes/<name>-sealed-secret.yml
 
 `kustomization.yml` lists every object that makes up this workload, so one
 command applies the lot. This is also what `deploy_kubernetes_resources.sh`
-runs — there is no second, hand-maintained list to drift out of sync.
+runs: there is no second, hand-maintained list to drift out of sync.
 
 ```
 kubectl apply -k kubernetes/
