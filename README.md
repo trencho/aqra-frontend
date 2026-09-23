@@ -1,4 +1,4 @@
-# AQRA — air quality monitoring for North Macedonia
+# AQRA: air quality monitoring for North Macedonia
 
 A single-page app for exploring air-quality data across North Macedonia. It
 renders a Leaflet map with pollutant heatmaps and a 24-hour time slider,
@@ -11,7 +11,7 @@ mobile app for Android and iOS.
 ## Requirements
 
 - **Node 24** (the current LTS)
-- **Yarn 4.18.0** — provisioned automatically by corepack from the
+- **Yarn 4.18.0**: provisioned automatically by corepack from the
   `packageManager` field. No global install needed; run `corepack enable` once.
 
 ## Getting started
@@ -33,7 +33,7 @@ Other scripts:
 | `yarn test:watch` | Run the tests in watch mode |
 | `yarn test:coverage` | Run with coverage; fails below the configured thresholds |
 | `yarn lint` | ESLint over the project |
-| `yarn typecheck` | `vue-tsc --noEmit` over `src/` — not `tsc`, which cannot read `.vue` |
+| `yarn typecheck` | `vue-tsc --noEmit` over `src/`, not `tsc`, which cannot read `.vue` |
 | `yarn format` | Prettier over the project |
 
 ## Configuration
@@ -46,7 +46,7 @@ To point it elsewhere, copy `.env.example` to `.env.local` and set
 
 ### Working without the API
 
-**The public API is answering again** as of 2026-08-21, after a long outage — it
+**The public API is answering again** as of 2026-08-21, after a long outage: it
 returned `5xx` on every data route through July and August (503 in July, 500 on
 2026-08-18). A plain `yarn dev` now gives you real data.
 
@@ -54,20 +54,20 @@ Verified live on 2026-08-21, every route the app calls:
 
 | Route | Status |
 |---|---|
-| `/cities/` | `200` — 55 cities |
+| `/cities/` | `200`: 55 cities |
 | `/cities/{city}/sensors/` | `200` |
 | `/cities/{city}/sensors/{id}/pollutants/` | `200` |
 | `/cities/{city}/sensors/{id}/forecast/` | `200` |
 | `/cities/{city}/sensors/{id}/history/{dataType}/` | `200` for the app's `pollution` default |
 | `/cities/coordinates/{lat},{lon}/forecast/` | `404` unless the point is near a sensor |
 
-Two things to know before reading a `404` as an outage. Coverage is uneven — a
+Two things to know before reading a `404` as an outage. Coverage is uneven: a
 city can return `200` with an **empty** sensor list (Amsterdam does), so an empty
 map is data, not a failure. And `history/{dataType}` takes `pollution`, not a
 pollutant name: `history/pm10/` is a `404` by design, even though `pm10` is a
 valid entry in the `pollutants` response.
 
-The fixture-backed stand-in is still the better choice for local work — it is
+The fixture-backed stand-in is still the better choice for local work: it is
 offline, deterministic, and does not depend on a service that has already been
 down for a month once. It has no dependencies and serves the six endpoints the
 app calls, with a deterministic 24 hours of readings:
@@ -128,7 +128,7 @@ kubectl kustomize kubernetes/ | kubectl apply -f -
 ```
 
 The Deployment pulls `ghcr.io/trencho/aqra-frontend:latest`, built and pushed by
-CI — nothing is built on the node. See
+CI: nothing is built on the node. See
 [kubernetes/README.md](kubernetes/README.md).
 
 ## Mobile
@@ -141,16 +141,16 @@ npx cap open android   # or: npx cap open ios
 
 ## Continuous integration
 
-- **CI** — lint, typecheck, test with coverage, and build on every push and pull request.
-- **Security scan** — OSV scan of the lockfile plus `yarn npm audit`, on every
+- **CI**: lint, typecheck, test with coverage, and build on every push and pull request.
+- **Security scan**: OSV scan of the lockfile plus `yarn npm audit`, on every
   change and weekly, so a newly published advisory is caught even against an
   unchanged lockfile.
-- **Deploy** — runs only after CI succeeds on `master`.
+- **Deploy**: runs only after CI succeeds on `master`.
 
 ## Contributing
 
 `yarn lint`, `yarn typecheck` and `yarn test` must pass. Dependencies are pinned
-to exact versions — no `^` or `~` ranges — and `yarn.lock` is committed, so
+to exact versions, no `^` or `~` ranges, and `yarn.lock` is committed, so
 `yarn install --immutable` must succeed.
 
 The app is TypeScript under `strict`, plus `noUncheckedIndexedAccess` and
