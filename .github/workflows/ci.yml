@@ -1,10 +1,15 @@
 name: CI
 
+# No docs-only `paths:` filter, deliberately. The master ruleset requires "Lint, test and build",
+# and a filtered workflow never reports on a PR it skips, so a README-only PR would wait for ever.
 on:
   push:
     branches:
       - master
   pull_request:
+  # Required: the auto-merge job dispatches this workflow on master after a merge, and
+  # `gh workflow run` against a workflow without this trigger is an error, not a run.
+  workflow_dispatch:
 
 # Least privilege by default; no job here needs write access.
 permissions:
@@ -60,3 +65,239 @@ jobs:
 
       - name: Build
         run: yarn build
+
+  # Lands a Dependabot PR once `build` passes. This replaced dependabot-auto-merge.yml, which queued
+  # GitHub's native auto-merge (`gh pr merge --auto`). GitHub then performed the merge with no run
+  # left to react, so a merged bump was never built on master and never deployed. As a job here the
+  # gate is `needs:`: a failed or skipped `build` skips this job and the PR stays open, and the job
+  # itself dispatches CI on master after the merge.
+  #
+  # Every update type merges, majors included, so `build` IS the gate: nobody reads the changelog.
+  # This project has been bitten by a major before (ESLint 9 -> 10 broke the lint run; Vuetify 2 -> 4
+  # rewrote the component API), which is why `build` runs the tests, not just the build, and the
+  # master ruleset stays strict. The majors that genuinely cannot land are held in dependabot.yml,
+  # each with a `# lift-when:` condition the monthly cleanup job re-tests. A pre-release target or a
+  # workflow-modifying (github_actions) bump is held for a human. The security scan is a separate
+  # workflow and never gates this.
+  #
+  # Gated on the PR's AUTHOR, not `github.actor`: the actor is whoever triggered this run, so a human
+  # touching the branch (an "Update branch" click, a rebase) would turn the condition false.
+  auto-merge:
+    name: Auto-merge Dependabot updates
+    needs: [build]
+    if: >
+      github.event_name == 'pull_request'
+      && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      # To dispatch ci.yml on master after the merge; see DISPATCH_WORKFLOW below.
+      actions: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pre-release guard: the one thing that does NOT auto-merge, and the only
+      # update-type distinction left. Registries expose a release channel, but
+      # the docker/docker-compose ecosystems match image TAGS, which carry none
+      # -- so `python:3.14.6-slim` -> `python:3.15.0rc1-slim` scores an ordinary
+      # MINOR and lands in a production image (it did, on a sibling repo, on
+      # 2026-08-15). It cannot be expressed in dependabot.yml, because
+      # ignore.versions takes version RANGES and not globs
+      # (dependabot-core#15154), so the guard lives here.
+      #
+      # `new-version` is empty on a GROUPED PR, so the raw metadata JSON is
+      # checked too: if any updated dependency looks like a pre-release, the
+      # whole PR is held. Failing toward "hold" is deliberate -- a missed merge
+      # is a nuisance, a shipped release candidate is an incident.
+      - name: Check for a pre-release target
+        id: prerelease
+        env:
+          NEW_VERSION: ${{ steps.meta.outputs.new-version }}
+          UPDATED_JSON: ${{ steps.meta.outputs.updated-dependencies-json }}
+        run: |
+          set -euo pipefail
+          # A token counts only where it is not buried inside a longer alphabetic word: `3.15.0rc1`
+          # is held, while `26.7.0-alpine` and `1.31-alpine` are ordinary releases and pass. Longest
+          # alternatives first so `preview` is reported as itself rather than as `pre`.
+          pattern='(^|[^a-zA-Z])(preview|insiders|snapshot|nightly|canary|alpha|beta|next|dev|pre|rc)([^a-zA-Z]|$)'
+          held=false
+          offender=""
+          if [ -n "${NEW_VERSION:-}" ] && printf '%s' "$NEW_VERSION" | grep -qiE "$pattern"; then
+            held=true
+            offender="$NEW_VERSION"
+          fi
+          if [ -n "${UPDATED_JSON:-}" ]; then
+            # jq ships on GitHub-hosted runners. On a self-hosted one without it this holds every
+            # PR, so say which of the two failures it is -- an unexplained fleet-wide freeze is
+            # exactly how the 0.1.18 bug went unnoticed for a day.
+            if ! command -v jq >/dev/null 2>&1; then
+              held=true
+              offender="jq unavailable - cannot inspect grouped metadata"
+            elif versions=$(printf '%s' "$UPDATED_JSON" | jq -r '.[]?.newVersion // empty'); then
+              hit=$(printf '%s\n' "$versions" | grep -iE "$pattern" | head -n 1 || true)
+              if [ -n "$hit" ]; then
+                held=true
+                offender="$hit"
+              fi
+            else
+              held=true
+              offender="unparseable metadata"
+            fi
+          fi
+          echo "held=$held" >> "$GITHUB_OUTPUT"
+          echo "offender=$offender" >> "$GITHUB_OUTPUT"
+          if [ "$held" = true ]; then
+            echo "pre-release target detected ('$offender') - not auto-merging."
+          fi
+
+      # Actions bumps REWRITE A WORKFLOW FILE, and the workflows here can read the production
+      # deploy secrets. SHA pinning is the control that makes a third-party action safe, and a
+      # Dependabot bump rewrites the pin itself -- so auto-merging one accepts whatever SHA
+      # upstream published, with no human in the loop.
+      #
+      # The VALUE is `github_actions`, with an UNDERSCORE. `dependabot.yml` spells the same
+      # ecosystem `github-actions` with a hyphen, and a guard matching the hyphen holds nothing
+      # while looking exactly like a working gate. Read off a real run's
+      # `outputs.package-ecosystem:` log line, not assumed.
+      - name: Hold a workflow-modifying bump for a human
+        id: workflow_hold
+        env:
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+        run: |
+          set -euo pipefail
+          held=false
+          if [ "${ECOSYSTEM:-}" = "github_actions" ]; then
+            held=true
+          fi
+          echo "held=$held" >> "$GITHUB_OUTPUT"
+          if [ "$held" = true ]; then
+            echo "github_actions bump - a workflow change needs a human, not auto-merging."
+          fi
+
+      # Said on the PR, not only in the log. A hold nobody is told about is indistinguishable from
+      # a gate that silently stopped working.
+      - name: Explain a held workflow bump
+        if: steps.workflow_hold.outputs.held == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr comment "$PR_URL" --body \
+            "Held: this bump modifies a **workflow file**, and the workflows here can read the production deploy secrets. SHA pinning is what makes a third-party action safe, and this bump rewrites the pin itself, so merging it accepts whatever SHA upstream published. Review the diff and merge manually."
+
+      - name: Explain a held pre-release
+        if: steps.prerelease.outputs.held == 'true'
+        run: |
+          gh pr comment "$PR_URL" --body "Held: this bump targets a **pre-release** version (\`$OFFENDER\`). Every other update type auto-merges; pre-releases need a human to confirm it is intended."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          # The offending VALUE, not `new-version` -- which is empty on exactly the
+          # grouped PRs the metadata check exists to cover.
+          OFFENDER: ${{ steps.prerelease.outputs.offender }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge, then dispatch CI on the base branch
+        if: steps.prerelease.outputs.held == 'false' && steps.workflow_hold.outputs.held == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # `gh workflow run` takes its repository from GH_REPO or the git remote, and this job has
+          # no checkout. Without it the dispatch fails with "not a git repository".
+          GH_REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          # The head commit `build` tested. `--match-head-commit` refuses the merge if the branch has
+          # moved since; the newer push has its own CI run, and that run decides.
+          SHA: ${{ github.event.pull_request.head.sha }}
+          # `gh pr merge` pushes with GITHUB_TOKEN, and a push made with GITHUB_TOKEN raises NO
+          # workflow events, so nothing would build the merged head and build-deploy.yml, which
+          # waits for CI on master, would never fire. A dispatch is the one event GITHUB_TOKEN may
+          # raise. The dispatched run reaches the deploy through `deploy-dispatch` below. Set to
+          # empty to opt out.
+          DISPATCH_WORKFLOW: ci.yml
+          DISPATCH_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          # If the branch is BEHIND, ask Dependabot to rebase and stop. The master ruleset requires
+          # branches to be up to date, so GitHub refuses a stale branch.
+          #
+          # Ask DEPENDABOT to update the branch; do NOT use `gh pr update-branch` here. A branch
+          # updated with GITHUB_TOKEN gets no CI run (GitHub raises no workflow events for its own
+          # token), so its new head could never satisfy this job's `needs:`. Dependabot's own push
+          # does trigger CI, and that run reaches this job again.
+          state=$(gh pr view "$PR_URL" --json mergeStateStatus --jq .mergeStateStatus)
+          if [ "$state" = "BEHIND" ]; then
+            gh pr comment "$PR_URL" --body '@dependabot rebase'
+            echo "branch is behind the base; asked Dependabot to rebase. Its CI run will merge it."
+            exit 0
+          fi
+
+          if gh pr merge "$PR_URL" --squash --delete-branch --match-head-commit "$SHA"; then
+            if [ -n "${DISPATCH_WORKFLOW:-}" ]; then
+              if gh workflow run "$DISPATCH_WORKFLOW" --ref "$DISPATCH_REF"; then
+                echo "merged, and dispatched $DISPATCH_WORKFLOW on $DISPATCH_REF so the change ships."
+              else
+                # A failed dispatch FAILS this job. The merge has landed and a re-run cannot undo it,
+                # but a warning on a green job is read by nobody; a red check on the merged PR is
+                # what someone sees.
+                echo "::error::merged, but could not dispatch $DISPATCH_WORKFLOW on $DISPATCH_REF. This change will NOT ship until something runs CI on $DISPATCH_REF: gh workflow run $DISPATCH_WORKFLOW --ref $DISPATCH_REF"
+                exit 1
+              fi
+            fi
+            exit 0
+          fi
+
+          # A sibling PR landing while this run was testing can leave the branch behind. Hand it back
+          # to Dependabot rather than failing, for the reason given above.
+          state=$(gh pr view "$PR_URL" --json mergeStateStatus --jq .mergeStateStatus)
+          if [ "$state" = "BEHIND" ]; then
+            gh pr comment "$PR_URL" --body '@dependabot rebase'
+            echo "merge refused: branch fell behind; asked Dependabot to rebase."
+            exit 0
+          fi
+          # Any other refusal is real and stays loud. Seen in the wild: GitHub blocks a GITHUB_TOKEN
+          # merge of a PR that edits a workflow file, and `--match-head-commit` refuses a branch that
+          # moved after `build` tested it.
+          echo "::error::merge refused while mergeStateStatus=$state."
+          exit 1
+
+  # The deploy hop. A CI run the `auto-merge` job dispatched runs under GITHUB_TOKEN, and a run
+  # started that way raises no `workflow_run` event when it finishes, so build-deploy.yml, which
+  # listens on `workflow_run: [CI]`, never hears about it. `workflow_dispatch` is the one event
+  # GITHUB_TOKEN may still raise, so this job dispatches the deploy itself once `build` passed.
+  # build-deploy.yml accepts a dispatch without a CI conclusion and builds the head of master.
+  #
+  # Only for github-actions[bot]'s dispatch: a person's dispatch, or a person re-running the bot's
+  # run, still reaches the deploy through `workflow_run`, and this job would deploy it a second time.
+  deploy-dispatch:
+    needs: [build]
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      && github.ref_name == github.event.repository.default_branch
+      && github.triggering_actor == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch the deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same reason as the merge step: no checkout, so gh needs the repository named.
+          GH_REPO: ${{ github.repository }}
+          DEPLOY_WORKFLOW: build-deploy.yml
+          DEPLOY_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_WORKFLOW:-}" ]; then
+            echo "::notice::DEPLOY_WORKFLOW is empty, so nothing is dispatched."
+            exit 0
+          fi
+          # No `|| true`: a failed dispatch fails this job, so a merge that will not deploy shows red.
+          gh workflow run "$DEPLOY_WORKFLOW" --ref "$DEPLOY_REF"
+          echo "dispatched $DEPLOY_WORKFLOW on $DEPLOY_REF."
