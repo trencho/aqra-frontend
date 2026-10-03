@@ -4,7 +4,7 @@
 # Add [[IgnoredVulns]] entries ONLY for a deliberate, documented decision — a reason, and an
 # `ignoreUntil` re-review date so an exception cannot quietly become permanent. Never use this to
 # silence something that is actually fixable: every other advisory this repo has seen was fixed at
-# source instead (most recently brace-expansion, resolved by bumping the `resolutions` pin in
+# source instead (most recently brace-expansion, twice, resolved by bumping the `resolutions` pin in
 # package.json rather than suppressing it here).
 
 [[IgnoredVulns]]
@@ -35,3 +35,10 @@ reason = "uuid 7.0.3 (7.5) reaches this repo only via @capacitor/cli (devDepende
 # When the chain resolves to a patched uuid, DELETE this entry rather than extending the date.
 #
 # Reviewed 2026-08-15.
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2026-11-02
+reason = "braces <= 3.0.3 has no fixed release (3.0.3 is the latest on npm, checked 2026-10-03). It is a dev/build dependency only: sass-embedded (devDependency) -> sass 1.105.0 -> @parcel/watcher 2.5.1 -> micromatch 4.0.8 -> braces 3.0.3 (yarn why braces). It runs in the Sass file watcher at build time and is not bundled into the app or the container image. Re-check on 2026-11-02: if a patched braces exists, run `yarn up -R braces` and delete this entry."
+# Reviewed 2026-10-03. Unlike the brace-expansion advisories cleared the same day (a fixed 5.0.12
+# exists, so the `resolutions` pin was moved to it), this one has nothing to upgrade to.
