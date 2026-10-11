@@ -1,0 +1,6 @@
+Contact: mailto:trenche@feit.ukim.edu.mk
+Contact: https://github.com/trencho/aqra-frontend/security/advisories/new
+Expires: 2027-10-11T00:00:00.000Z
+Preferred-Languages: en, mk
+Canonical: https://aqra.feit.ukim.edu.mk/.well-known/security.txt
+Policy: https://github.com/trencho/aqra-frontend/blob/master/SECURITY.md

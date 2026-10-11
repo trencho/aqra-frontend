@@ -11,6 +11,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createMemoryHistory } from 'vue-router';
 
+import { LegalPages } from '@/constants/legal';
 import { TabIds, Tabs } from '@/constants/navigationTabs';
 import { createAppRouter, routes } from '@/router';
 import { useUiStore } from '@/stores/ui';
@@ -28,14 +29,82 @@ describe('routes', () => {
   // Derived from Tabs rather than written out again, so this is really checking
   // that the derivation covers every tab -- a tab with no route renders a blank
   // page, and the tab bar would still show it.
-  it('declares one route per navigation tab, plus a catch-all', () => {
-    expect(routes).toHaveLength(Tabs.length + 1);
+  it('declares one route per navigation tab and legal page, plus a catch-all', () => {
+    expect(routes).toHaveLength(Tabs.length + LegalPages.length + 1);
 
     for (const tab of Tabs) {
       const route = routes.find((r) => r.name === tab.name);
       expect(route?.path).toBe(tab.path);
       expect(route?.component).toBeTruthy();
     }
+  });
+});
+
+describe('legal routes', () => {
+  it.each(LegalPages.map((p) => [p.path, p.name, p.id]))(
+    'declares %s as the %s route, passing the page id as a prop',
+    (path, name, id) => {
+      const route = routes.find((r) => r.name === name);
+
+      expect(route?.path).toBe(path);
+      expect(route?.props).toEqual({ pageId: id });
+    }
+  );
+
+  // They must not become tabs: Tabs feeds the tab bar, the drawer and the
+  // Record<TabId, Component> the router keys its views on.
+  it('keeps every legal page out of the tab list', () => {
+    for (const page of LegalPages) {
+      expect(Tabs.some((t) => t.path === page.path)).toBe(false);
+      expect(Tabs.some((t) => t.name === page.name)).toBe(false);
+    }
+  });
+
+  // The catch-all must come last, or it swallows the legal paths.
+  it('places the catch-all after the legal routes', () => {
+    expect(routes.at(-1)?.path).toBe('/:pathMatch(.*)*');
+  });
+
+  it.each(LegalPages.map((p) => [p.path, p.name]))(
+    'resolves a deep link to %s without redirecting home',
+    async (path, name) => {
+      const r = router();
+      await r.push(path);
+
+      expect(r.currentRoute.value.name).toBe(name);
+      expect(r.currentRoute.value.path).toBe(path);
+    }
+  );
+
+  it('loads one shared page component lazily', async () => {
+    const loaders = LegalPages.map(
+      (p) => routes.find((r) => r.name === p.name)?.component
+    );
+    const first = loaders[0];
+
+    expect(typeof first).toBe('function');
+    // Every route shares the same loader, so they share one chunk.
+    expect(new Set(loaders).size).toBe(1);
+    const mod = (
+      await (first as () => Promise<{ default: { name: string } }>)()
+    ).default;
+    expect(mod.name).toBe('LegalPage');
+  });
+});
+
+describe('scroll behaviour', () => {
+  const scroll = (saved: { left: number; top: number } | null) => {
+    const behavior = router().options.scrollBehavior;
+    const route = router().currentRoute.value;
+    return behavior?.(route, route, saved);
+  };
+
+  it('starts a new page at the top', () => {
+    expect(scroll(null)).toEqual({ top: 0 });
+  });
+
+  it('restores the saved position on back and forward', () => {
+    expect(scroll({ left: 0, top: 640 })).toEqual({ left: 0, top: 640 });
   });
 });
 
@@ -94,22 +163,16 @@ describe('store synchronisation', () => {
     expect(store.tabId).toBe(TabIds.SwaggerDocumentation);
   });
 
-  // The guard is `if (tab)` for a reason: a route added later that is not one
-  // of the four tabs must not write a bogus tabId. addRoute is how that becomes
-  // reachable today -- there is no such route yet, and the catch-all redirects
-  // to a tab before afterEach ever sees it.
+  // The guard is `if (tab)` for a reason: a route that is not one of the four
+  // tabs must not write a bogus tabId. The legal pages are such routes.
   it('leaves tabId alone for a route that is not a tab', async () => {
     const r = router();
-    r.addRoute({
-      path: '/not-a-tab',
-      name: 'not-a-tab',
-      component: { template: '<div />' },
-    });
     const store = useUiStore();
     await r.push('/statistics');
 
-    await r.push('/not-a-tab');
+    await r.push('/privacy');
 
+    expect(r.currentRoute.value.name).toBe('privacy');
     expect(store.tabId).toBe(TabIds.Statistics);
   });
 

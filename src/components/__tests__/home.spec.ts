@@ -1,18 +1,20 @@
 // @vitest-environment jsdom
 
-import {mount } from '@vue/test-utils';
-import { beforeEach,describe, expect, it } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { at } from '@/__tests__/support/expect';
+import { LegalPages } from '@/constants/legal';
 import { LocaleId } from '@/constants/locales';
 import { TabIds } from '@/constants/navigationTabs';
+import { i18n } from '@/services/i18n';
 import { useLocaleStore } from '@/stores/locale';
 import { useUiStore } from '@/stores/ui';
 
 import Footer from '../home/Footer.vue';
 import MenuDrawer from '../home/MenuDrawer.vue';
 import TranslationButton from '../home/TranslationButton.vue';
-import { globalMountOptions, mountInApp,stubBrowserApis } from './helpers';
+import { globalMountOptions, mountInApp, stubBrowserApis } from './helpers';
 
 beforeEach(() => {
   stubBrowserApis();
@@ -65,7 +67,9 @@ describe('MenuDrawer', () => {
       });
     });
 
-    await at(wrapper.findAllComponents({ name: 'VListItem' }), 2).trigger('click');
+    await at(wrapper.findAllComponents({ name: 'VListItem' }), 2).trigger(
+      'click'
+    );
     await navigated;
 
     expect(store.tabId).toBe(TabIds.PollutionMap);
@@ -77,10 +81,9 @@ describe('MenuDrawer', () => {
     const wrapper = mountIt(true);
     const store = useUiStore();
 
-    wrapper.findComponent({ name: 'VNavigationDrawer' }).vm.$emit(
-      'update:modelValue',
-      false
-    );
+    wrapper
+      .findComponent({ name: 'VNavigationDrawer' })
+      .vm.$emit('update:modelValue', false);
     await wrapper.vm.$nextTick();
 
     expect(store.drawer).toBe(false);
@@ -135,6 +138,11 @@ describe('TranslationButton', () => {
 });
 
 describe('Footer', () => {
+  // The TranslationButton specs above switch the shared i18n to Macedonian.
+  beforeEach(() => {
+    i18n.global.locale.value = LocaleId.en;
+  });
+
   it('renders the current year and the city name', () => {
     const wrapper = mount(Footer, { global: globalMountOptions() });
 
@@ -146,6 +154,51 @@ describe('Footer', () => {
     const wrapper = mount(Footer, { global: globalMountOptions() });
 
     expect(wrapper.text()).not.toContain('common.skopje');
+    expect(wrapper.text()).not.toMatch(/(legal|footer)\.\w+/);
     wrapper.unmount();
+  });
+
+  it('links to all six legal pages from a labelled nav', () => {
+    const wrapper = mount(Footer, { global: globalMountOptions() });
+    const nav = wrapper.get('nav');
+
+    expect(nav.attributes('aria-label')).toBe('Site information');
+    expect(nav.findAll('a').map((a) => a.attributes('href'))).toEqual(
+      LegalPages.map((p) => p.path)
+    );
+    expect(nav.text()).toContain('Privacy policy');
+    expect(nav.text()).toContain('Accessibility statement');
+    wrapper.unmount();
+  });
+
+  // Visible on every page: OpenWeather's ODbL terms and OpenStreetMap's
+  // licence both require attribution where the data is shown.
+  it('shows the data attribution with links to each source', () => {
+    const wrapper = mount(Footer, { global: globalMountOptions() });
+    const credits = wrapper
+      .findAll('ul')
+      .find((ul) => ul.attributes('aria-label') === 'Data credits');
+    const links = credits?.findAll('a') ?? [];
+
+    expect(links.map((a) => [a.text(), a.attributes('href')])).toEqual([
+      ['Weather data © OpenWeather', 'https://openweathermap.org'],
+      ['Air-quality data: pulse.eco', 'https://pulse.eco'],
+      [
+        '© OpenStreetMap contributors',
+        'https://www.openstreetmap.org/copyright',
+      ],
+    ]);
+    wrapper.unmount();
+  });
+
+  it('translates the links and the attribution into Macedonian', async () => {
+    i18n.global.locale.value = LocaleId.mk;
+    const wrapper = mount(Footer, { global: globalMountOptions() });
+
+    expect(wrapper.text()).toContain('Политика за приватност');
+    expect(wrapper.text()).toContain('Временски податоци © OpenWeather');
+    expect(wrapper.text()).toContain('© соработници на OpenStreetMap');
+    wrapper.unmount();
+    i18n.global.locale.value = LocaleId.en;
   });
 });

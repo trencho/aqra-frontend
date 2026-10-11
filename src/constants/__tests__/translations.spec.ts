@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createI18n } from 'vue-i18n';
 
 import { at } from '@/__tests__/support/expect';
@@ -22,9 +22,16 @@ describe('translations', () => {
     );
   });
 
+  // Every namespace, not only `common`: the legal pages live under `legal`
+  // and the footer under `footer`, and a parity check that skipped them would
+  // pass while a Macedonian visitor read raw keys.
   it('defines the same keys in every locale', () => {
     const keysOf = (locale: LocaleId) =>
-      Object.keys(translations[locale].common).sort();
+      Object.entries(translations[locale])
+        .flatMap(([ns, messages]) =>
+          Object.keys(messages).map((key) => `${ns}.${key}`)
+        )
+        .sort();
     // `at` rather than a destructure: noUncheckedIndexedAccess types the first
     // element as possibly undefined, and this test is meaningless if the locale
     // list is empty -- better to fail saying so.
@@ -56,9 +63,30 @@ describe('translations', () => {
     for (const locale of Object.values(Locales)) {
       const { t } = makeI18n(locale).global;
 
-      for (const key of Object.keys(translations[locale].common)) {
-        expect(() => t(`common.${key}`)).not.toThrow();
+      for (const [ns, messages] of Object.entries(translations[locale])) {
+        for (const key of Object.keys(messages)) {
+          expect(() => t(`${ns}.${key}`)).not.toThrow();
+        }
       }
+    }
+  });
+
+  it.each(Object.values(Locales))(
+    'renders the accessibility contact address with a real @ in %s',
+    (locale) => {
+      const { t } = makeI18n(locale).global;
+
+      expect(t('legal.accessibilityContact')).toContain(
+        'trenche@feit.ukim.edu.mk'
+      );
+    }
+  );
+
+  // DarkSky shut down in 2023 and the backend dropped it; the project
+  // description kept naming it.
+  it('no longer names DarkSky as a data source', () => {
+    for (const locale of Object.values(Locales)) {
+      expect(JSON.stringify(translations[locale])).not.toContain('DarkSky');
     }
   });
 });

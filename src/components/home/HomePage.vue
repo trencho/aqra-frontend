@@ -34,10 +34,15 @@
               @click="uiStore.setDrawer(!uiStore.drawer)"
             />
 
+            <!--
+              mandatory off: on a legal page no tab is active, and VTabs'
+              default of 'force' would select the first tab and navigate Home.
+            -->
             <VTabs
               v-if="$vuetify.display.mdAndUp"
               v-model="activeTab"
               bg-color="transparent"
+              :mandatory="false"
               grow
             >
               <VTab
@@ -107,7 +112,7 @@ import { defineComponent } from 'vue';
 import logo from '@/assets/logo.svg';
 import { APP_BAR_HEIGHT } from '@/constants/layout';
 import type { TabId } from '@/constants/navigationTabs';
-import { tabById,Tabs } from '@/constants/navigationTabs';
+import { tabById, tabByName, Tabs } from '@/constants/navigationTabs';
 import { useAirPollutionStore } from '@/stores/airPollution';
 import { useUiStore } from '@/stores/ui';
 
@@ -149,10 +154,19 @@ export default defineComponent({
     // afterEach then calls changeTab. Writing both here would let the tab bar
     // and the URL disagree whenever navigation is cancelled or redirected.
     activeTab: {
-      get() {
+      // Null on a named route that is not a tab (the legal pages), so the tab
+      // bar stops highlighting whichever tab the visitor left. Optional
+      // chaining because error-state.spec mounts HomePage with no router.
+      get(): TabId | null {
+        const name = this.$route?.name;
+        if (typeof name === 'string' && !tabByName(name)) {
+          return null;
+        }
         return this.uiStore.tabId;
       },
-      set(id: TabId) {
+      // With mandatory off, clicking the active tab emits an empty value.
+      set(id: TabId | null | undefined) {
+        if (id == null) return;
         void this.$router.push(tabById(id).path);
       },
     },
