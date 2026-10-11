@@ -44,6 +44,10 @@ None is required to start. The app defaults to the public AQRA API at
 To point it elsewhere, copy `.env.example` to `.env.local` and set
 `VITE_AQRA_API_URL`. Only variables prefixed `VITE_` reach the browser bundle.
 
+`VITE_LEGAL_PUBLISHED` gates the legal pages. Unset or anything but `true`, each
+page shows a "Draft: pending review by FEIT/UKIM" banner and a `noindex` robots
+tag. Set it to `true` only after FEIT/UKIM has approved the text.
+
 ### Working without the API
 
 **The public API is answering again** as of 2026-08-21, after a long outage: it
@@ -99,6 +103,12 @@ Routes (`/`, `/map`, `/statistics`, `/api-docs`) are derived from a single
 `Tabs` constant, so the tab bar, the drawer and the routing table cannot
 disagree. The route is the source of truth and the store mirrors it via
 `router.afterEach`, not the other way round.
+
+The legal and site-information pages (`/privacy`, `/terms`, `/cookies`,
+`/data-sources`, `/disclaimer`, `/accessibility`) are derived the same way from
+`LegalPages` in `src/constants/legal.ts`. They are routes but not tabs, load
+lazily through one shared component, and the footer links to all six beside
+the OpenWeather, pulse.eco and OpenStreetMap attribution.
 
 ## Stack
 

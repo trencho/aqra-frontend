@@ -11,8 +11,8 @@
  * `$t` unavailable because i18n was registered in legacy mode.
  */
 import { createTestingPinia } from '@pinia/testing';
-import {mount } from '@vue/test-utils';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App.vue';
 import { testRouter } from '@/components/__tests__/helpers';
@@ -32,7 +32,9 @@ vi.mock('@/utils/createMap', () => ({
 
 vi.mock('@/services/api', () => ({
   aqra: {
-    getDataForAllCities: vi.fn(() => Promise.resolve({ status: 200, data: [] })),
+    getDataForAllCities: vi.fn(() =>
+      Promise.resolve({ status: 200, data: [] })
+    ),
   },
 }));
 
@@ -169,6 +171,40 @@ describe('App mounts under Vue 3', () => {
 
     store.changeTab(TabIds.Statistics);
     expect(store.drawer).toBe(false);
+    wrapper.unmount();
+  });
+
+  // The legal pages are routes but not tabs. VTabs defaults to mandatory
+  // 'force', which would select the first tab on an empty model and navigate
+  // Home; the getter returns null there and mandatory is off.
+  it('renders a legal page and highlights no tab', async () => {
+    const wrapper = mountApp();
+    const router = wrapper.vm.$router;
+    await router.isReady();
+
+    await router.push('/privacy');
+    await flushPromises();
+
+    expect(router.currentRoute.value.path).toBe('/privacy');
+    expect(wrapper.get('h1').text()).toBe('Privacy policy');
+    expect(
+      wrapper.findComponent({ name: 'VTabs' }).props('modelValue')
+    ).toBeNull();
+    wrapper.unmount();
+  });
+
+  it('ignores the empty value VTabs emits when the active tab is clicked', async () => {
+    const wrapper = mountApp();
+    const router = wrapper.vm.$router;
+    await router.isReady();
+    await router.push('/api-docs');
+
+    wrapper
+      .findComponent({ name: 'VTabs' })
+      .vm.$emit('update:modelValue', null);
+    await flushPromises();
+
+    expect(router.currentRoute.value.path).toBe('/api-docs');
     wrapper.unmount();
   });
 });

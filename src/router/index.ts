@@ -1,13 +1,14 @@
 import type { Component } from 'vue';
-import type { Router, RouteRecordRaw,RouterHistory } from 'vue-router';
+import type { Router, RouteRecordRaw, RouterHistory } from 'vue-router';
 import { createRouter, createWebHistory } from 'vue-router';
 
 import Content from '@/components/content/Content.vue';
 import Map from '@/components/map/Map.vue';
 import Statistics from '@/components/statistics/Statistics.vue';
 import SwaggerDocumentation from '@/components/swaggerDocumentation/SwaggerDocumentation.vue';
+import { LegalPages } from '@/constants/legal';
 import type { TabId } from '@/constants/navigationTabs';
-import { tabByName,TabIds, Tabs } from '@/constants/navigationTabs';
+import { tabByName, TabIds, Tabs } from '@/constants/navigationTabs';
 import { useUiStore } from '@/stores/ui';
 
 /**
@@ -22,6 +23,9 @@ const views: Record<TabId, Component> = {
   [TabIds.SwaggerDocumentation]: SwaggerDocumentation,
 };
 
+/** One loader for all six legal routes, so they share one lazy chunk. */
+const LegalPage = () => import('@/components/legal/LegalPage.vue');
+
 /**
  * Routes are derived from Tabs, not written out again beside it. The app used
  * to switch tabs with four `v-if`s against a number in the Pinia store, which
@@ -33,6 +37,16 @@ export const routes: RouteRecordRaw[] = [
     path: tab.path,
     name: tab.name,
     component: views[tab.id],
+  })),
+  // The legal and site-information pages. Not tabs, so they stay out of the
+  // tab bar and the drawer, and lazy, so the page component ships in its own
+  // chunk. (The text itself lives in translations.ts and loads with the app.)
+  // One component renders all six; the page id travels as a prop.
+  ...LegalPages.map((page) => ({
+    path: page.path,
+    name: page.name,
+    component: LegalPage,
+    props: { pageId: page.id },
   })),
   // Anything else lands on Home rather than rendering an empty <RouterView />.
   { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -46,7 +60,14 @@ export const routes: RouteRecordRaw[] = [
 export function createAppRouter(
   history: RouterHistory = createWebHistory(import.meta.env.BASE_URL)
 ): Router {
-  const router = createRouter({ history, routes });
+  const router = createRouter({
+    history,
+    routes,
+    // The footer links sit at the bottom of a long page. Without this a visitor
+    // following one lands at the bottom of the next page too. Back and forward
+    // still restore where the visitor was.
+    scrollBehavior: (_to, _from, savedPosition) => savedPosition ?? { top: 0 },
+  });
 
   /**
    * The route is the source of truth for which tab is active; the store mirrors

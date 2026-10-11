@@ -20,6 +20,14 @@
 // only when its `styles` option is set, and the default leaves the base sheet to the application.
 // Shipped without it from the 2026-07-29 Vuetify 2 -> 4 migration until 2026-08-18.
 import 'vuetify/styles';
+// Roboto, self-hosted. It came from fonts.googleapis.com, which handed every visitor's IP address
+// to Google before the page rendered. Only the four weights Vuetify's typography classes use are
+// bundled; each file carries unicode-range subsets, so a browser downloads Cyrillic only when the
+// page shows Macedonian.
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 
 import { createVuetify } from 'vuetify';
 
