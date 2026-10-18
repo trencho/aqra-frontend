@@ -60,8 +60,18 @@ jobs:
       - name: Typecheck
         run: yarn typecheck
 
+      # Every run shuffles the files and the tests inside each file, so a test that leans on another's
+      # leftover mock or module state fails here. The seed is the run id: each push and each pull
+      # request tries a fresh order, and a re-run replays the same one, so it cannot clear an order
+      # failure. The log and the run summary name the seed, and
+      # `yarn test --sequence.shuffle --sequence.seed=<seed>` reproduces it locally.
       - name: Test with coverage
-        run: yarn test:coverage
+        env:
+          SEED: ${{ github.run_id }}
+        run: |
+          echo "Shuffled test order, seed $SEED"
+          echo "Shuffled test order, seed \`$SEED\`" >> "$GITHUB_STEP_SUMMARY"
+          yarn test:coverage --sequence.shuffle "--sequence.seed=$SEED"
 
       - name: Build
         run: yarn build
