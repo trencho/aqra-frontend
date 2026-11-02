@@ -114,10 +114,16 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          # Current LTS. Deliberately not 26, which does not become LTS until
-          # 2026-10-28.
-          node-version: 24
+          # Current LTS (Node 26 since 2026-10-28), read from .nvmrc.
+          node-version-file: .nvmrc
           cache: yarn
+
+      # Node 25 stopped bundling corepack. The corepack step above setup-node ran the runner's own
+      # Node, which still has it, so setup-node can read Yarn's cache folder; this one gives the
+      # .nvmrc Node its own corepack, so every yarn below runs on the Node CI tests. Same pin as
+      # docker/Dockerfile.
+      - name: Corepack for the .nvmrc Node
+        run: npm install -g corepack@0.36.0 && corepack enable
 
       # --immutable fails if yarn.lock would change, which is the point: it
       # proves the committed lockfile is complete and current.

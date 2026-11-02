@@ -42,13 +42,13 @@ updates:
           - patch
     ignore:
       # @types/node tracks the RUNTIME major, always -- typings for a Node the project does
-      # not run describe APIs that are not there. It had reached 26.2.0 while every runtime
-      # pin here says 24. The image hold below lives in the `docker` ecosystem and cannot
+      # not run describe APIs that are not there. Runtime and typings moved to Node 26 together
+      # on 2026-11-02, after its LTS date; Node 27 never becomes LTS. The image hold below lives in the `docker` ecosystem and cannot
       # reach an npm package, so without this one the types walk to the next major alone.
       # Same release condition as the image, so the two lift together.
-      # lift-when: eol-lts nodejs 26
+      # lift-when: eol-lts nodejs 28
       - dependency-name: "@types/node"
-        versions: [">=25"]
+        versions: [">=27"]
       # TypeScript 7 is the native-compiler rewrite, and it is blocked upstream rather than deferred
       # by preference: typescript-eslint peers `typescript >=4.8.4 <6.1.0`, so no released version
       # supports TS 7, and Yarn's builtin typescript compat patch is incompatible with the native
@@ -70,7 +70,7 @@ updates:
       time: "05:00"
       timezone: Europe/Skopje
 
-  # docker/Dockerfile pins node:24-alpine3.24 and nginx:stable-alpine3.24 to an
+  # docker/Dockerfile pins node:26-alpine3.24 and nginx:stable-alpine3.24 to an
   # explicit Alpine release. Nothing else updates them, so base-image CVEs would
   # have gone unnoticed.
   - package-ecosystem: docker
@@ -81,15 +81,15 @@ updates:
       time: "06:00"
       timezone: Europe/Skopje
     ignore:
-      # Hold Node majors. CI pins node-version 24 and engines.node is ">=24",
+      # Hold Node majors. CI reads .nvmrc (26) and engines.node is ">=26",
       # so taking a major here alone would build and ship production on a
-      # runtime nothing tests against. Node 26 does not become LTS until
-      # 2026-10-28. Lift this when moving the whole project to the next LTS --
-      # CI, engines.node, .nvmrc and this base image together, not piecemeal.
+      # runtime nothing tests against. Node 27 never becomes LTS; Node 28 does.
+      # Lift this when moving the whole project to the next LTS -- CI,
+      # engines.node, .nvmrc and this base image together, not piecemeal.
       - dependency-name: node
         update-types:
           - version-update:semver-major
-        # lift-when: eol-lts nodejs 26
+        # lift-when: eol-lts nodejs 28
 
   - package-ecosystem: gradle
     directory: /android
