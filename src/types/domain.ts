@@ -123,13 +123,11 @@ export interface ToggleFilterInput {
   value: boolean;
 }
 
-export type FilterInput = SelectFilterInput | ToggleFilterInput;
-
 /**
  * The shape `setValue` accepts: whichever filter input the emitting component
  * owns, plus its new value.
  *
- * Structurally wider than FilterInput on purpose. Which input is passed and
+ * Structurally wider than `SelectFilterInput | ToggleFilterInput` on purpose. Which input is passed and
  * what type its value takes are correlated at runtime -- a 'name' input carries
  * a string, a 'showForAllCities' input carries a boolean -- but the emitting
  * component is what establishes that, and the store rediscovers it by switching

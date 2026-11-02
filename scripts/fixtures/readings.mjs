@@ -53,10 +53,10 @@ const RANGES = {
   so2: [2, 40],
 };
 
-export const HOURS = 24;
+const HOURS = 24;
 
 /** Midnight UTC today, so `time` formats as a full readable day in the slider. */
-export function startOfDayUnix(now = new Date()) {
+function startOfDayUnix(now = new Date()) {
   return Math.floor(
     Date.UTC(
       now.getUTCFullYear(),
@@ -74,7 +74,7 @@ export function startOfDayUnix(now = new Date()) {
  * that swing every slider position renders identically and the control looks
  * broken when it is not.
  */
-export function seriesFor(key, { hours = HOURS, now = new Date() } = {}) {
+function seriesFor(key, { hours = HOURS, now = new Date() } = {}) {
   const base = startOfDayUnix(now);
 
   return Array.from({ length: hours }, (_, hour) => {

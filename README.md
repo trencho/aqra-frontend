@@ -10,7 +10,7 @@ mobile app for Android and iOS.
 
 ## Requirements
 
-- **Node 24** (the current LTS)
+- **Node 26** (the current LTS)
 - **Yarn 4.18.0**: provisioned automatically by corepack from the
   `packageManager` field. No global install needed; run `corepack enable` once.
 
