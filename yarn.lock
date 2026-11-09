@@ -1728,7 +1728,7 @@ __metadata:
     globals: "npm:17.14.0"
     jsdom: "npm:31.0.0"
     leaflet: "npm:1.9.4"
-    leaflet.heat: "npm:0.2.0"
+    leaflet.heat: "npm:1.0.0"
     pinia: "npm:4.1.0"
     prettier: "npm:3.9.10"
     qs: "npm:6.17.1"
@@ -3055,10 +3055,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"leaflet.heat@npm:0.2.0":
-  version: 0.2.0
-  resolution: "leaflet.heat@npm:0.2.0"
-  checksum: 10c0/0cc6bb20e941e1b2f583620de420da5ebfc8ca094b9627159987d2a8c1b1e99d24f613c7ccaf9df887ba16f9008ff3fef5c0feac464366cd7fc4a2d260e2eb90
+"leaflet.heat@npm:1.0.0":
+  version: 1.0.0
+  resolution: "leaflet.heat@npm:1.0.0"
+  dependencies:
+    simpleheat: "npm:^1.0.0"
+  peerDependencies:
+    leaflet: ^1.9.0 || ^2.0.0-beta.1
+  checksum: 10c0/9d1958dfcb090fcf2e37cefecefaa9ade32199127432999bd59632bd927f64e22b801400c99de1ca9401c29ca58af49d1a3f4ee72b162b08aa30d2aef3cf09f3
   languageName: node
   linkType: hard
 
@@ -4251,6 +4255,13 @@ __metadata:
     bplist-parser: "npm:0.3.2"
     plist: "npm:^3.0.5"
   checksum: 10c0/226c283492d8518d715e4133d94bdbd15c0619561bcde583b4807b36cde106c0078c615b9b4e25c0e8758a4ae4e79ed5dd76e57cd528d8b7001ecab5ad35e343
+  languageName: node
+  linkType: hard
+
+"simpleheat@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "simpleheat@npm:1.0.0"
+  checksum: 10c0/fe18fe80c981629e9d515724ca584e4fcd137c99c7f99c088b83c97eb9a0398f14d79541d33ef7b0d45caff20249e79cf6601be5349b4d7b837c778b74e5f9ce
   languageName: node
   linkType: hard
 
