@@ -71,13 +71,13 @@
 
 <script lang="ts">
 import type {
-  HeatLayer,
   LatLngBoundsExpression,
   Map as LeafletMap,
   Marker,
   Polygon,
 } from 'leaflet';
 import L from 'leaflet';
+import type { HeatLayer } from 'leaflet.heat';
 import { mapStores } from 'pinia';
 import { defineComponent } from 'vue';
 

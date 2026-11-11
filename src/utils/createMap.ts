@@ -1,6 +1,5 @@
 import type {
   HeatLatLngTuple,
-  HeatLayer,
   LatLngTuple,
   Layer,
   Map as LeafletMap,
@@ -9,6 +8,7 @@ import type {
   TileLayer,
 } from 'leaflet';
 import L from 'leaflet';
+import { HeatLayer } from 'leaflet.heat';
 
 import { mapOptions, MAX_ZOOM, MIN_ZOOM } from '@/constants/map';
 import { PollutantRatio } from '@/constants/pollutants';
@@ -187,13 +187,15 @@ export function createHeatLayer(
 ): HeatLayerResult {
   const forecast = city.sensors[sensorId]?.forecast;
   if (!forecast) {
-    return { heatLayer: L.heatLayer([], mapOptions).addTo(map), time: [] };
+    return { heatLayer: new HeatLayer([], mapOptions).addTo(map), time: [] };
   }
 
   map.fitBounds([asLatLng(forecast.position)]);
 
   // `!= null` rather than a truthiness test: a genuine reading of 0 is data, not
-  // absence, and would be dropped by `reading ? ... : ...`.
+  // absence, so it still reaches the layer, which fits the map and keeps the
+  // slider's axis. leaflet.heat 1.0.0 paints nothing for an intensity of 0
+  // (0.2.0 drew it at minOpacity), so clean air shows as an empty map.
   const reading = forecast.data[time]?.[pollutant];
   const points =
     reading != null
@@ -204,7 +206,7 @@ export function createHeatLayer(
 
   return {
     time: forecast.data.map((t) => t.time),
-    heatLayer: L.heatLayer(points, mapOptions).addTo(map),
+    heatLayer: new HeatLayer(points, mapOptions).addTo(map),
   };
 }
 
@@ -240,10 +242,10 @@ export function createHeatLayers(
     })
     // A narrowing predicate rather than `.filter((i) => i)`: same runtime
     // result (a heat tuple is always truthy), but it drops `null` from the
-    // element type so the array satisfies heatLayer's parameter.
+    // element type so the array satisfies HeatLayer's parameter.
     .filter((p): p is HeatLatLngTuple => p !== null);
 
-  const heatLayer = L.heatLayer(points, mapOptions).addTo(map);
+  const heatLayer = new HeatLayer(points, mapOptions).addTo(map);
 
   return {
     heatLayer,
@@ -278,7 +280,7 @@ export function createSensorHeatLayers(
     )
     .flat();
 
-  const heatLayer = L.heatLayer(points, mapOptions).addTo(map);
+  const heatLayer = new HeatLayer(points, mapOptions).addTo(map);
 
   return {
     heatLayer,

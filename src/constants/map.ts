@@ -1,4 +1,5 @@
-import type { HeatMapOptions, LatLngTuple } from 'leaflet';
+import type { LatLngTuple } from 'leaflet';
+import type { HeatLayerOptions } from 'leaflet.heat';
 
 export const MIN_ZOOM = 9;
 export const MAX_ZOOM = 15;
@@ -10,20 +11,21 @@ export const MAX_ZOOM = 15;
 export const MACEDONIA_COORDINATES: LatLngTuple = [41.6086, 21.7453];
 
 /**
- * Heatmap rendering options, passed to `L.heatLayer`.
+ * Heatmap rendering options, passed to leaflet.heat's `HeatLayer`.
  *
  * `scaleRadius: true` used to sit in here and has been removed: it is an option
  * of the unrelated leaflet-heatmap plugin, and leaflet.heat -- the plugin this
  * project actually uses -- never reads it. Its HeatLayer consults only radius,
  * blur, gradient, max, maxZoom and minOpacity. Nothing else in src/ referenced
  * it either, so this is dead configuration going away, not a behaviour change.
- * The HeatMapOptions type in src/types/leaflet.d.ts is what surfaced it.
+ * A hand-written options type in src/types/leaflet.d.ts surfaced it; since
+ * leaflet.heat 1.0.0 the package's own HeatLayerOptions type replaces it.
  */
 /**
  * The six-stop colour ramp, as its own non-optional constant.
  *
  * Split out of `mapOptions` so the legend can read it without a `?? {}`
- * fallback: `HeatMapOptions.gradient` is optional in Leaflet's types, and a
+ * fallback: `HeatLayerOptions.gradient` is optional in Leaflet's types, and a
  * legend silently falling back to no stops renders a blank bar -- the exact
  * shape of silent failure this file already records for `scaleRadius`.
  *
@@ -44,7 +46,7 @@ export const HEAT_GRADIENT: Record<number, string> = {
   1: '#ad0000',
 };
 
-export const mapOptions: HeatMapOptions = {
+export const mapOptions: HeatLayerOptions = {
   gradient: HEAT_GRADIENT,
   minOpacity: 0.5,
   radius: 50,

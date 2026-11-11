@@ -9,11 +9,10 @@
  * does not evaluate module bodies either. That left a real blind spot --
  * anything that throws at import time in main.js ships green.
  *
- * The concrete case this guards: `leaflet.heat` contains no import or require
- * of Leaflet. It reaches for a bare global `L` and hangs `L.heatLayer` off it,
- * so it must be evaluated *after* `import L from 'leaflet'` or it throws
- * `L is not defined`. An import sorter that hoists side-effect imports to the
- * top of the file reorders exactly that pair.
+ * It used to guard leaflet.heat 0.2.0, which hung `L.heatLayer` off a bare
+ * global `L` and threw if evaluated before Leaflet. 1.0.0 imports Leaflet
+ * itself and main.ts no longer loads it; utils/__tests__/leaflet-heat.spec.ts
+ * now checks the package contract createMap.ts relies on.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,16 +48,6 @@ describe('main.js', () => {
    * globals, which survive the cached import. The mount check lives alone in
    * main-mount.spec.ts for that reason.
    */
-  it('loads leaflet.heat after Leaflet, so L.heatLayer is registered', async () => {
-    await import('@/main.ts');
-    const L = (await import('leaflet')).default;
-
-    // If leaflet.heat were evaluated before Leaflet, the import above would
-    // already have thrown. This asserts the plugin actually attached rather
-    // than merely that nothing blew up.
-    expect(typeof L.heatLayer).toBe('function');
-  });
-
   it('rewrites the Leaflet default marker icon URLs for the bundler', async () => {
     await import('@/main.ts');
     const L = (await import('leaflet')).default;

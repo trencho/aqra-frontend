@@ -1,23 +1,16 @@
 /* eslint-disable simple-import-sort/imports --
  * The import order in this file is load-bearing and must not be sorted.
  *
- * `leaflet.heat` contains no import or require of Leaflet -- it reaches for a
- * bare global `L` and hangs `L.heatLayer` off it. ES module bodies evaluate in
- * source order, so it must come after `import L from 'leaflet'` or it throws
- * `L is not defined` before the app mounts. The autofix hoists side-effect
- * imports to the top of the file, which puts it first and breaks the boot.
+ * leaflet.heat 1.0.0 is an ES module that imports Leaflet itself, so it no
+ * longer has to load after `import L from 'leaflet'` and no longer appears
+ * here: utils/createMap.ts imports its HeatLayer class directly.
  *
- * Converting this file to TypeScript changes none of that: the hazard is a
- * runtime evaluation-order property, and the type checker is blind to it.
- * src/__tests__/main.spec.js is still the only thing that catches it.
- *
- * The stylesheet imports below are ordered for the cascade for the same reason:
- * styles.scss overrides the Material Design Icons sheet.
+ * The stylesheet imports below are ordered for the cascade: styles.scss
+ * overrides the Material Design Icons sheet.
  */
 import { createApp } from 'vue';
 
 import L from 'leaflet';
-import 'leaflet.heat';
 import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
