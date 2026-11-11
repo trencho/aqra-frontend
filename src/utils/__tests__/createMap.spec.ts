@@ -8,7 +8,7 @@ import type { Position } from '@/types/domain';
 // Leaflet needs real DOM layout, so the whole module is mocked and these tests
 // assert on the calls made to it rather than on rendered output.
 //
-// One shared `layer()` factory now backs all four constructors, where the .js
+// One shared `layer()` factory backs every constructor, where the .js
 // version repeated the object literal per constructor and also exported an
 // unused `__marker`. Same behaviour -- a fresh object per call, with `addTo`
 // returning itself so the chained call yields the layer -- with the dead export
@@ -26,20 +26,30 @@ vi.mock('leaflet', () => {
       marker: vi.fn(layer),
       polygon: vi.fn(layer),
       tileLayer: vi.fn(layer),
-      heatLayer: vi.fn(layer),
     },
   };
 });
 
-/** The four Leaflet constructors this module uses, as the mocks they are. */
+// leaflet.heat 1.0.0 exports a class, so the double has to be constructible:
+// a `function` implementation, which returns the layer object in place of
+// `this`. An arrow implementation would throw on `new`.
+vi.mock('leaflet.heat', () => ({
+  HeatLayer: vi.fn(function () {
+    const l: Record<string, unknown> = {};
+    l.addTo = vi.fn(() => l);
+    return l;
+  }),
+}));
+
+/** The three Leaflet constructors this module uses, as the mocks they are. */
 interface LeafletDouble {
   marker: Mock;
   polygon: Mock;
   tileLayer: Mock;
-  heatLayer: Mock;
 }
 
 const L = (await import('leaflet')).default as unknown as LeafletDouble;
+const HeatLayer = (await import('leaflet.heat')).HeatLayer as unknown as Mock;
 
 const {
   mapCities,
@@ -187,7 +197,7 @@ describe('createHeatLayer (single sensor)', () => {
       time: 0,
     });
 
-    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [points] = at(HeatLayer.mock.calls, 0);
     expect(points).toEqual([['41.99', '21.42', 60 / PollutantRatio.pm10]]);
   });
 
@@ -223,7 +233,7 @@ describe('createHeatLayer (single sensor)', () => {
       pollutant: 'pm10',
     });
 
-    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([]);
+    expect(at(HeatLayer.mock.calls, 0)[0]).toEqual([]);
     expect(result.time).toEqual([]);
   });
 
@@ -234,7 +244,7 @@ describe('createHeatLayer (single sensor)', () => {
       pollutant: 'pm10',
     });
 
-    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([]);
+    expect(at(HeatLayer.mock.calls, 0)[0]).toEqual([]);
     expect(result.time).toEqual([]);
   });
 
@@ -250,13 +260,13 @@ describe('createHeatLayer (single sensor)', () => {
       time: 99,
     });
 
-    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([]);
+    expect(at(HeatLayer.mock.calls, 0)[0]).toEqual([]);
     // Still fits the map and still reports the axis, so the slider stays usable.
     expect(m.fitBounds).toHaveBeenCalledWith([['41.99', '21.42']]);
     expect(result.time).toEqual(['15/01/2024 10:30']);
   });
 
-  it('keeps a genuine reading of 0, which is data rather than absence', () => {
+  it('passes a genuine reading of 0 to the layer, which is data rather than absence', () => {
     createHeatLayer(asMap(map()), {
       city: { sensors: { s1: { forecast: forecast(0) } } },
       sensorId: 's1',
@@ -264,7 +274,7 @@ describe('createHeatLayer (single sensor)', () => {
       time: 0,
     });
 
-    expect(at(L.heatLayer.mock.calls, 0)[0]).toEqual([['41.99', '21.42', 0]]);
+    expect(at(HeatLayer.mock.calls, 0)[0]).toEqual([['41.99', '21.42', 0]]);
   });
 });
 
@@ -278,7 +288,7 @@ describe('createHeatLayers (all cities)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [points] = at(HeatLayer.mock.calls, 0);
     expect(points).toHaveLength(1);
   });
 
@@ -294,7 +304,7 @@ describe('createHeatLayers (all cities)', () => {
 
     // Named, because this test is specifically about the third element: a heat
     // point is [lat, lng, intensity], and the claim is about the intensity.
-    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [points] = at(HeatLayer.mock.calls, 0);
     const [, , intensity] = at(points as Array<[string, string, number]>, 0);
 
     expect(intensity).toBe(60 / PollutantRatio.pm10);
@@ -315,7 +325,7 @@ describe('createSensorHeatLayers (all sensors)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [points] = at(HeatLayer.mock.calls, 0);
     expect(points).toHaveLength(2);
   });
 
@@ -332,7 +342,7 @@ describe('createSensorHeatLayers (all sensors)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [points] = at(HeatLayer.mock.calls, 0);
     expect(points).toHaveLength(1);
   });
 
@@ -345,7 +355,7 @@ describe('createSensorHeatLayers (all sensors)', () => {
       pollutant: 'pm10',
     });
 
-    const [points] = at(L.heatLayer.mock.calls, 0);
+    const [points] = at(HeatLayer.mock.calls, 0);
     const [, , intensity] = at(points as Array<[string, string, number]>, 0);
 
     expect(intensity).toBe(60 / PollutantRatio.pm10);
